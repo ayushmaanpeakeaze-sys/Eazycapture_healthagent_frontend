@@ -3,51 +3,51 @@ import { useNavigate } from "react-router-dom";
 
 import { fetchAuditConfig, fetchHealthStats } from "../../services/audit.service";
 import { HealthStatsResponse, IssueType } from "../../types/audit.types";
-import { CheckSettingsPanel, SETTINGS_ALIAS } from "./CheckSettingsPanel";
+import { CheckSettingsPanel, SETTINGS_ALIAS } from "@/features/checks/CheckSettingsPanel";
 import {
   ALL_CHECKS,
   CHECK_GROUPS,
   Importance,
   importanceOf,
-} from "./checksCatalog";
-import { BankBalanceCheckPage } from "./BankBalanceCheckPage";
-import { CapitalItemReviewPage } from "./CapitalItemReviewPage";
-import { ContactDefaultsPage } from "./ContactDefaultsPage";
-import { DuplicateContactsPage } from "./DuplicateContactsPage";
-import { InactiveContactsPage } from "./InactiveContactsPage";
-import { LowCostFixedAssetPage } from "./LowCostFixedAssetPage";
-import { MisallocatedItemsPage } from "./MisallocatedItemsPage";
+} from "@/features/checks/checksCatalog";
+import { BankBalanceCheckPage } from "@/features/checks/BankBalanceCheckPage";
+import { CapitalItemReviewPage } from "@/features/checks/CapitalItemReviewPage";
+import { ContactDefaultsPage } from "@/features/checks/ContactDefaultsPage";
+import { DuplicateContactsPage } from "@/features/checks/DuplicateContactsPage";
+import { InactiveContactsPage } from "@/features/checks/InactiveContactsPage";
+import { LowCostFixedAssetPage } from "@/features/checks/LowCostFixedAssetPage";
+import { MisallocatedItemsPage } from "@/features/checks/MisallocatedItemsPage";
 import {
   MultiCodeRuleId,
   MultiCodeSuppliersPage,
-} from "./MultiCodeSuppliersPage";
-import { OldCreditRuleId, OldCreditsPage } from "./OldCreditsPage";
-import { OpeningBalanceDiffsPage } from "./OpeningBalanceDiffsPage";
-import { TaxMissingPage, TaxMissingRuleId } from "./TaxMissingPage";
-import { UndocumentedBillsPage } from "./UndocumentedBillsPage";
-import { UnreconciledBankItemsPage } from "./UnreconciledBankItemsPage";
+} from "@/features/checks/MultiCodeSuppliersPage";
+import { OldCreditRuleId, OldCreditsPage } from "@/features/checks/OldCreditsPage";
+import { OpeningBalanceDiffsPage } from "@/features/checks/OpeningBalanceDiffsPage";
+import { TaxMissingPage, TaxMissingRuleId } from "@/features/checks/TaxMissingPage";
+import { UndocumentedBillsPage } from "@/features/checks/UndocumentedBillsPage";
+import { UnreconciledBankItemsPage } from "@/features/checks/UnreconciledBankItemsPage";
 import {
   WrongTaxDirectionPage,
   WrongTaxRuleId,
-} from "./WrongTaxDirectionPage";
-import { DuplicateInvoicesPage, DuplicateRuleId } from "./DuplicateInvoicesPage";
+} from "@/features/checks/WrongTaxDirectionPage";
+import { DuplicateInvoicesPage, DuplicateRuleId } from "@/features/checks/DuplicateInvoicesPage";
 import {
   OldUnpaidInvoicesPage,
   OldUnpaidRuleId,
-} from "./OldUnpaidInvoicesPage";
+} from "@/features/checks/OldUnpaidInvoicesPage";
 import {
   PaymentMatchReviewPage,
   PaymentMatchRuleId,
-} from "./PaymentMatchReviewPage";
+} from "@/features/checks/PaymentMatchReviewPage";
 import {
   UnapprovedDocsPage,
   UnapprovedRuleId,
-} from "./UnapprovedDocsPage";
+} from "@/features/checks/UnapprovedDocsPage";
 import {
   UnexpectedCodingPage,
   UnexpectedRuleId,
-} from "./UnexpectedCodingPage";
-import { TrappedInvoicesList } from "./TrappedInvoicesList";
+} from "@/features/checks/UnexpectedCodingPage";
+import { TrappedInvoicesList } from "@/features/checks/TrappedInvoicesList";
 
 const IMP_STYLE: Record<Importance, { label: string; chip: string }> = {
   critical: { label: "Critical", chip: "bg-rose-50 text-rose-700 ring-rose-200" },

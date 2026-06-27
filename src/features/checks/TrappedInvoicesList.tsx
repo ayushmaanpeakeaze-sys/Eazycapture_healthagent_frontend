@@ -9,8 +9,8 @@ import {
   IssueType,
   Severity,
 } from "../../types/audit.types";
-import { ResolutionDrawer } from "./ResolutionDrawer";
-import { SuggestFixModal } from "./SuggestFixModal";
+import { ResolutionDrawer } from "@/features/checks/ResolutionDrawer";
+import { SuggestFixModal } from "@/features/checks/SuggestFixModal";
 
 const SEVERITY_RANK: Record<Severity, number> = {
   critical: 3,

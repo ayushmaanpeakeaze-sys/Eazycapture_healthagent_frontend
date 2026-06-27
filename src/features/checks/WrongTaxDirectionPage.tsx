@@ -1,17 +1,20 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import {
   bulkTrappedAction,
   fetchAuditConfig,
+  fetchCodingOptions,
   fetchTrappedInvoices,
-  recheckAttachment,
   saveAuditConfigFull,
-  uploadAttachment,
 } from "../../services/audit.service";
-import { FlaggedIssue, HealthCheckResult } from "../../types/audit.types";
-import { TablePager, useClientPagination } from "./paginate";
+import {
+  CodingOptions,
+  FlaggedIssue,
+  HealthCheckResult,
+} from "../../types/audit.types";
+import { TablePager, useClientPagination } from "@/features/checks/paginate";
 
-const RULE = "undocumented_bill";
+export type WrongTaxRuleId = "sales_tax_on_bills" | "purchase_tax_on_invoices";
 
 const money = (amt: number | string | null | undefined, cur?: string | null) => {
   const n = typeof amt === "string" ? parseFloat(amt) : (amt ?? 0);
@@ -35,54 +38,56 @@ const shortDate = (iso: string | null | undefined) => {
 };
 
 const DOC_TYPE_LABEL: Record<string, string> = {
-  ACCPAY: "Bill",
-  SPEND: "Money Out",
   ACCREC: "Invoice",
+  ACCPAY: "Bill",
   RECEIVE: "Money In",
+  SPEND: "Money Out",
 };
 const DOC_TYPE_CLS: Record<string, string> = {
-  ACCPAY: "bg-amber-600 text-white",
-  SPEND: "bg-rose-700 text-white",
   ACCREC: "bg-emerald-600 text-white",
+  ACCPAY: "bg-amber-600 text-white",
   RECEIVE: "bg-sky-600 text-white",
+  SPEND: "bg-rose-700 text-white",
 };
 
-const flagFor = (r: HealthCheckResult): FlaggedIssue | undefined =>
-  (r.result?.flagged ?? []).find((f) => f.issue_type === RULE) ??
+const flagFor = (r: HealthCheckResult, kind: string): FlaggedIssue | undefined =>
+  (r.result?.flagged ?? []).find((f) => f.issue_type === kind) ??
   r.result?.flagged?.[0];
 
-const matchesRule = (r: HealthCheckResult): boolean =>
-  (r.result?.rule_ids ?? []).includes(RULE) ||
-  (r.result?.flagged ?? []).some((f) => f.issue_type === RULE);
+const matchesRule = (r: HealthCheckResult, kind: string): boolean =>
+  (r.result?.rule_ids ?? []).includes(kind) ||
+  (r.result?.flagged ?? []).some((f) => f.issue_type === kind);
 
-const fileToBase64 = (file: File): Promise<string> =>
-  new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve((reader.result as string).split(",")[1] ?? "");
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-
-// Undocumented Bills — supplier bills with no file attachment. Upload a doc,
-// re-check, edit in Xero, dismiss, or ignore the contact.
-export const UndocumentedBillsPage = ({
+// Sales Tax on Bills / Purchase Tax on Invoices — a wrong-direction VAT code.
+// Review: Edit-in-Xero / Dismiss / Ignore-contact, + "Show bank payments" toggle.
+export const WrongTaxDirectionPage = ({
   companyId,
+  ruleId,
   refreshKey = 0,
 }: {
   companyId: string;
+  ruleId: WrongTaxRuleId;
   refreshKey?: number;
 }) => {
   const [rows, setRows] = useState<HealthCheckResult[]>([]);
+  const [options, setOptions] = useState<CodingOptions | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showDismissed, setShowDismissed] = useState(false);
-  const [showBank, setShowBank] = useState(false); // "Also show direct payments"
-  const [taxOnly, setTaxOnly] = useState(false); // "Show only with tax"
+  const [showBank, setShowBank] = useState(false); // OFF → exclude_bank_items
   const [search, setSearch] = useState("");
   const [busyKey, setBusyKey] = useState<string | null>(null);
   const [removed, setRemoved] = useState<Set<string>>(new Set());
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulkBusy, setBulkBusy] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    fetchCodingOptions(companyId).then((o) => active && setOptions(o));
+    return () => {
+      active = false;
+    };
+  }, [companyId]);
 
   useEffect(() => {
     let active = true;
@@ -92,7 +97,8 @@ export const UndocumentedBillsPage = ({
     setSelected(new Set());
 
     const excludeBank = !showBank;
-    const byRule = (list: HealthCheckResult[]) => list.filter(matchesRule);
+    const byRule = (list: HealthCheckResult[]) =>
+      list.filter((r) => matchesRule(r, ruleId));
 
     const load = async () => {
       if (showDismissed) {
@@ -140,15 +146,18 @@ export const UndocumentedBillsPage = ({
     return () => {
       active = false;
     };
-  }, [companyId, showDismissed, showBank, refreshKey]);
+  }, [companyId, ruleId, showDismissed, showBank, refreshKey]);
+
+  const nameByCode = useMemo(() => {
+    const m: Record<string, string> = {};
+    for (const a of options?.accounts ?? []) m[a.code] = a.name;
+    return m;
+  }, [options]);
 
   const visible = useMemo(() => {
     const q = search.trim().toLowerCase();
     return rows
       .filter((r) => !removed.has(r.id))
-      .filter((r) =>
-        taxOnly ? Number(flagFor(r)?.match_reasons?.tax_amount) > 0 : true,
-      )
       .filter((r) => {
         if (!q) return true;
         const res = r.result;
@@ -156,21 +165,21 @@ export const UndocumentedBillsPage = ({
           (v || "").toString().toLowerCase().includes(q),
         );
       });
-  }, [rows, removed, search, taxOnly]);
+  }, [rows, removed, search]);
 
-  const pg = useClientPagination(visible, `${search}|${showDismissed}|${showBank}|${taxOnly}`);
+  const pg = useClientPagination(visible, `${search}|${showDismissed}|${showBank}`);
 
   const totalValue = useMemo(
     () =>
       visible.reduce(
         (s, r) =>
           s +
-          (Number(flagFor(r)?.match_reasons?.net_amount) ||
+          (Number(flagFor(r, ruleId)?.match_reasons?.net_amount) ||
             Number(r.result?.amount) ||
             0),
         0,
       ),
-    [visible],
+    [visible, ruleId],
   );
   const currency = visible[0]?.result?.currency_code ?? "GBP";
 
@@ -180,34 +189,6 @@ export const UndocumentedBillsPage = ({
       ids.forEach((id) => n.add(id));
       return n;
     });
-
-  const onUpload = async (r: HealthCheckResult, file: File) => {
-    setBusyKey(r.id);
-    try {
-      const b64 = await fileToBase64(file);
-      const res = await uploadAttachment(companyId, r.id, {
-        filename: file.name,
-        content_type: file.type || "application/octet-stream",
-        content_base64: b64,
-      });
-      if (res.ok && res.resolved) drop([r.id]);
-      else if (res.ok && res.stub)
-        setError("Connect Xero to upload attachments.");
-      else if (!res.ok) setError(res.error ?? "Upload failed");
-    } catch {
-      setError("Couldn’t read that file.");
-    }
-    setBusyKey(null);
-  };
-
-  const onRecheck = async (r: HealthCheckResult) => {
-    setBusyKey(r.id);
-    const res = await recheckAttachment(companyId, r.id);
-    setBusyKey(null);
-    if (res.ok && res.resolved) drop([r.id]);
-    else if (res.ok) setError("Still no attachment found in Xero.");
-    else setError(res.error ?? "Re-check failed");
-  };
 
   const onDismiss = async (r: HealthCheckResult) => {
     setBusyKey(r.id);
@@ -225,11 +206,11 @@ export const UndocumentedBillsPage = ({
     setBusyKey(r.id);
     const cfg = await fetchAuditConfig(companyId);
     const list =
-      (cfg?.settings?.undocumented_ignore_contacts as string[] | undefined) ?? [];
+      (cfg?.settings?.tax_missing_ignore_contacts as string[] | undefined) ?? [];
     const upper = value.toUpperCase();
     if (!list.some((x) => x.toUpperCase() === upper)) {
       const save = await saveAuditConfigFull(companyId, {
-        settings: { undocumented_ignore_contacts: [...list, upper] },
+        settings: { tax_missing_ignore_contacts: [...list, upper] },
       });
       if (!save.ok) {
         setBusyKey(null);
@@ -276,25 +257,22 @@ export const UndocumentedBillsPage = ({
         <div className="flex flex-wrap items-center gap-4">
           <label className="inline-flex cursor-pointer items-center gap-2 text-xs font-medium text-ink-600">
             <Switch on={showDismissed} onClick={() => setShowDismissed((v) => !v)} />
-            Show dismissed
-          </label>
-          <label className="inline-flex cursor-pointer items-center gap-2 text-xs font-medium text-ink-600">
-            <Switch on={taxOnly} onClick={() => setTaxOnly((v) => !v)} />
-            Only with tax
+            Show dismissed items
           </label>
           <label
             className="inline-flex cursor-pointer items-center gap-2 text-xs font-medium text-ink-600"
-            title="Also include direct bank payments (Money Out) without an attachment"
+            title="Also include bank payments (Money Out / Money In), not just bills/invoices"
           >
             <Switch on={showBank} onClick={() => setShowBank((v) => !v)} />
-            Also show direct payments
+            Show Bank payments too
           </label>
         </div>
         <div className="flex items-center gap-3">
           {!loading && visible.length > 0 && (
             <>
               <span className="text-xs text-ink-500">
-                {visible.length} item{visible.length === 1 ? "" : "s"} · Total:{" "}
+                {visible.length} item{visible.length === 1 ? "" : "s"} · Total
+                potential errors:{" "}
                 <span className="font-semibold text-ink-800">
                   {money(totalValue, currency)}
                 </span>
@@ -314,7 +292,7 @@ export const UndocumentedBillsPage = ({
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search…"
-            className="w-48 rounded-lg border border-ink-200 px-3 py-1.5 text-sm focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-200"
+            className="w-52 rounded-lg border border-ink-200 px-3 py-1.5 text-sm focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-200"
           />
         </div>
       </div>
@@ -356,11 +334,11 @@ export const UndocumentedBillsPage = ({
             ? "No dismissed items."
             : search
               ? "No matches for your search."
-              : "No undocumented bills 🎉"}
+              : "No wrong-direction tax items 🎉"}
         </p>
       ) : (
         <div className="overflow-x-auto rounded-2xl border border-ink-100 bg-white shadow-card">
-          <table className="w-full min-w-[1040px] text-sm">
+          <table className="w-full min-w-[920px] text-sm">
             <thead>
               <tr className="border-b border-ink-100 bg-ink-50/50 text-left text-[10px] font-semibold uppercase tracking-wider text-ink-400">
                 <th className="px-3 py-2.5">
@@ -376,16 +354,18 @@ export const UndocumentedBillsPage = ({
                 <th className="px-2 py-2.5">Details</th>
                 <th className="px-2 py-2.5">Net</th>
                 <th className="px-2 py-2.5">Tax</th>
-                <th className="px-2 py-2.5">Tax code</th>
-                <th className="px-2 py-2.5">Attach to bill</th>
+                <th className="px-2 py-2.5">Tax code used</th>
                 <th className="px-3 py-2.5 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-ink-50">
               {pg.paged.map((r) => {
                 const res = r.result;
-                const f = flagFor(r);
+                const f = flagFor(r, ruleId);
                 const mr = f?.match_reasons;
+                const acct = res?.current_account_code;
+                const acctName = res?.current_account_name || nameByCode[acct ?? ""];
+                const editable = res?.editable !== false;
                 const busy = busyKey === r.id;
                 return (
                   <tr key={r.id} className="align-top transition hover:bg-brand-50/20">
@@ -415,6 +395,12 @@ export const UndocumentedBillsPage = ({
                           .filter(Boolean)
                           .join(" · ")}
                       </p>
+                      {acct && (
+                        <p className="text-[11px] text-ink-400">
+                          {acct}
+                          {acctName ? ` ${acctName}` : ""}
+                        </p>
+                      )}
                       <button
                         type="button"
                         onClick={() => onIgnoreContact(r)}
@@ -424,7 +410,7 @@ export const UndocumentedBillsPage = ({
                         Ignore this contact
                       </button>
                     </td>
-                    <td className="max-w-[180px] px-2 py-3 text-[12px] text-ink-500">
+                    <td className="max-w-[220px] px-2 py-3 text-[12px] text-ink-500">
                       <span className="line-clamp-2">{res?.details || "—"}</span>
                     </td>
                     <td className="px-2 py-3 font-semibold tabular-nums text-ink-900">
@@ -434,36 +420,25 @@ export const UndocumentedBillsPage = ({
                       {money(mr?.tax_amount, res?.currency_code)}
                     </td>
                     <td className="px-2 py-3 text-ink-700">
-                      {res?.tax_code || mr?.tax_code || f?.current_code || "—"}
-                    </td>
-                    <td className="w-44 px-2 py-3">
-                      <DropZone busy={busy} onFile={(file) => onUpload(r, file)} />
+                      {f?.current_code || mr?.tax_code || f?.current_name || "—"}
                     </td>
                     <td className="px-3 py-3">
                       <div className="flex flex-wrap items-center justify-end gap-1.5">
-                        <button
-                          type="button"
-                          onClick={() => onRecheck(r)}
-                          disabled={busy}
-                          className="rounded-md border border-ink-200 px-2 py-1 text-xs font-semibold text-ink-600 transition hover:border-brand-300 hover:text-brand-700 disabled:opacity-60"
-                        >
-                          {busy ? "…" : "Check again"}
-                        </button>
                         {r.xero_url && (
                           <a
                             href={r.xero_url}
                             target="_blank"
                             rel="noreferrer"
-                            className="rounded-md border border-ink-200 px-2 py-1 text-xs font-semibold text-ink-600 transition hover:border-brand-300 hover:text-brand-700"
+                            className="rounded-md border border-ink-200 px-2.5 py-1 text-xs font-semibold text-ink-600 transition hover:border-brand-300 hover:text-brand-700"
                           >
-                            Edit in Xero
+                            {editable ? "View / Edit" : "Edit in Xero"}
                           </a>
                         )}
                         <button
                           type="button"
                           onClick={() => onDismiss(r)}
                           disabled={busy}
-                          className="rounded-md border border-ink-200 px-2 py-1 text-xs font-semibold text-ink-500 transition hover:border-rose-300 hover:text-rose-600 disabled:opacity-60"
+                          className="rounded-md border border-ink-200 px-2.5 py-1 text-xs font-semibold text-ink-500 transition hover:border-rose-300 hover:text-rose-600 disabled:opacity-60"
                         >
                           Dismiss
                         </button>
@@ -483,51 +458,6 @@ export const UndocumentedBillsPage = ({
           />
         </div>
       )}
-    </div>
-  );
-};
-
-const DropZone = ({
-  busy,
-  onFile,
-}: {
-  busy: boolean;
-  onFile: (file: File) => void;
-}) => {
-  const [over, setOver] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
-  return (
-    <div
-      onClick={() => inputRef.current?.click()}
-      onDragOver={(e) => {
-        e.preventDefault();
-        setOver(true);
-      }}
-      onDragLeave={() => setOver(false)}
-      onDrop={(e) => {
-        e.preventDefault();
-        setOver(false);
-        const f = e.dataTransfer.files?.[0];
-        if (f) onFile(f);
-      }}
-      className={[
-        "cursor-pointer rounded-md border border-dashed px-3 py-2 text-center text-[11px] transition",
-        over
-          ? "border-brand-400 bg-brand-50 text-brand-700"
-          : "border-ink-300 text-ink-400 hover:border-brand-300 hover:text-brand-600",
-      ].join(" ")}
-    >
-      {busy ? "Uploading…" : "Drop file here (or click)"}
-      <input
-        ref={inputRef}
-        type="file"
-        className="hidden"
-        onChange={(e) => {
-          const f = e.target.files?.[0];
-          if (f) onFile(f);
-          e.target.value = "";
-        }}
-      />
     </div>
   );
 };

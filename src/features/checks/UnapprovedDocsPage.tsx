@@ -1,17 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 
 import {
+  approveTrapped,
   bulkTrappedAction,
+  deleteTrapped,
   fetchTrappedInvoices,
-  restoreTrapped,
-  voidTrapped,
 } from "../../services/audit.service";
 import { FlaggedIssue, HealthCheckResult } from "../../types/audit.types";
-import { TablePager, useClientPagination } from "./paginate";
-
-export type OldCreditRuleId =
-  | "old_unsettled_sales_credit"
-  | "old_unsettled_purchase_credit";
+import { TablePager, useClientPagination } from "@/features/checks/paginate";
 
 const money = (amt: number | string | null | undefined, cur?: string | null) => {
   const n = typeof amt === "string" ? parseFloat(amt) : (amt ?? 0);
@@ -34,43 +30,25 @@ const shortDate = (iso: string | null | undefined) => {
   });
 };
 
-const flagFor = (r: HealthCheckResult, kind: string): FlaggedIssue | undefined =>
-  (r.result?.flagged ?? []).find((f) => f.issue_type === kind) ??
+export type UnapprovedRuleId = "unapproved_invoice" | "unapproved_bill";
+
+const flagFor = (r: HealthCheckResult, ruleId: string): FlaggedIssue | undefined =>
+  (r.result?.flagged ?? []).find((f) => f.issue_type === ruleId) ??
   r.result?.flagged?.[0];
 
-const matchesRule = (r: HealthCheckResult, kind: string): boolean =>
-  (r.result?.rule_ids ?? []).includes(kind) ||
-  (r.result?.flagged ?? []).some((f) => f.issue_type === kind);
+const matchesRule = (r: HealthCheckResult, ruleId: string): boolean =>
+  (r.result?.rule_ids ?? []).includes(ruleId) ||
+  (r.result?.flagged ?? []).some((f) => f.issue_type === ruleId);
 
-const ageDays = (r: HealthCheckResult, f: FlaggedIssue | undefined): number | null => {
-  const a = f?.match_reasons?.age_days;
-  if (a != null) return a;
-  if (!r.result?.invoice_date) return null;
-  const d = Math.floor(
-    (Date.now() - new Date(r.result.invoice_date).getTime()) / 86_400_000,
-  );
-  return Number.isFinite(d) ? d : null;
-};
-
-// Part-allocated when some of the credit has been used (remaining < total).
-const detailText = (r: HealthCheckResult): string => {
-  if (r.result?.details) return r.result.details;
-  const total = Number(r.result?.amount);
-  const due = Number(r.result?.amount_due);
-  if (Number.isFinite(total) && Number.isFinite(due) && due < total)
-    return "part-allocated credit note";
-  return "credit note";
-};
-
-// Old Sales / Purchase Credits — credit notes outstanding > N days.
-// View / Void (editable) / Dismiss / Ignore, + restore in the dismissed view.
-export const OldCreditsPage = ({
+// Unapproved Invoices / Bills — draft/submitted docs not yet in the accounts.
+// Approve / Delete / Ignore / Dismiss.
+export const UnapprovedDocsPage = ({
   companyId,
-  issueType,
+  ruleId,
   refreshKey = 0,
 }: {
   companyId: string;
-  issueType: OldCreditRuleId;
+  ruleId: UnapprovedRuleId;
   refreshKey?: number;
 }) => {
   const [rows, setRows] = useState<HealthCheckResult[]>([]);
@@ -78,7 +56,7 @@ export const OldCreditsPage = ({
   const [error, setError] = useState<string | null>(null);
   const [showDismissed, setShowDismissed] = useState(false);
   const [search, setSearch] = useState("");
-  const [busy, setBusy] = useState<string | null>(null);
+  const [busyKey, setBusyKey] = useState<string | null>(null);
   const [removed, setRemoved] = useState<Set<string>>(new Set());
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulkBusy, setBulkBusy] = useState(false);
@@ -91,7 +69,7 @@ export const OldCreditsPage = ({
     setSelected(new Set());
 
     const byRule = (list: HealthCheckResult[]) =>
-      list.filter((r) => matchesRule(r, issueType));
+      list.filter((r) => matchesRule(r, ruleId));
 
     const load = async () => {
       if (showDismissed) {
@@ -130,7 +108,9 @@ export const OldCreditsPage = ({
     return () => {
       active = false;
     };
-  }, [companyId, issueType, showDismissed, refreshKey]);
+  }, [companyId, ruleId, showDismissed, refreshKey]);
+
+  const noun = ruleId === "unapproved_bill" ? "bill" : "invoice";
 
   const visible = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -139,7 +119,7 @@ export const OldCreditsPage = ({
       .filter((r) => {
         if (!q) return true;
         const res = r.result;
-        return [res?.vendor_name, res?.reference, res?.invoice_number].some((v) =>
+        return [res?.vendor_name, res?.invoice_number, res?.details].some((v) =>
           (v || "").toString().toLowerCase().includes(q),
         );
       });
@@ -147,9 +127,10 @@ export const OldCreditsPage = ({
 
   const pg = useClientPagination(visible, `${search}|${showDismissed}`);
 
-  // Total Potential Errors = sum of remaining credit (amount_due).
-  const totalValue = useMemo(
-    () => visible.reduce((s, r) => s + (Number(r.result?.amount_due) || 0), 0),
+  // "Total potential errors" — sum of the visible docs' values.
+  const total = useMemo(
+    () =>
+      visible.reduce((sum, r) => sum + (Number(r.result?.amount) || 0), 0),
     [visible],
   );
   const currency = visible[0]?.result?.currency_code ?? "GBP";
@@ -161,16 +142,15 @@ export const OldCreditsPage = ({
       return n;
     });
 
-  const act = async (
-    key: string,
-    ids: string[],
+  const run = async (
+    r: HealthCheckResult,
     fn: () => Promise<{ ok: boolean; error?: string }>,
     label: string,
   ) => {
-    setBusy(key);
+    setBusyKey(r.id);
     const res = await fn();
-    setBusy(null);
-    if (res.ok) drop(ids);
+    setBusyKey(null);
+    if (res.ok) drop([r.id]);
     else setError(res.error ?? `${label} failed`);
   };
 
@@ -184,16 +164,16 @@ export const OldCreditsPage = ({
   const toggleAll = () =>
     setSelected(allSelected ? new Set() : new Set(pg.paged.map((r) => r.id)));
 
-  const bulk = async (action: "dismiss" | "snooze" | "restore", opts?: { days?: number }) => {
+  const bulkDismiss = async () => {
     const ids = [...selected];
     if (!ids.length) return;
     setBulkBusy(true);
-    const res = await bulkTrappedAction(companyId, ids, action, opts);
+    const res = await bulkTrappedAction(companyId, ids, "dismiss");
     setBulkBusy(false);
     if (res.ok) {
       drop(ids);
       setSelected(new Set());
-    } else setError(res.error ?? "Bulk action failed");
+    } else setError(res.error ?? "Bulk dismiss failed");
   };
 
   return (
@@ -222,10 +202,9 @@ export const OldCreditsPage = ({
         <div className="flex items-center gap-3">
           {!loading && visible.length > 0 && (
             <span className="text-xs text-ink-500">
-              {visible.length} item{visible.length === 1 ? "" : "s"} · Total
-              potential errors:{" "}
+              Total potential errors:{" "}
               <span className="font-semibold text-ink-800">
-                {money(totalValue, currency)}
+                {money(total, currency)}
               </span>
             </span>
           )}
@@ -233,7 +212,7 @@ export const OldCreditsPage = ({
             type="search"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search…"
+            placeholder={`Search ${noun}s…`}
             className="w-56 rounded-lg border border-ink-200 px-3 py-1.5 text-sm focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-200"
           />
         </div>
@@ -242,35 +221,14 @@ export const OldCreditsPage = ({
       {selected.size > 0 && (
         <div className="flex flex-wrap items-center gap-2 rounded-lg border border-brand-200 bg-brand-50 px-3 py-2 text-xs">
           <span className="font-semibold text-brand-700">{selected.size} selected</span>
-          {showDismissed ? (
-            <button
-              type="button"
-              disabled={bulkBusy}
-              onClick={() => bulk("restore")}
-              className="rounded-md border border-ink-200 bg-white px-2.5 py-1 font-semibold text-ink-600 transition hover:border-brand-300 hover:text-brand-700 disabled:opacity-60"
-            >
-              Add back to list
-            </button>
-          ) : (
-            <>
-              <button
-                type="button"
-                disabled={bulkBusy}
-                onClick={() => bulk("snooze", { days: 30 })}
-                className="rounded-md border border-ink-200 bg-white px-2.5 py-1 font-semibold text-ink-600 transition hover:border-brand-300 hover:text-brand-700 disabled:opacity-60"
-              >
-                Ignore 30 days
-              </button>
-              <button
-                type="button"
-                disabled={bulkBusy}
-                onClick={() => bulk("dismiss")}
-                className="rounded-md border border-ink-200 bg-white px-2.5 py-1 font-semibold text-ink-600 transition hover:border-rose-300 hover:text-rose-600 disabled:opacity-60"
-              >
-                Dismiss
-              </button>
-            </>
-          )}
+          <button
+            type="button"
+            disabled={bulkBusy}
+            onClick={bulkDismiss}
+            className="rounded-md border border-ink-200 bg-white px-2.5 py-1 font-semibold text-ink-600 transition hover:border-rose-300 hover:text-rose-600 disabled:opacity-60"
+          >
+            Dismiss
+          </button>
           <button
             type="button"
             onClick={() => setSelected(new Set())}
@@ -294,14 +252,14 @@ export const OldCreditsPage = ({
       ) : visible.length === 0 ? (
         <p className="rounded-2xl border border-ink-100 bg-white px-5 py-10 text-center text-sm italic text-ink-400 shadow-card">
           {showDismissed
-            ? "No dismissed credit notes."
+            ? "No dismissed items."
             : search
               ? "No matches for your search."
-              : "No old credit notes 🎉"}
+              : `No unapproved ${noun}s 🎉`}
         </p>
       ) : (
         <div className="overflow-x-auto rounded-2xl border border-ink-100 bg-white shadow-card">
-          <table className="w-full min-w-[820px] text-sm">
+          <table className="w-full min-w-[860px] text-sm">
             <thead>
               <tr className="border-b border-ink-100 bg-ink-50/50 text-left text-[10px] font-semibold uppercase tracking-wider text-ink-400">
                 <th className="px-3 py-2.5">
@@ -314,21 +272,27 @@ export const OldCreditsPage = ({
                   />
                 </th>
                 <th className="px-2 py-2.5">Contact</th>
-                <th className="px-2 py-2.5">Credit date</th>
-                <th className="px-2 py-2.5">Age</th>
-                <th className="px-2 py-2.5">Credit ref</th>
+                <th className="px-2 py-2.5">Date</th>
+                <th className="px-2 py-2.5">Status</th>
+                <th className="px-2 py-2.5">{noun === "bill" ? "Bill" : "Invoice"} ref</th>
                 <th className="px-2 py-2.5">Details</th>
-                <th className="px-2 py-2.5">Credit remaining</th>
+                <th className="px-2 py-2.5">Total</th>
                 <th className="px-3 py-2.5 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-ink-50">
               {pg.paged.map((r) => {
                 const res = r.result;
-                const f = flagFor(r, issueType);
-                const age = ageDays(r, f);
-                const editable = res?.editable !== false;
-                const rowBusy = busy === r.id;
+                const f = flagFor(r, ruleId);
+                const status = (res?.invoice_status || "").toUpperCase();
+                const canApprove = res?.editable !== false;
+                const busy = busyKey === r.id;
+                // Deep link: xero_url, else xero_reference when it's a URL.
+                const editUrl =
+                  r.xero_url ||
+                  (res?.xero_reference?.startsWith("http")
+                    ? res.xero_reference
+                    : null);
                 return (
                   <tr key={r.id} className="align-middle transition hover:bg-brand-50/20">
                     <td className="px-3 py-3">
@@ -347,81 +311,70 @@ export const OldCreditsPage = ({
                     <td className="px-2 py-3">
                       <span
                         className={[
-                          "rounded-full px-2 py-0.5 text-[11px] font-semibold tabular-nums",
-                          age != null && age >= 180
-                            ? "bg-rose-50 text-rose-700"
+                          "rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider",
+                          status === "SUBMITTED"
+                            ? "bg-sky-50 text-sky-700"
                             : "bg-amber-50 text-amber-700",
                         ].join(" ")}
                       >
-                        {age != null ? `${age} days` : "—"}
+                        {status || "DRAFT"}
                       </span>
                     </td>
-                    <td className="px-2 py-3 text-ink-600">
-                      {res?.reference || res?.invoice_number || "—"}
+                    <td className="px-2 py-3 text-ink-600">{res?.invoice_number || "—"}</td>
+                    <td className="max-w-[220px] px-2 py-3 text-[12px] text-ink-500">
+                      <span className="line-clamp-2">{res?.details || f?.message || "—"}</span>
                     </td>
-                    <td className="px-2 py-3 text-[12px] text-ink-500">{detailText(r)}</td>
                     <td className="px-2 py-3 font-semibold tabular-nums text-ink-900">
-                      {money(res?.amount_due ?? res?.amount, res?.currency_code)}
+                      {money(res?.amount, res?.currency_code)}
                     </td>
                     <td className="px-3 py-3">
                       <div className="flex flex-wrap items-center justify-end gap-1.5">
-                        {r.xero_url && (
+                        {editUrl && (
                           <a
-                            href={r.xero_url}
+                            href={editUrl}
                             target="_blank"
                             rel="noreferrer"
                             className="rounded-md border border-ink-200 px-2 py-1 text-xs font-semibold text-ink-600 transition hover:border-brand-300 hover:text-brand-700"
                           >
-                            {editable ? "View" : "Edit in Xero"}
+                            View / Edit
                           </a>
                         )}
-                        {showDismissed ? (
+                        {canApprove && (
                           <button
                             type="button"
-                            disabled={rowBusy}
-                            onClick={() =>
-                              act(r.id, [r.id], () => restoreTrapped(companyId, r.id), "Restore")
-                            }
-                            className="rounded-md border border-ink-200 px-2 py-1 text-xs font-semibold text-ink-600 transition hover:border-brand-300 hover:text-brand-700 disabled:opacity-60"
+                            onClick={() => run(r, () => approveTrapped(companyId, r.id), "Approve")}
+                            disabled={busy}
+                            className="rounded-md bg-brand-gradient px-2.5 py-1 text-xs font-semibold text-white shadow-brand transition hover:brightness-110 disabled:opacity-60"
                           >
-                            {rowBusy ? "…" : "Add back"}
+                            {busy ? "…" : "Approve"}
                           </button>
-                        ) : (
-                          <>
-                            {editable && (
-                              <button
-                                type="button"
-                                disabled={rowBusy}
-                                onClick={() =>
-                                  act(r.id, [r.id], () => voidTrapped(companyId, r.id), "Void")
-                                }
-                                className="rounded-md border border-rose-300 bg-rose-50 px-2 py-1 text-xs font-semibold text-rose-700 transition hover:bg-rose-100 disabled:opacity-60"
-                              >
-                                {rowBusy ? "…" : "Void"}
-                              </button>
-                            )}
-                            <button
-                              type="button"
-                              disabled={rowBusy}
-                              onClick={() =>
-                                act(r.id, [r.id], () => bulkTrappedAction(companyId, [r.id], "snooze", { days: 30 }), "Snooze")
-                              }
-                              className="rounded-md border border-ink-200 px-2 py-1 text-xs font-semibold text-ink-600 transition hover:border-brand-300 hover:text-brand-700 disabled:opacity-60"
-                            >
-                              Ignore 30d
-                            </button>
-                            <button
-                              type="button"
-                              disabled={rowBusy}
-                              onClick={() =>
-                                act(r.id, [r.id], () => bulkTrappedAction(companyId, [r.id], "dismiss"), "Dismiss")
-                              }
-                              className="rounded-md border border-ink-200 px-2 py-1 text-xs font-semibold text-ink-500 transition hover:border-rose-300 hover:text-rose-600 disabled:opacity-60"
-                            >
-                              Dismiss
-                            </button>
-                          </>
                         )}
+                        <button
+                          type="button"
+                          onClick={() => run(r, () => deleteTrapped(companyId, r.id), "Delete")}
+                          disabled={busy}
+                          className="rounded-md border border-rose-300 bg-rose-50 px-2.5 py-1 text-xs font-semibold text-rose-700 transition hover:bg-rose-100 disabled:opacity-60"
+                        >
+                          Delete
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            run(r, () => bulkTrappedAction(companyId, [r.id], "snooze", { days: 30 }), "Snooze")
+                          }
+                          disabled={busy}
+                          className="rounded-md border border-ink-200 px-2 py-1 text-xs font-semibold text-ink-600 transition hover:border-brand-300 hover:text-brand-700 disabled:opacity-60"
+                        >
+                          Ignore 30d
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => run(r, () => bulkTrappedAction(companyId, [r.id], "dismiss"), "Dismiss")}
+                          disabled={busy}
+                          className="rounded-md border border-ink-200 px-2 py-1 text-xs font-semibold text-ink-500 transition hover:border-rose-300 hover:text-rose-600 disabled:opacity-60"
+                        >
+                          Dismiss
+                        </button>
                       </div>
                     </td>
                   </tr>

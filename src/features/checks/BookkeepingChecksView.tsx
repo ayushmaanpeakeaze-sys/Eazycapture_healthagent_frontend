@@ -12,13 +12,13 @@ import {
   AuditSummary,
   HealthStatsResponse,
 } from "../../types/audit.types";
-import { BatchSummaryCard } from "./BatchSummaryCard";
-import { ChecksDirectory } from "./ChecksDirectory";
+import { BatchSummaryCard } from "@/features/batch/BatchSummaryCard";
+import { ChecksDirectory } from "@/features/checks/ChecksDirectory";
 import {
   getActiveRuleKeys,
   getIgnoreBeforeDate,
   RuleSettingsDrawer,
-} from "./RuleSettingsDrawer";
+} from "@/features/checks/RuleSettingsDrawer";
 
 type PeriodKey =
   | "all"

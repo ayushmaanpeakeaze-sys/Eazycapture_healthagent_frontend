@@ -1,6 +1,6 @@
 import { createRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
-import AuditFirewallCenter from "./components/AuditFirewallCenter";
+import App from "./App";
 import { AuthProvider } from "./components/Auth/AuthProvider";
 import "./index.css";
 
@@ -15,7 +15,7 @@ try {
 createRoot(document.getElementById("root")!).render(
   <BrowserRouter>
     <AuthProvider>
-      <AuditFirewallCenter />
+      <App />
     </AuthProvider>
   </BrowserRouter>,
 );

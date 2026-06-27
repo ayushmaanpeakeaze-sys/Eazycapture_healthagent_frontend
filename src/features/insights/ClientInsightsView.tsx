@@ -1,4 +1,4 @@
-import { FinancialInsights } from "./FinancialInsights";
+import { FinancialInsights } from "@/features/insights/FinancialInsights";
 
 // Client insights = the live financial KPIs. The bookkeeping-health breakdown
 // (health score, issues-by-type, severity, lifecycle) was removed from this

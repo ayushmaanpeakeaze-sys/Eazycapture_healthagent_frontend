@@ -12,21 +12,21 @@ import {
 import {
   fetchCompaniesPanorama,
   PanoramaClient,
-} from "../../services/audit.service";
-import { useAuth } from "../Auth/AuthProvider";
-import { ActivityFeedView } from "./ActivityFeedView";
-import { TeamActivityView } from "./TeamActivityView";
-import { AllClientsView } from "./AllClientsView";
-import { BatchAuditInspector } from "./BatchAuditInspector";
-import { BookkeepingChecksView } from "./BookkeepingChecksView";
-import { CheckDetailPage } from "./CheckDetailPage";
-import { ClientInsightsView } from "./ClientInsightsView";
-import { FirmOverview } from "./FirmOverview";
-import { LedgerHealthDashboard } from "./LedgerHealthDashboard";
-import { NotificationsView } from "./NotificationsView";
-import { PreLedgerReviewCenter } from "./PreLedgerReviewCenter";
-import { SettingsView } from "./SettingsView";
-import { TeamView } from "./TeamView";
+} from "@/services/audit.service";
+import { useAuth } from "@/components/Auth/AuthProvider";
+import { ActivityFeedView } from "@/features/practice/ActivityFeedView";
+import { TeamActivityView } from "@/features/practice/TeamActivityView";
+import { AllClientsView } from "@/features/firm/AllClientsView";
+import { BatchAuditInspector } from "@/features/batch/BatchAuditInspector";
+import { BookkeepingChecksView } from "@/features/checks/BookkeepingChecksView";
+import { CheckDetailPage } from "@/features/checks/CheckDetailPage";
+import { ClientInsightsView } from "@/features/insights/ClientInsightsView";
+import { FirmOverview } from "@/features/firm/FirmOverview";
+import { LedgerHealthDashboard } from "@/features/insights/LedgerHealthDashboard";
+import { NotificationsView } from "@/features/practice/NotificationsView";
+import { PreLedgerReviewCenter } from "@/features/checks/PreLedgerReviewCenter";
+import { SettingsView } from "@/features/practice/SettingsView";
+import { TeamView } from "@/features/practice/TeamView";
 
 type ViewKey =
   | "firmOverview"
@@ -656,7 +656,7 @@ const ClientOutbound = () => <PreLedgerReviewCenter companyId={useCompanyId()} /
 const ClientAuditLogs = () => <ActivityFeedView companyId={useCompanyId()} />;
 
 /* -------------------------------- Routes ---------------------------------- */
-export const AuditFirewallCenter = () => (
+export const App = () => (
   <Routes>
     <Route element={<PracticeLayout />}>
       <Route path="/" element={<Navigate to="/overview" replace />} />
@@ -682,4 +682,4 @@ export const AuditFirewallCenter = () => (
   </Routes>
 );
 
-export default AuditFirewallCenter;
+export default App;

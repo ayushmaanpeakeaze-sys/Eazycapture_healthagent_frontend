@@ -13,7 +13,7 @@ import {
   OpeningBalanceItem,
   OpeningBalanceResponse,
 } from "../../types/audit.types";
-import { TablePager, useClientPagination } from "./paginate";
+import { TablePager, useClientPagination } from "@/features/checks/paginate";
 
 const money = (amt: number | string | null | undefined, cur?: string | null) => {
   const n = typeof amt === "string" ? parseFloat(amt) : (amt ?? 0);

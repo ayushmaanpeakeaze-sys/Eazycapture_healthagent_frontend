@@ -1,4 +1,4 @@
-import { useAuth } from "../Auth/AuthProvider";
+import { useAuth } from "@/components/Auth/AuthProvider";
 
 export const SettingsView = () => {
   const { logout, role, me, isLoggedIn } = useAuth();

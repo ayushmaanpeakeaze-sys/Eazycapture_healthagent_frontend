@@ -11,9 +11,9 @@ import {
   FlaggedIssue,
   HealthCheckResult,
 } from "../../types/audit.types";
-import { TablePager, useClientPagination } from "./paginate";
+import { TablePager, useClientPagination } from "@/features/checks/paginate";
 
-const RULE = "capital_item_review";
+const RULE = "misallocated_item";
 
 const money = (amt: number | string | null | undefined, cur?: string | null) => {
   const n = typeof amt === "string" ? parseFloat(amt) : (amt ?? 0);
@@ -70,13 +70,9 @@ const matchesRule = (r: HealthCheckResult): boolean =>
   (r.result?.rule_ids ?? []).includes(RULE) ||
   (r.result?.flagged ?? []).some((f) => f.issue_type === RULE);
 
-// Capital Item Review — an expense line above the threshold may really be a
-// capital item (fixed asset) mis-coded to an expense. Re-code it to a FIXED
-// asset account (so it's capitalised + depreciated), or dismiss if the expense
-// treatment is correct. This is a *review* suggestion: there's no single
-// "correct" target, so we offer the fixed-asset accounts and surface the
-// reasoning rather than auto-picking one.
-export const CapitalItemReviewPage = ({
+// Misallocated Items — lines on a vague/broad account (e.g. General Expenses)
+// above the materiality threshold. Re-code to a specific account, or dismiss.
+export const MisallocatedItemsPage = ({
   companyId,
   refreshKey = 0,
 }: {
@@ -157,11 +153,6 @@ export const CapitalItemReviewPage = ({
     for (const a of accounts) m[a.code] = a.name;
     return m;
   }, [accounts]);
-  const typeByCode = useMemo(() => {
-    const m: Record<string, string> = {};
-    for (const a of accounts) m[a.code] = a.type;
-    return m;
-  }, [accounts]);
 
   const visible = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -192,7 +183,7 @@ export const CapitalItemReviewPage = ({
     });
 
   const onSave = async (r: HealthCheckResult, current: string) => {
-    const chosen = choice[r.id];
+    const chosen = choice[r.id] ?? current;
     if (!chosen || chosen === current) return;
     setBusyKey(r.id);
     const res = await recodeTrapped(companyId, r.id, chosen);
@@ -258,7 +249,7 @@ export const CapitalItemReviewPage = ({
           {!loading && visible.length > 0 && (
             <span className="text-xs text-ink-500">
               {visible.length} item{visible.length === 1 ? "" : "s"} · Total
-              flagged:{" "}
+              potential errors:{" "}
               <span className="font-semibold text-ink-800">
                 {money(totalValue, currency)}
               </span>
@@ -311,11 +302,11 @@ export const CapitalItemReviewPage = ({
             ? "No dismissed items."
             : search
               ? "No matches for your search."
-              : "No capital items to review 🎉"}
+              : "No misallocated items 🎉"}
         </p>
       ) : (
         <div className="overflow-x-auto rounded-2xl border border-ink-100 bg-white shadow-card">
-          <table className="w-full min-w-[940px] text-sm">
+          <table className="w-full min-w-[920px] text-sm">
             <thead>
               <tr className="border-b border-ink-100 bg-ink-50/50 text-left text-[10px] font-semibold uppercase tracking-wider text-ink-400">
                 <th className="px-3 py-2.5">
@@ -332,7 +323,7 @@ export const CapitalItemReviewPage = ({
                 <th className="px-2 py-2.5">Details</th>
                 <th className="px-2 py-2.5">Net</th>
                 <th className="px-2 py-2.5">Account used</th>
-                <th className="px-2 py-2.5">Change to (fixed asset)</th>
+                <th className="px-2 py-2.5">Change to</th>
                 <th className="px-3 py-2.5 text-right">Actions</th>
               </tr>
             </thead>
@@ -340,18 +331,10 @@ export const CapitalItemReviewPage = ({
               {pg.paged.map((r) => {
                 const res = r.result;
                 const f = flagFor(r);
-                const mr = f?.match_reasons;
-                const current = f?.current_code ?? mr?.account_code ?? "";
-                const usedName = f?.current_name || mr?.account_name || nameByCode[current];
-                const usedType = typeByCode[current];
-                const targetType = (mr?.recode_to_account_type || "FIXED").toUpperCase();
-                const fixedAccounts = accounts.filter(
-                  (a) => (a.type || "").toUpperCase() === targetType,
-                );
-                const targetAccounts = fixedAccounts.length ? fixedAccounts : accounts;
-                const reason = f?.reasoning || f?.message || "";
+                const current = f?.current_code ?? "";
+                const usedName = f?.current_name || nameByCode[current];
                 const editable = res?.editable !== false;
-                const chosen = choice[r.id] ?? "";
+                const chosen = choice[r.id] ?? current;
                 const busy = busyKey === r.id;
                 return (
                   <tr key={r.id} className="align-middle transition hover:bg-brand-50/20">
@@ -390,22 +373,7 @@ export const CapitalItemReviewPage = ({
                       {money(res?.amount, res?.currency_code)}
                     </td>
                     <td className="px-2 py-3 text-ink-700">
-                      <span className="inline-flex items-center gap-1">
-                        {current || "—"}
-                        {usedType && (
-                          <span className="rounded bg-rose-50 px-1 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-rose-600 ring-1 ring-rose-100">
-                            {usedType}
-                          </span>
-                        )}
-                        {reason && (
-                          <span
-                            title={reason}
-                            className="flex h-4 w-4 cursor-help items-center justify-center rounded-full bg-ink-100 text-[10px] font-bold text-ink-500"
-                          >
-                            ?
-                          </span>
-                        )}
-                      </span>
+                      {current || "—"}
                       {usedName && (
                         <span className="block text-[11px] text-ink-400">{usedName}</span>
                       )}
@@ -417,10 +385,9 @@ export const CapitalItemReviewPage = ({
                           onChange={(e) =>
                             setChoice((p) => ({ ...p, [r.id]: e.target.value }))
                           }
-                          className="w-52 rounded-md border border-ink-200 bg-white px-2 py-1 text-xs focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-200"
+                          className="w-44 rounded-md border border-ink-200 bg-white px-2 py-1 text-xs focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-200"
                         >
-                          <option value="">Select fixed-asset account…</option>
-                          {targetAccounts.map((a) => (
+                          {accounts.map((a) => (
                             <option key={a.code} value={a.code}>
                               {a.code} — {a.name}
                             </option>
@@ -441,7 +408,7 @@ export const CapitalItemReviewPage = ({
                           <button
                             type="button"
                             onClick={() => onSave(r, current)}
-                            disabled={busy || !chosen || chosen === current}
+                            disabled={busy || chosen === current}
                             className="rounded-md bg-brand-gradient px-2.5 py-1 text-xs font-semibold text-white shadow-brand transition hover:brightness-110 disabled:opacity-50"
                           >
                             {busy ? "…" : "Save changes"}

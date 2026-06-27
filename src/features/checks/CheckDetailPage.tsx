@@ -7,49 +7,49 @@ import {
   fetchSyncStatus,
 } from "../../services/audit.service";
 import { IssueType } from "../../types/audit.types";
-import { BankBalanceCheckPage } from "./BankBalanceCheckPage";
-import { CapitalItemReviewPage } from "./CapitalItemReviewPage";
-import { CheckSettingsPanel, SETTINGS_ALIAS } from "./CheckSettingsPanel";
-import { CHECK_BY_KEY } from "./checksCatalog";
-import { ContactDefaultsPage } from "./ContactDefaultsPage";
-import { DuplicateContactsPage } from "./DuplicateContactsPage";
-import { InactiveContactsPage } from "./InactiveContactsPage";
-import { LowCostFixedAssetPage } from "./LowCostFixedAssetPage";
-import { MisallocatedItemsPage } from "./MisallocatedItemsPage";
+import { BankBalanceCheckPage } from "@/features/checks/BankBalanceCheckPage";
+import { CapitalItemReviewPage } from "@/features/checks/CapitalItemReviewPage";
+import { CheckSettingsPanel, SETTINGS_ALIAS } from "@/features/checks/CheckSettingsPanel";
+import { CHECK_BY_KEY } from "@/features/checks/checksCatalog";
+import { ContactDefaultsPage } from "@/features/checks/ContactDefaultsPage";
+import { DuplicateContactsPage } from "@/features/checks/DuplicateContactsPage";
+import { InactiveContactsPage } from "@/features/checks/InactiveContactsPage";
+import { LowCostFixedAssetPage } from "@/features/checks/LowCostFixedAssetPage";
+import { MisallocatedItemsPage } from "@/features/checks/MisallocatedItemsPage";
 import {
   MultiCodeRuleId,
   MultiCodeSuppliersPage,
-} from "./MultiCodeSuppliersPage";
-import { OldCreditRuleId, OldCreditsPage } from "./OldCreditsPage";
-import { OpeningBalanceDiffsPage } from "./OpeningBalanceDiffsPage";
-import { TaxMissingPage, TaxMissingRuleId } from "./TaxMissingPage";
-import { UndocumentedBillsPage } from "./UndocumentedBillsPage";
-import { UnreconciledBankItemsPage } from "./UnreconciledBankItemsPage";
+} from "@/features/checks/MultiCodeSuppliersPage";
+import { OldCreditRuleId, OldCreditsPage } from "@/features/checks/OldCreditsPage";
+import { OpeningBalanceDiffsPage } from "@/features/checks/OpeningBalanceDiffsPage";
+import { TaxMissingPage, TaxMissingRuleId } from "@/features/checks/TaxMissingPage";
+import { UndocumentedBillsPage } from "@/features/checks/UndocumentedBillsPage";
+import { UnreconciledBankItemsPage } from "@/features/checks/UnreconciledBankItemsPage";
 import {
   WrongTaxDirectionPage,
   WrongTaxRuleId,
-} from "./WrongTaxDirectionPage";
+} from "@/features/checks/WrongTaxDirectionPage";
 import {
   DuplicateInvoicesPage,
   DuplicateRuleId,
-} from "./DuplicateInvoicesPage";
+} from "@/features/checks/DuplicateInvoicesPage";
 import {
   OldUnpaidInvoicesPage,
   OldUnpaidRuleId,
-} from "./OldUnpaidInvoicesPage";
+} from "@/features/checks/OldUnpaidInvoicesPage";
 import {
   PaymentMatchReviewPage,
   PaymentMatchRuleId,
-} from "./PaymentMatchReviewPage";
-import { TrappedInvoicesList } from "./TrappedInvoicesList";
+} from "@/features/checks/PaymentMatchReviewPage";
+import { TrappedInvoicesList } from "@/features/checks/TrappedInvoicesList";
 import {
   UnapprovedDocsPage,
   UnapprovedRuleId,
-} from "./UnapprovedDocsPage";
+} from "@/features/checks/UnapprovedDocsPage";
 import {
   UnexpectedCodingPage,
   UnexpectedRuleId,
-} from "./UnexpectedCodingPage";
+} from "@/features/checks/UnexpectedCodingPage";
 
 const DONE = new Set(["completed", "complete", "done", "success", "finished"]);
 

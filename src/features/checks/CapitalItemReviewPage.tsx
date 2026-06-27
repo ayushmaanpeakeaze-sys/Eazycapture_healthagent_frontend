@@ -1,17 +1,19 @@
 import { useEffect, useMemo, useState } from "react";
 
 import {
-  applyCodingFix,
   bulkTrappedAction,
   fetchCodingOptions,
   fetchTrappedInvoices,
+  recodeTrapped,
 } from "../../services/audit.service";
 import {
   CodingOptions,
   FlaggedIssue,
   HealthCheckResult,
 } from "../../types/audit.types";
-import { TablePager, useClientPagination } from "./paginate";
+import { TablePager, useClientPagination } from "@/features/checks/paginate";
+
+const RULE = "capital_item_review";
 
 const money = (amt: number | string | null | undefined, cur?: string | null) => {
   const n = typeof amt === "string" ? parseFloat(amt) : (amt ?? 0);
@@ -40,8 +42,6 @@ const DOC_TYPE_LABEL: Record<string, string> = {
   RECEIVE: "Money In",
   SPEND: "Money Out",
 };
-
-// Xenon-style colour per document type.
 const DOC_TYPE_CLS: Record<string, string> = {
   ACCREC: "bg-emerald-50 text-emerald-700 ring-emerald-200",
   ACCPAY: "bg-amber-50 text-amber-700 ring-amber-200",
@@ -49,18 +49,6 @@ const DOC_TYPE_CLS: Record<string, string> = {
   SPEND: "bg-rose-50 text-rose-700 ring-rose-200",
 };
 
-// Paid / Unpaid from payment_status (fallback to invoice_status / amount_due).
-const paidLabel = (r: HealthCheckResult): "Paid" | "Unpaid" | null => {
-  const ps = (r.result?.payment_status || "").toLowerCase();
-  if (ps === "paid") return "Paid";
-  if (ps === "unpaid") return "Unpaid";
-  if ((r.result?.invoice_status || "").toUpperCase() === "PAID") return "Paid";
-  const due = r.result?.amount_due;
-  if (due != null) return Number(due) === 0 ? "Paid" : "Unpaid";
-  return null;
-};
-
-// "?" tooltip for read-only rows — why it can't be edited in-app.
 const reasonText = (reason?: string | null): string => {
   switch (reason) {
     case "reconciled":
@@ -74,33 +62,27 @@ const reasonText = (reason?: string | null): string => {
   }
 };
 
-export type UnexpectedRuleId = "unexpected_account" | "unexpected_tax_code";
-
-const flagFor = (r: HealthCheckResult, ruleId: string): FlaggedIssue | undefined =>
-  (r.result?.flagged ?? []).find((f) => f.issue_type === ruleId) ??
+const flagFor = (r: HealthCheckResult): FlaggedIssue | undefined =>
+  (r.result?.flagged ?? []).find((f) => f.issue_type === RULE) ??
   r.result?.flagged?.[0];
 
-const matchesRule = (r: HealthCheckResult, ruleId: string): boolean =>
-  (r.result?.rule_ids ?? []).includes(ruleId) ||
-  (r.result?.flagged ?? []).some((f) => f.issue_type === ruleId);
+const matchesRule = (r: HealthCheckResult): boolean =>
+  (r.result?.rule_ids ?? []).includes(RULE) ||
+  (r.result?.flagged ?? []).some((f) => f.issue_type === RULE);
 
-interface Opt {
-  code: string;
-  name: string;
-}
-
-// Unexpected Account / Tax Code — table with the editable "Change To" picker
-// (Save) vs read-only "Edit in Xero", plus View / Dismiss / bulk / search.
-export const UnexpectedCodingPage = ({
+// Capital Item Review — an expense line above the threshold may really be a
+// capital item (fixed asset) mis-coded to an expense. Re-code it to a FIXED
+// asset account (so it's capitalised + depreciated), or dismiss if the expense
+// treatment is correct. This is a *review* suggestion: there's no single
+// "correct" target, so we offer the fixed-asset accounts and surface the
+// reasoning rather than auto-picking one.
+export const CapitalItemReviewPage = ({
   companyId,
-  ruleId,
   refreshKey = 0,
 }: {
   companyId: string;
-  ruleId: UnexpectedRuleId;
   refreshKey?: number;
 }) => {
-  const isTax = ruleId === "unexpected_tax_code";
   const [rows, setRows] = useState<HealthCheckResult[]>([]);
   const [options, setOptions] = useState<CodingOptions | null>(null);
   const [loading, setLoading] = useState(true);
@@ -109,13 +91,10 @@ export const UnexpectedCodingPage = ({
   const [search, setSearch] = useState("");
   const [busyKey, setBusyKey] = useState<string | null>(null);
   const [removed, setRemoved] = useState<Set<string>>(new Set());
-  // "Change To" pick: default (= suggested) vs a custom account from the dropdown.
-  const [mode, setMode] = useState<Record<string, "default" | "custom">>({});
-  const [customCode, setCustomCode] = useState<Record<string, string>>({});
+  const [choice, setChoice] = useState<Record<string, string>>({});
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulkBusy, setBulkBusy] = useState(false);
 
-  // Coding options — loaded once per company, cached.
   useEffect(() => {
     let active = true;
     fetchCodingOptions(companyId).then((o) => active && setOptions(o));
@@ -131,8 +110,7 @@ export const UnexpectedCodingPage = ({
     setRemoved(new Set());
     setSelected(new Set());
 
-    const byRule = (list: HealthCheckResult[]) =>
-      list.filter((r) => matchesRule(r, ruleId));
+    const byRule = (list: HealthCheckResult[]) => list.filter(matchesRule);
 
     const load = async () => {
       if (showDismissed) {
@@ -171,19 +149,19 @@ export const UnexpectedCodingPage = ({
     return () => {
       active = false;
     };
-  }, [companyId, ruleId, showDismissed, refreshKey]);
+  }, [companyId, showDismissed, refreshKey]);
 
-  // Code → name lookup + the option list for the picker.
-  const { allOpts, nameByCode } = useMemo(() => {
-    const src: Opt[] = isTax
-      ? (options?.tax_rates ?? [])
-      : (options?.accounts ?? []).map((a) => ({ code: a.code, name: a.name }));
-    const map: Record<string, string> = {};
-    for (const o of src) map[o.code] = o.name;
-    return { allOpts: src, nameByCode: map };
-  }, [options, isTax]);
-
-  const noun = isTax ? "tax code" : "account";
+  const accounts = useMemo(() => options?.accounts ?? [], [options]);
+  const nameByCode = useMemo(() => {
+    const m: Record<string, string> = {};
+    for (const a of accounts) m[a.code] = a.name;
+    return m;
+  }, [accounts]);
+  const typeByCode = useMemo(() => {
+    const m: Record<string, string> = {};
+    for (const a of accounts) m[a.code] = a.type;
+    return m;
+  }, [accounts]);
 
   const visible = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -192,13 +170,19 @@ export const UnexpectedCodingPage = ({
       .filter((r) => {
         if (!q) return true;
         const res = r.result;
-        return [res?.vendor_name, res?.invoice_number, res?.details].some((v) =>
+        return [res?.vendor_name, res?.details].some((v) =>
           (v || "").toString().toLowerCase().includes(q),
         );
       });
   }, [rows, removed, search]);
 
   const pg = useClientPagination(visible, `${search}|${showDismissed}`);
+
+  const totalValue = useMemo(
+    () => visible.reduce((s, r) => s + (Number(r.result?.amount) || 0), 0),
+    [visible],
+  );
+  const currency = visible[0]?.result?.currency_code ?? "GBP";
 
   const drop = (ids: string[]) =>
     setRemoved((p) => {
@@ -207,21 +191,11 @@ export const UnexpectedCodingPage = ({
       return n;
     });
 
-  const onSave = async (r: HealthCheckResult, f: FlaggedIssue) => {
-    const suggested = f.suggested_code ?? "";
-    const chosen =
-      (mode[r.id] ?? "default") === "custom"
-        ? customCode[r.id] ||
-          allOpts.find((o) => o.code !== suggested)?.code ||
-          suggested
-        : suggested;
-    if (!chosen) return;
+  const onSave = async (r: HealthCheckResult, current: string) => {
+    const chosen = choice[r.id];
+    if (!chosen || chosen === current) return;
     setBusyKey(r.id);
-    const res = await applyCodingFix(
-      companyId,
-      r.id,
-      isTax ? { TaxType: chosen } : { AccountCode: chosen },
-    );
+    const res = await recodeTrapped(companyId, r.id, chosen);
     setBusyKey(null);
     if (res.ok) drop([r.id]);
     else setError(res.error ?? "Save failed");
@@ -280,13 +254,24 @@ export const UnexpectedCodingPage = ({
           </button>
           Show dismissed items
         </label>
-        <input
-          type="search"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search…"
-          className="w-56 rounded-lg border border-ink-200 px-3 py-1.5 text-sm focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-200"
-        />
+        <div className="flex items-center gap-3">
+          {!loading && visible.length > 0 && (
+            <span className="text-xs text-ink-500">
+              {visible.length} item{visible.length === 1 ? "" : "s"} · Total
+              flagged:{" "}
+              <span className="font-semibold text-ink-800">
+                {money(totalValue, currency)}
+              </span>
+            </span>
+          )}
+          <input
+            type="search"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search…"
+            className="w-56 rounded-lg border border-ink-200 px-3 py-1.5 text-sm focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-200"
+          />
+        </div>
       </div>
 
       {selected.size > 0 && (
@@ -310,11 +295,6 @@ export const UnexpectedCodingPage = ({
         </div>
       )}
 
-      {options && !options.connected && (
-        <p className="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800 ring-1 ring-amber-100">
-          Xero isn’t connected — you can review here but edits open in Xero.
-        </p>
-      )}
       {error && (
         <p className="rounded-lg bg-rose-50 px-3 py-2 text-xs text-rose-700 ring-1 ring-rose-100">
           {error}
@@ -331,11 +311,11 @@ export const UnexpectedCodingPage = ({
             ? "No dismissed items."
             : search
               ? "No matches for your search."
-              : `No unexpected ${noun}s 🎉`}
+              : "No capital items to review 🎉"}
         </p>
       ) : (
         <div className="overflow-x-auto rounded-2xl border border-ink-100 bg-white shadow-card">
-          <table className="w-full min-w-[900px] text-sm">
+          <table className="w-full min-w-[940px] text-sm">
             <thead>
               <tr className="border-b border-ink-100 bg-ink-50/50 text-left text-[10px] font-semibold uppercase tracking-wider text-ink-400">
                 <th className="px-3 py-2.5">
@@ -351,24 +331,28 @@ export const UnexpectedCodingPage = ({
                 <th className="px-2 py-2.5">Item</th>
                 <th className="px-2 py-2.5">Details</th>
                 <th className="px-2 py-2.5">Net</th>
-                <th className="px-2 py-2.5">{isTax ? "Tax used" : "Account used"}</th>
-                <th className="px-2 py-2.5">Change to</th>
+                <th className="px-2 py-2.5">Account used</th>
+                <th className="px-2 py-2.5">Change to (fixed asset)</th>
                 <th className="px-3 py-2.5 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-ink-50">
               {pg.paged.map((r) => {
                 const res = r.result;
-                const f = flagFor(r, ruleId);
-                if (!f) return null;
+                const f = flagFor(r);
+                const mr = f?.match_reasons;
+                const current = f?.current_code ?? mr?.account_code ?? "";
+                const usedName = f?.current_name || mr?.account_name || nameByCode[current];
+                const usedType = typeByCode[current];
+                const targetType = (mr?.recode_to_account_type || "FIXED").toUpperCase();
+                const fixedAccounts = accounts.filter(
+                  (a) => (a.type || "").toUpperCase() === targetType,
+                );
+                const targetAccounts = fixedAccounts.length ? fixedAccounts : accounts;
+                const reason = f?.reasoning || f?.message || "";
                 const editable = res?.editable !== false;
+                const chosen = choice[r.id] ?? "";
                 const busy = busyKey === r.id;
-                const suggested = f.suggested_code ?? "";
-                const m = mode[r.id] ?? "default";
-                const usedName = f.current_name || nameByCode[f.current_code ?? ""];
-                const sugName = f.suggested_name || nameByCode[suggested] || "";
-                // dropdown = any account other than the suggested default
-                const otherOpts: Opt[] = allOpts.filter((o) => o.code !== suggested);
                 return (
                   <tr key={r.id} className="align-middle transition hover:bg-brand-50/20">
                     <td className="px-3 py-3">
@@ -392,157 +376,92 @@ export const UnexpectedCodingPage = ({
                       </span>
                     </td>
                     <td className="px-2 py-3">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <p className="font-medium text-ink-900">
-                          {res?.vendor_name || "—"}
+                      <p className="font-medium text-ink-900">{res?.vendor_name || "—"}</p>
+                      {shortDate(res?.invoice_date) && (
+                        <p className="text-[11px] text-ink-400">
+                          {shortDate(res?.invoice_date)}
                         </p>
-                        {(() => {
-                          const pay = paidLabel(r);
-                          return pay ? (
-                            <span
-                              className={[
-                                "rounded-full px-1.5 py-0.5 text-[10px] font-semibold",
-                                pay === "Paid"
-                                  ? "bg-emerald-50 text-emerald-700"
-                                  : "bg-rose-50 text-rose-700",
-                              ].join(" ")}
-                            >
-                              {pay}
-                            </span>
-                          ) : null;
-                        })()}
-                      </div>
-                      <p className="text-[11px] text-ink-400">
-                        {[shortDate(res?.invoice_date), res?.invoice_number]
-                          .filter(Boolean)
-                          .join(" · ") || "—"}
-                      </p>
+                      )}
                     </td>
-                    <td className="max-w-[200px] px-2 py-3 text-[12px] text-ink-500">
+                    <td className="max-w-[180px] px-2 py-3 text-[12px] text-ink-500">
                       <span className="line-clamp-2">{res?.details || "—"}</span>
                     </td>
                     <td className="px-2 py-3 font-semibold tabular-nums text-ink-900">
                       {money(res?.amount, res?.currency_code)}
                     </td>
                     <td className="px-2 py-3 text-ink-700">
-                      {f.current_code || "—"}
+                      <span className="inline-flex items-center gap-1">
+                        {current || "—"}
+                        {usedType && (
+                          <span className="rounded bg-rose-50 px-1 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-rose-600 ring-1 ring-rose-100">
+                            {usedType}
+                          </span>
+                        )}
+                        {reason && (
+                          <span
+                            title={reason}
+                            className="flex h-4 w-4 cursor-help items-center justify-center rounded-full bg-ink-100 text-[10px] font-bold text-ink-500"
+                          >
+                            ?
+                          </span>
+                        )}
+                      </span>
                       {usedName && (
                         <span className="block text-[11px] text-ink-400">{usedName}</span>
                       )}
                     </td>
                     <td className="px-2 py-3">
                       {editable ? (
-                        <div className="space-y-1.5">
-                          {/* Default = contact's expected account (suggested) */}
-                          <label className="flex items-center gap-2 text-xs">
-                            <input
-                              type="radio"
-                              name={`ct-${r.id}`}
-                              checked={m !== "custom"}
-                              onChange={() =>
-                                setMode((p) => ({ ...p, [r.id]: "default" }))
-                              }
-                              className="accent-brand-600"
-                            />
-                            <span className="font-medium text-ink-800">
-                              {suggested || "—"}
-                              {sugName ? ` – ${sugName}` : ""}
-                            </span>
-                          </label>
-                          {/* Or pick any other account */}
-                          <label className="flex items-center gap-2 text-xs">
-                            <input
-                              type="radio"
-                              name={`ct-${r.id}`}
-                              checked={m === "custom"}
-                              onChange={() =>
-                                setMode((p) => ({ ...p, [r.id]: "custom" }))
-                              }
-                              className="accent-brand-600"
-                            />
-                            <select
-                              value={customCode[r.id] ?? otherOpts[0]?.code ?? ""}
-                              onChange={(e) => {
-                                setCustomCode((p) => ({
-                                  ...p,
-                                  [r.id]: e.target.value,
-                                }));
-                                setMode((p) => ({ ...p, [r.id]: "custom" }));
-                              }}
-                              className={[
-                                "w-40 rounded-md border border-ink-200 bg-white px-2 py-1 text-xs focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-200",
-                                m !== "custom" ? "opacity-50" : "",
-                              ].join(" ")}
-                            >
-                              {otherOpts.length === 0 && (
-                                <option value="">No other accounts</option>
-                              )}
-                              {otherOpts.map((o) => (
-                                <option key={o.code} value={o.code}>
-                                  {o.code}
-                                  {o.name ? ` — ${o.name}` : ""}
-                                </option>
-                              ))}
-                            </select>
-                          </label>
-                        </div>
+                        <select
+                          value={chosen}
+                          onChange={(e) =>
+                            setChoice((p) => ({ ...p, [r.id]: e.target.value }))
+                          }
+                          className="w-52 rounded-md border border-ink-200 bg-white px-2 py-1 text-xs focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-200"
+                        >
+                          <option value="">Select fixed-asset account…</option>
+                          {targetAccounts.map((a) => (
+                            <option key={a.code} value={a.code}>
+                              {a.code} — {a.name}
+                            </option>
+                          ))}
+                        </select>
                       ) : (
-                        <span className="inline-flex items-start gap-1.5 text-ink-700">
-                          <span>
-                            {suggested || "—"}
-                            {sugName && (
-                              <span className="block text-[11px] text-ink-400">
-                                {sugName}
-                              </span>
-                            )}
-                          </span>
-                          <span
-                            title={reasonText(res?.editable_reason)}
-                            className="mt-0.5 flex h-4 w-4 shrink-0 cursor-help items-center justify-center rounded-full bg-ink-100 text-[10px] font-bold text-ink-500"
-                          >
-                            ?
-                          </span>
+                        <span
+                          title={reasonText(res?.editable_reason)}
+                          className="flex h-4 w-4 cursor-help items-center justify-center rounded-full bg-ink-100 text-[10px] font-bold text-ink-500"
+                        >
+                          ?
                         </span>
                       )}
                     </td>
                     <td className="px-3 py-3">
                       <div className="flex flex-wrap items-center justify-end gap-1.5">
-                        {editable ? (
+                        {editable && (
                           <button
                             type="button"
-                            onClick={() => onSave(r, f)}
-                            disabled={busy}
-                            className="rounded-md bg-brand-gradient px-2.5 py-1 text-xs font-semibold text-white shadow-brand transition hover:brightness-110 disabled:opacity-60"
+                            onClick={() => onSave(r, current)}
+                            disabled={busy || !chosen || chosen === current}
+                            className="rounded-md bg-brand-gradient px-2.5 py-1 text-xs font-semibold text-white shadow-brand transition hover:brightness-110 disabled:opacity-50"
                           >
                             {busy ? "…" : "Save changes"}
                           </button>
-                        ) : (
-                          r.xero_url && (
-                            <a
-                              href={r.xero_url}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="rounded-md border border-ink-200 px-2.5 py-1 text-xs font-semibold text-ink-600 transition hover:border-brand-300 hover:text-brand-700"
-                            >
-                              Edit in Xero
-                            </a>
-                          )
                         )}
                         {r.xero_url && (
                           <a
                             href={r.xero_url}
                             target="_blank"
                             rel="noreferrer"
-                            className="rounded-md border border-ink-200 px-2 py-1 text-xs font-semibold text-ink-600 transition hover:border-brand-300 hover:text-brand-700"
+                            className="rounded-md border border-ink-200 px-2.5 py-1 text-xs font-semibold text-ink-600 transition hover:border-brand-300 hover:text-brand-700"
                           >
-                            View
+                            {editable ? "View" : "Edit in Xero"}
                           </a>
                         )}
                         <button
                           type="button"
                           onClick={() => onDismiss(r)}
                           disabled={busy}
-                          className="rounded-md border border-ink-200 px-2 py-1 text-xs font-semibold text-ink-500 transition hover:border-rose-300 hover:text-rose-600 disabled:opacity-60"
+                          className="rounded-md border border-ink-200 px-2.5 py-1 text-xs font-semibold text-ink-500 transition hover:border-rose-300 hover:text-rose-600 disabled:opacity-60"
                         >
                           Dismiss
                         </button>
@@ -553,7 +472,13 @@ export const UnexpectedCodingPage = ({
               })}
             </tbody>
           </table>
-          <TablePager page={pg.page} setPage={pg.setPage} limit={pg.limit} setLimit={pg.setLimit} total={pg.total} />
+          <TablePager
+            page={pg.page}
+            setPage={pg.setPage}
+            limit={pg.limit}
+            setLimit={pg.setLimit}
+            total={pg.total}
+          />
         </div>
       )}
     </div>

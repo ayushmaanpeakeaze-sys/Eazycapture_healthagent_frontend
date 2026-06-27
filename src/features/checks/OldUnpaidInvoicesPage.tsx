@@ -2,18 +2,12 @@ import { useEffect, useMemo, useState } from "react";
 
 import {
   bulkTrappedAction,
-  fetchCodingOptions,
+  creditNoteTrapped,
   fetchTrappedInvoices,
-  recodeTrapped,
+  voidTrapped,
 } from "../../services/audit.service";
-import {
-  CodingOptions,
-  FlaggedIssue,
-  HealthCheckResult,
-} from "../../types/audit.types";
-import { TablePager, useClientPagination } from "./paginate";
-
-const RULE = "low_cost_fixed_asset";
+import { FlaggedIssue, HealthCheckResult } from "../../types/audit.types";
+import { TablePager, useClientPagination } from "@/features/checks/paginate";
 
 const money = (amt: number | string | null | undefined, cur?: string | null) => {
   const n = typeof amt === "string" ? parseFloat(amt) : (amt ?? 0);
@@ -26,9 +20,9 @@ const money = (amt: number | string | null | undefined, cur?: string | null) => 
 };
 
 const shortDate = (iso: string | null | undefined) => {
-  if (!iso) return null;
+  if (!iso) return "—";
   const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return null;
+  if (Number.isNaN(d.getTime())) return "—";
   return d.toLocaleDateString("en-GB", {
     day: "numeric",
     month: "short",
@@ -36,55 +30,52 @@ const shortDate = (iso: string | null | undefined) => {
   });
 };
 
-const DOC_TYPE_LABEL: Record<string, string> = {
-  ACCREC: "Invoice",
-  ACCPAY: "Bill",
-  RECEIVE: "Money In",
-  SPEND: "Money Out",
-};
-const DOC_TYPE_CLS: Record<string, string> = {
-  ACCREC: "bg-emerald-50 text-emerald-700 ring-emerald-200",
-  ACCPAY: "bg-amber-50 text-amber-700 ring-amber-200",
-  RECEIVE: "bg-sky-50 text-sky-700 ring-sky-200",
-  SPEND: "bg-rose-50 text-rose-700 ring-rose-200",
-};
+export type OldUnpaidRuleId = "old_unpaid_invoice" | "old_unpaid_bill";
 
-const flagFor = (r: HealthCheckResult): FlaggedIssue | undefined =>
-  (r.result?.flagged ?? []).find((f) => f.issue_type === RULE) ??
+const flagFor = (r: HealthCheckResult, ruleId: string): FlaggedIssue | undefined =>
+  (r.result?.flagged ?? []).find((f) => f.issue_type === ruleId) ??
   r.result?.flagged?.[0];
 
-const matchesRule = (r: HealthCheckResult): boolean =>
-  (r.result?.rule_ids ?? []).includes(RULE) ||
-  (r.result?.flagged ?? []).some((f) => f.issue_type === RULE);
+const matchesRule = (r: HealthCheckResult, ruleId: string): boolean =>
+  (r.result?.rule_ids ?? []).includes(ruleId) ||
+  (r.result?.flagged ?? []).some((f) => f.issue_type === ruleId);
 
-// Low Cost Fixed Asset — capital items below the threshold posted to a
-// fixed-asset account (consider expensing). Review + Dismiss, optional re-code.
-export const LowCostFixedAssetPage = ({
+// Age: prefer the audit-time age_days; fall back to days since the basis date.
+const ageDays = (r: HealthCheckResult, f: FlaggedIssue | undefined): number | null => {
+  const a = f?.match_reasons?.age_days;
+  if (a != null) return a;
+  const basis =
+    f?.match_reasons?.age_basis === "due_date"
+      ? r.result?.due_date
+      : r.result?.invoice_date;
+  if (!basis) return null;
+  const d = Math.floor((Date.now() - new Date(basis).getTime()) / 86_400_000);
+  return Number.isFinite(d) ? d : null;
+};
+
+const cantVoid = (r: HealthCheckResult): boolean =>
+  r.result?.reconciled === true || Number(r.result?.amount_paid ?? 0) > 0;
+
+// Old Unpaid Customer Invoices / Bills — Xenon-style table with Age + per-row
+// actions (View / Void / Credit Note / Dismiss / Ignore 30d) + search + bulk.
+export const OldUnpaidInvoicesPage = ({
   companyId,
+  ruleId,
   refreshKey = 0,
 }: {
   companyId: string;
+  ruleId: OldUnpaidRuleId;
   refreshKey?: number;
 }) => {
   const [rows, setRows] = useState<HealthCheckResult[]>([]);
-  const [options, setOptions] = useState<CodingOptions | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showDismissed, setShowDismissed] = useState(false);
   const [search, setSearch] = useState("");
   const [busyKey, setBusyKey] = useState<string | null>(null);
   const [removed, setRemoved] = useState<Set<string>>(new Set());
-  const [choice, setChoice] = useState<Record<string, string>>({});
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulkBusy, setBulkBusy] = useState(false);
-
-  useEffect(() => {
-    let active = true;
-    fetchCodingOptions(companyId).then((o) => active && setOptions(o));
-    return () => {
-      active = false;
-    };
-  }, [companyId]);
 
   useEffect(() => {
     let active = true;
@@ -93,7 +84,8 @@ export const LowCostFixedAssetPage = ({
     setRemoved(new Set());
     setSelected(new Set());
 
-    const byRule = (list: HealthCheckResult[]) => list.filter(matchesRule);
+    const byRule = (list: HealthCheckResult[]) =>
+      list.filter((r) => matchesRule(r, ruleId));
 
     const load = async () => {
       if (showDismissed) {
@@ -132,12 +124,9 @@ export const LowCostFixedAssetPage = ({
     return () => {
       active = false;
     };
-  }, [companyId, showDismissed, refreshKey]);
+  }, [companyId, ruleId, showDismissed, refreshKey]);
 
-  const accounts = useMemo(
-    () => options?.accounts ?? [],
-    [options],
-  );
+  const noun = ruleId === "old_unpaid_bill" ? "bill" : "invoice";
 
   const visible = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -146,9 +135,8 @@ export const LowCostFixedAssetPage = ({
       .filter((r) => {
         if (!q) return true;
         const res = r.result;
-        return [res?.vendor_name, res?.details].some((v) =>
-          (v || "").toString().toLowerCase().includes(q),
-        );
+        return [res?.vendor_name, res?.invoice_number, res?.details]
+          .some((v) => (v || "").toString().toLowerCase().includes(q));
       });
   }, [rows, removed, search]);
 
@@ -161,14 +149,20 @@ export const LowCostFixedAssetPage = ({
       return n;
     });
 
-  const onSave = async (r: HealthCheckResult) => {
-    const chosen = choice[r.id];
-    if (!chosen) return;
+  const onVoid = async (r: HealthCheckResult) => {
     setBusyKey(r.id);
-    const res = await recodeTrapped(companyId, r.id, chosen);
+    const res = await voidTrapped(companyId, r.id);
     setBusyKey(null);
     if (res.ok) drop([r.id]);
-    else setError(res.error ?? "Save failed");
+    else setError(res.error ?? "Void failed");
+  };
+
+  const onCreditNote = async (r: HealthCheckResult) => {
+    setBusyKey(r.id);
+    const res = await creditNoteTrapped(companyId, r.id);
+    setBusyKey(null);
+    if (res.ok) drop([r.id]);
+    else setError(res.error ?? "Credit note failed");
   };
 
   const onDismiss = async (r: HealthCheckResult) => {
@@ -179,30 +173,40 @@ export const LowCostFixedAssetPage = ({
     else setError(res.error ?? "Dismiss failed");
   };
 
+  const onIgnore = async (r: HealthCheckResult) => {
+    setBusyKey(r.id);
+    const res = await bulkTrappedAction(companyId, [r.id], "snooze", { days: 30 });
+    setBusyKey(null);
+    if (res.ok) drop([r.id]);
+    else setError(res.error ?? "Snooze failed");
+  };
+
   const toggle = (id: string) =>
     setSelected((p) => {
       const n = new Set(p);
       n.has(id) ? n.delete(id) : n.add(id);
       return n;
     });
+
   const allSelected = pg.paged.length > 0 && pg.paged.every((r) => selected.has(r.id));
   const toggleAll = () =>
     setSelected(allSelected ? new Set() : new Set(pg.paged.map((r) => r.id)));
 
-  const bulkDismiss = async () => {
+  const bulk = async (action: "dismiss" | "snooze", opts?: { days?: number }) => {
     const ids = [...selected];
     if (!ids.length) return;
     setBulkBusy(true);
-    const res = await bulkTrappedAction(companyId, ids, "dismiss");
+    const res = await bulkTrappedAction(companyId, ids, action, opts);
     setBulkBusy(false);
     if (res.ok) {
       drop(ids);
       setSelected(new Set());
-    } else setError(res.error ?? "Bulk dismiss failed");
+    } else setError(res.error ?? "Bulk action failed");
   };
 
   return (
     <div className="space-y-4">
+      {/* Controls: search · show dismissed */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <label className="inline-flex cursor-pointer items-center gap-2 text-xs font-medium text-ink-600">
           <button
@@ -228,18 +232,27 @@ export const LowCostFixedAssetPage = ({
           type="search"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search…"
+          placeholder={`Search ${noun}s…`}
           className="w-56 rounded-lg border border-ink-200 px-3 py-1.5 text-sm focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-200"
         />
       </div>
 
+      {/* Bulk action bar */}
       {selected.size > 0 && (
         <div className="flex flex-wrap items-center gap-2 rounded-lg border border-brand-200 bg-brand-50 px-3 py-2 text-xs">
           <span className="font-semibold text-brand-700">{selected.size} selected</span>
           <button
             type="button"
             disabled={bulkBusy}
-            onClick={bulkDismiss}
+            onClick={() => bulk("snooze", { days: 30 })}
+            className="rounded-md border border-ink-200 bg-white px-2.5 py-1 font-semibold text-ink-600 transition hover:border-brand-300 hover:text-brand-700 disabled:opacity-60"
+          >
+            Ignore 30 days
+          </button>
+          <button
+            type="button"
+            disabled={bulkBusy}
+            onClick={() => bulk("dismiss")}
             className="rounded-md border border-ink-200 bg-white px-2.5 py-1 font-semibold text-ink-600 transition hover:border-rose-300 hover:text-rose-600 disabled:opacity-60"
           >
             Dismiss
@@ -270,11 +283,11 @@ export const LowCostFixedAssetPage = ({
             ? "No dismissed items."
             : search
               ? "No matches for your search."
-              : "No low-cost fixed assets 🎉"}
+              : `No old unpaid ${noun}s 🎉`}
         </p>
       ) : (
         <div className="overflow-x-auto rounded-2xl border border-ink-100 bg-white shadow-card">
-          <table className="w-full min-w-[960px] text-sm">
+          <table className="min-w-[820px] w-full text-sm">
             <thead>
               <tr className="border-b border-ink-100 bg-ink-50/50 text-left text-[10px] font-semibold uppercase tracking-wider text-ink-400">
                 <th className="px-3 py-2.5">
@@ -286,33 +299,22 @@ export const LowCostFixedAssetPage = ({
                     aria-label="Select all"
                   />
                 </th>
-                <th className="px-2 py-2.5">Type</th>
-                <th className="px-2 py-2.5">Item</th>
+                <th className="px-2 py-2.5">Contact</th>
+                <th className="px-2 py-2.5">Due date</th>
+                <th className="px-2 py-2.5">Age</th>
+                <th className="px-2 py-2.5">Ref</th>
                 <th className="px-2 py-2.5">Details</th>
-                <th className="px-2 py-2.5">Amount</th>
-                <th className="px-2 py-2.5">Fixed-asset account</th>
-                <th className="px-2 py-2.5">Re-code to</th>
+                <th className="px-2 py-2.5 text-right">Total</th>
                 <th className="px-3 py-2.5 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-ink-50">
               {pg.paged.map((r) => {
                 const res = r.result;
-                const f = flagFor(r);
-                if (!f) return null;
-                const mr = f.match_reasons;
-                const editable = res?.editable !== false;
+                const f = flagFor(r, ruleId);
+                const age = ageDays(r, f);
+                const noVoid = cantVoid(r);
                 const busy = busyKey === r.id;
-                const chosen = choice[r.id] ?? "";
-                const reasoning = f.reasoning || f.message || "";
-                // Highlight the preferred re-code type (e.g. EXPENSE) at the top.
-                const preferred = (mr?.recode_to_account_type || "EXPENSE").toUpperCase();
-                const preferredAccts = accounts.filter(
-                  (a) => (a.type || "").toUpperCase() === preferred,
-                );
-                const otherAccts = accounts.filter(
-                  (a) => (a.type || "").toUpperCase() !== preferred,
-                );
                 return (
                   <tr key={r.id} className="align-middle transition hover:bg-brand-50/20">
                     <td className="px-3 py-3">
@@ -324,107 +326,86 @@ export const LowCostFixedAssetPage = ({
                         aria-label="Select row"
                       />
                     </td>
+                    <td className="px-2 py-3 font-medium text-ink-900">
+                      {res?.vendor_name || "—"}
+                    </td>
+                    <td className="px-2 py-3 text-ink-600">
+                      {shortDate(res?.due_date ?? res?.invoice_date)}
+                    </td>
                     <td className="px-2 py-3">
                       <span
                         className={[
-                          "rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ring-1",
-                          DOC_TYPE_CLS[r.document_type] ??
-                            "bg-ink-100 text-ink-600 ring-ink-200",
+                          "rounded-full px-2 py-0.5 text-[11px] font-semibold tabular-nums",
+                          age != null && age >= 90
+                            ? "bg-rose-50 text-rose-700"
+                            : "bg-amber-50 text-amber-700",
                         ].join(" ")}
                       >
-                        {DOC_TYPE_LABEL[r.document_type] ?? r.document_type}
+                        {age != null ? `${age} days` : "—"}
                       </span>
                     </td>
-                    <td className="px-2 py-3">
-                      <p className="font-medium text-ink-900">{res?.vendor_name || "—"}</p>
-                      {shortDate(res?.invoice_date) && (
-                        <p className="text-[11px] text-ink-400">
-                          {shortDate(res?.invoice_date)}
-                        </p>
-                      )}
+                    <td className="px-2 py-3 text-ink-600">{res?.invoice_number || "—"}</td>
+                    <td className="max-w-[220px] px-2 py-3 text-[12px] text-ink-500">
+                      <span className="line-clamp-2">{res?.details || "—"}</span>
                     </td>
-                    <td className="max-w-[180px] px-2 py-3 text-[12px] text-ink-500">
-                      <span className="line-clamp-2">
-                        {res?.details || mr?.account_name || "—"}
+                    <td className="px-2 py-3 text-right">
+                      <span className="font-semibold tabular-nums text-ink-900">
+                        {money(res?.amount, res?.currency_code)}
                       </span>
-                    </td>
-                    <td className="px-2 py-3 font-semibold tabular-nums text-ink-900">
-                      {money(mr?.line_amount ?? res?.amount, mr?.currency ?? res?.currency_code)}
-                    </td>
-                    <td className="px-2 py-3 text-ink-700">
-                      {f.current_code || mr?.account_code || "—"}
-                      {mr?.account_name && (
-                        <span className="block text-[11px] text-ink-400">
-                          {mr.account_name}
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-2 py-3">
-                      <div className="flex items-center gap-1.5">
-                        {editable && (
-                          <select
-                            value={chosen}
-                            onChange={(e) =>
-                              setChoice((p) => ({ ...p, [r.id]: e.target.value }))
-                            }
-                            className="w-44 rounded-md border border-ink-200 bg-white px-2 py-1 text-xs focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-200"
-                          >
-                            <option value="">Keep as-is</option>
-                            {preferredAccts.length > 0 && (
-                              <optgroup label="Expense accounts">
-                                {preferredAccts.map((a) => (
-                                  <option key={a.code} value={a.code}>
-                                    {a.code} — {a.name}
-                                  </option>
-                                ))}
-                              </optgroup>
-                            )}
-                            <optgroup label="Other accounts">
-                              {otherAccts.map((a) => (
-                                <option key={a.code} value={a.code}>
-                                  {a.code} — {a.name}
-                                </option>
-                              ))}
-                            </optgroup>
-                          </select>
-                        )}
-                        {reasoning && (
-                          <span
-                            title={reasoning}
-                            className="flex h-4 w-4 shrink-0 cursor-help items-center justify-center rounded-full bg-ink-100 text-[10px] font-bold text-ink-500"
-                          >
-                            ?
+                      {res?.amount_due != null &&
+                        Number(res.amount_due) !== Number(res?.amount ?? 0) && (
+                          <span className="block text-[10px] text-ink-400">
+                            {money(res.amount_due, res.currency_code)} due
                           </span>
                         )}
-                      </div>
                     </td>
                     <td className="px-3 py-3">
                       <div className="flex flex-wrap items-center justify-end gap-1.5">
-                        {editable && chosen && (
-                          <button
-                            type="button"
-                            onClick={() => onSave(r)}
-                            disabled={busy}
-                            className="rounded-md bg-brand-gradient px-2.5 py-1 text-xs font-semibold text-white shadow-brand transition hover:brightness-110 disabled:opacity-60"
-                          >
-                            {busy ? "…" : "Save changes"}
-                          </button>
-                        )}
                         {r.xero_url && (
                           <a
                             href={r.xero_url}
                             target="_blank"
                             rel="noreferrer"
-                            className="rounded-md border border-ink-200 px-2.5 py-1 text-xs font-semibold text-ink-600 transition hover:border-brand-300 hover:text-brand-700"
+                            className="rounded-md border border-ink-200 px-2 py-1 text-xs font-semibold text-ink-600 transition hover:border-brand-300 hover:text-brand-700"
                           >
-                            {editable ? "View" : "Edit in Xero"}
+                            View
                           </a>
                         )}
+                        {noVoid ? (
+                          <span className="text-[10px] text-ink-400" title="Has a payment/credit — unallocate in Xero first">
+                            Paid — can’t void
+                          </span>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => onVoid(r)}
+                            disabled={busy}
+                            className="rounded-md border border-rose-300 bg-rose-50 px-2 py-1 text-xs font-semibold text-rose-700 transition hover:bg-rose-100 disabled:opacity-60"
+                          >
+                            {busy ? "…" : "Void"}
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => onCreditNote(r)}
+                          disabled={busy}
+                          className="rounded-md border border-amber-300 bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-700 transition hover:bg-amber-100 disabled:opacity-60"
+                        >
+                          Credit note
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => onIgnore(r)}
+                          disabled={busy}
+                          className="rounded-md border border-ink-200 px-2 py-1 text-xs font-semibold text-ink-600 transition hover:border-brand-300 hover:text-brand-700 disabled:opacity-60"
+                        >
+                          Ignore 30d
+                        </button>
                         <button
                           type="button"
                           onClick={() => onDismiss(r)}
                           disabled={busy}
-                          className="rounded-md border border-ink-200 px-2.5 py-1 text-xs font-semibold text-ink-500 transition hover:border-rose-300 hover:text-rose-600 disabled:opacity-60"
+                          className="rounded-md border border-ink-200 px-2 py-1 text-xs font-semibold text-ink-500 transition hover:border-rose-300 hover:text-rose-600 disabled:opacity-60"
                         >
                           Dismiss
                         </button>

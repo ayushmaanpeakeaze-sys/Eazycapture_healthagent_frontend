@@ -5,7 +5,7 @@ import {
   fetchTrappedInvoices,
 } from "../../services/audit.service";
 import { FlaggedIssue, HealthCheckResult } from "../../types/audit.types";
-import { TablePager, useClientPagination } from "./paginate";
+import { TablePager, useClientPagination } from "@/features/checks/paginate";
 
 const RULE = "inactive_contact";
 

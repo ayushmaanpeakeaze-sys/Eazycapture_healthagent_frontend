@@ -961,6 +961,30 @@ export const fetchCompaniesPanorama = async (
   }
 };
 
+/**
+ * Disconnect (deactivate) a connected org — sets is_active=false so it drops off
+ * the dashboard and stops syncing/auditing. The Xero grant, Nango connection,
+ * and already-synced data are kept; reconnecting via "Connect to Xero" flips it
+ * back active with full history (no re-import).
+ *   POST /api/v1/health/disconnect/{company_id}/
+ */
+export const disconnectCompany = async (
+  companyId: string,
+): Promise<{ ok: boolean; error?: string }> => {
+  try {
+    await healthClient.post(
+      `/disconnect/${encodeURIComponent(companyId)}/`,
+    );
+    return { ok: true };
+  } catch (err) {
+    const error =
+      err instanceof AxiosError
+        ? (err.response?.data?.detail ?? err.message)
+        : "Disconnect failed.";
+    return { ok: false, error };
+  }
+};
+
 export const fetchConnectedCompanies = async (): Promise<ConnectedCompany[]> => {
   try {
     const { data } = await apiClient.get<{

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 
 import {
+  disconnectCompany,
   fetchCompaniesPanorama,
   PanoramaClient,
 } from "../../services/audit.service";
@@ -351,6 +352,11 @@ export const AllClientsView = ({ onPick, restrictToIds }: AllClientsViewProps) =
   const [bankByCompany, setBankByCompany] = useState<Record<string, BankBits>>(
     {},
   );
+  const [nonce, setNonce] = useState(0);
+  // Disconnect: which org is awaiting confirm, and which is mid-request.
+  const [confirmTarget, setConfirmTarget] = useState<PanoramaClient | null>(null);
+  const [disconnecting, setDisconnecting] = useState<string | null>(null);
+  const [disconnectError, setDisconnectError] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -371,7 +377,22 @@ export const AllClientsView = ({ onPick, restrictToIds }: AllClientsViewProps) =
     return () => {
       active = false;
     };
-  }, [windowDays, provider]);
+  }, [windowDays, provider, nonce]);
+
+  const onConfirmDisconnect = async () => {
+    const target = confirmTarget;
+    if (!target) return;
+    setDisconnecting(target.company_id);
+    setDisconnectError(null);
+    const res = await disconnectCompany(target.company_id);
+    setDisconnecting(null);
+    if (res.ok) {
+      setConfirmTarget(null);
+      setNonce((n) => n + 1); // refetch — the org drops off the list
+    } else {
+      setDisconnectError(res.error ?? "Disconnect failed.");
+    }
+  };
 
   // Bank-reconciliation columns come from firm-summary (merged by company_id).
   // Best-effort: if it fails, those cells just show "—".
@@ -461,6 +482,51 @@ export const AllClientsView = ({ onPick, restrictToIds }: AllClientsViewProps) =
 
   return (
     <div className="space-y-5">
+      {confirmTarget && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-ink-900/40 p-4"
+          onClick={() => {
+            if (!disconnecting) setConfirmTarget(null);
+          }}
+        >
+          <div
+            className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-base font-semibold text-ink-900">
+              Disconnect {confirmTarget.name}?
+            </h3>
+            <p className="mt-2 text-sm text-ink-500">
+              This hides the org and stops syncing &amp; audits. Your Xero data
+              stays safe — reconnect anytime with “Connect to Xero” and it
+              returns with full history (no re-import).
+            </p>
+            {disconnectError && (
+              <p className="mt-3 rounded-lg bg-rose-50 px-3 py-2 text-xs text-rose-700 ring-1 ring-rose-100">
+                {disconnectError}
+              </p>
+            )}
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                type="button"
+                disabled={!!disconnecting}
+                onClick={() => setConfirmTarget(null)}
+                className="rounded-lg px-3 py-1.5 text-sm font-medium text-ink-600 transition hover:text-ink-900 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={!!disconnecting}
+                onClick={onConfirmDisconnect}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-rose-600 px-3.5 py-1.5 text-sm font-semibold text-white transition hover:bg-rose-700 disabled:opacity-60"
+              >
+                {disconnecting ? "Disconnecting…" : "Disconnect"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <header className="grid grid-cols-1 items-start gap-8 lg:grid-cols-[1fr_auto]">
         {/* Left — title block */}
         <div className="max-w-2xl">
@@ -764,27 +830,43 @@ export const AllClientsView = ({ onPick, restrictToIds }: AllClientsViewProps) =
                         <Pill>{fmtRelative(r.last_audit_at)}</Pill>
                       </td>
                       <td className="px-5 py-3 text-right">
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onPick(r);
-                          }}
-                          className="inline-flex items-center gap-1 rounded-md border border-brand-200 bg-brand-50 px-2.5 py-1 text-xs font-semibold text-brand-700 transition hover:bg-brand-100"
-                        >
-                          Open
-                          <svg
-                            viewBox="0 0 24 24"
-                            className="h-3 w-3"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth={2.2}
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
+                        <div className="flex items-center justify-end gap-1.5">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onPick(r);
+                            }}
+                            className="inline-flex items-center gap-1 rounded-md border border-brand-200 bg-brand-50 px-2.5 py-1 text-xs font-semibold text-brand-700 transition hover:bg-brand-100"
                           >
-                            <path d="M5 12h14M13 5l7 7-7 7" />
-                          </svg>
-                        </button>
+                            Open
+                            <svg
+                              viewBox="0 0 24 24"
+                              className="h-3 w-3"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth={2.2}
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            >
+                              <path d="M5 12h14M13 5l7 7-7 7" />
+                            </svg>
+                          </button>
+                          {(r.nango_connection_id || r.xero_tenant_id) && (
+                            <button
+                              type="button"
+                              title="Disconnect this Xero organisation"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setDisconnectError(null);
+                                setConfirmTarget(r);
+                              }}
+                              className="inline-flex items-center rounded-md border border-ink-200 px-2.5 py-1 text-xs font-semibold text-ink-500 transition hover:border-rose-300 hover:text-rose-600"
+                            >
+                              Disconnect
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   );

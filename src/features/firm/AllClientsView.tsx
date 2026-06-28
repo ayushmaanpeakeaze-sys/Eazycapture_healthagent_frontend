@@ -6,6 +6,8 @@ import {
   PanoramaClient,
 } from "../../services/audit.service";
 import { fetchFirmSummary } from "../../services/insights.service";
+import { DisconnectedOrgs } from "@/features/integrations/DisconnectedOrgs";
+import { XeroOnboarding } from "@/features/integrations/XeroOnboarding";
 
 // Bank-reconciliation fields live on firm-summary, not companies-panorama, so we
 // fetch that too and merge by company_id to complete the Xenon-style table.
@@ -480,6 +482,15 @@ export const AllClientsView = ({ onPick, restrictToIds }: AllClientsViewProps) =
     return { risky, healthy, trapped };
   }, [filtered]);
 
+  // First-run / empty state: no active orgs → big "Connect to Xero" onboarding
+  // (with a Disconnected section for returning users who deactivated everything).
+  // Only firm-wide (not when scoped to a fixed set of ids).
+  if (!loading && !restrictToIds && rows.length === 0 && !loadError && !authRequired) {
+    return (
+      <XeroOnboarding reloadKey={nonce} onChanged={() => setNonce((n) => n + 1)} />
+    );
+  }
+
   return (
     <div className="space-y-5">
       {confirmTarget && (
@@ -876,6 +887,11 @@ export const AllClientsView = ({ onPick, restrictToIds }: AllClientsViewProps) =
           </div>
         )}
       </div>
+
+      <DisconnectedOrgs
+        reloadKey={nonce}
+        onChanged={() => setNonce((n) => n + 1)}
+      />
     </div>
   );
 };

@@ -985,6 +985,48 @@ export const disconnectCompany = async (
   }
 };
 
+/** A deactivated org — kept in our DB, hidden from the dashboard until reconnect. */
+export interface DisconnectedCompany {
+  company_id: string;
+  name: string;
+  xero_tenant_id?: string | null;
+}
+
+/** List orgs the user has disconnected (is_active=false) so they can reconnect. */
+export const fetchDisconnectedCompanies = async (): Promise<
+  DisconnectedCompany[]
+> => {
+  try {
+    const { data } = await healthClient.get<{
+      results: DisconnectedCompany[];
+      total: number;
+    }>(`/disconnected-companies/`);
+    return data.results ?? [];
+  } catch {
+    return [];
+  }
+};
+
+/**
+ * One-click reconnect — flips is_active back to true and triggers an incremental
+ * sync. No re-OAuth (the Xero grant was never revoked); the org returns with full
+ * history. POST /api/v1/health/reconnect/{company_id}/
+ */
+export const reconnectCompany = async (
+  companyId: string,
+): Promise<{ ok: boolean; error?: string }> => {
+  try {
+    await healthClient.post(`/reconnect/${encodeURIComponent(companyId)}/`);
+    return { ok: true };
+  } catch (err) {
+    const error =
+      err instanceof AxiosError
+        ? (err.response?.data?.detail ?? err.message)
+        : "Reconnect failed.";
+    return { ok: false, error };
+  }
+};
+
 export const fetchConnectedCompanies = async (): Promise<ConnectedCompany[]> => {
   try {
     const { data } = await apiClient.get<{

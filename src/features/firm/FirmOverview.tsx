@@ -9,6 +9,7 @@ import {
   FirmSummaryClient,
   FirmSummaryResponse,
 } from "../../types/insights.types";
+import { XeroOnboarding } from "@/features/integrations/XeroOnboarding";
 
 const gbp = (n: number | null | undefined, dp = 0): string =>
   n == null
@@ -69,6 +70,7 @@ export const FirmOverview = () => {
   // Triage default: lowest cash coverage first.
   const [sortKey, setSortKey] = useState<SortKey>("cash_coverage");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+  const [nonce, setNonce] = useState(0);
 
   useEffect(() => {
     let active = true;
@@ -77,7 +79,7 @@ export const FirmOverview = () => {
     return () => {
       active = false;
     };
-  }, []);
+  }, [nonce]);
 
   const rows = useMemo(() => {
     if (!res?.ok) return [];
@@ -115,20 +117,25 @@ export const FirmOverview = () => {
     }
   };
 
+  // 0 connected orgs → onboarding owns the screen (its own welcome header).
+  const isEmpty = !!res?.ok && res.data.totals.total_clients === 0;
+
   return (
     <div className="space-y-5">
-      <header>
-        <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-brand-500">
-          Firm overview
-        </p>
-        <h1 className="mt-0.5 text-3xl font-semibold tracking-tight text-ink-900">
-          Your firm, triaged.
-        </h1>
-        <p className="mt-1.5 text-sm text-ink-500">
-          Financial health across every client — sort by what needs attention
-          first. Click a row for the full insights.
-        </p>
-      </header>
+      {!isEmpty && (
+        <header>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-brand-500">
+            Firm overview
+          </p>
+          <h1 className="mt-0.5 text-3xl font-semibold tracking-tight text-ink-900">
+            Your firm, triaged.
+          </h1>
+          <p className="mt-1.5 text-sm text-ink-500">
+            Financial health across every client — sort by what needs attention
+            first. Click a row for the full insights.
+          </p>
+        </header>
+      )}
 
       {!res ? (
         <SummarySkeleton />
@@ -136,6 +143,12 @@ export const FirmOverview = () => {
         <div className="rounded-2xl border border-ink-100 bg-white p-6 text-sm text-ink-600 shadow-card">
           {res.error}
         </div>
+      ) : res.data.totals.total_clients === 0 ? (
+        // No connected orgs yet → onboarding empty state, front and center.
+        <XeroOnboarding
+          reloadKey={nonce}
+          onChanged={() => setNonce((n) => n + 1)}
+        />
       ) : (
         <>
           <SummaryTiles data={res.data} />

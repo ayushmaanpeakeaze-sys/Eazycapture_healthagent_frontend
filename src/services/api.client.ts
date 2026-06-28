@@ -1,6 +1,10 @@
 import axios, { AxiosInstance } from "axios";
 
-import { HEALTHCHECK_API_BASE, INSIGHTS_API_BASE } from "../config";
+import {
+  HEALTHCHECK_API_BASE,
+  INSIGHTS_API_BASE,
+  INTEGRATIONS_API_BASE,
+} from "../config";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "";
 
@@ -64,5 +68,14 @@ export const healthClient = buildClient(HEALTHCHECK_API_BASE, {
  * Same FastAPI service as healthClient, different router. Bearer JWT only.
  */
 export const insightsClient = buildClient(INSIGHTS_API_BASE, {
+  withCredentials: false,
+});
+
+/**
+ * Client for the integrations endpoints (`/api/v1/integrations/nango/…`).
+ * Used to open a Nango Connect session for the Xero OAuth handshake. Same
+ * FastAPI service as healthClient, the `/integrations` router. Bearer JWT only.
+ */
+export const integrationsClient = buildClient(INTEGRATIONS_API_BASE, {
   withCredentials: false,
 });

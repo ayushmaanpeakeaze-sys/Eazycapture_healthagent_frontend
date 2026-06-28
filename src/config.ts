@@ -23,3 +23,14 @@ export const HEALTHCHECK_API_BASE =
 export const INSIGHTS_API_BASE =
   import.meta.env.VITE_INSIGHTS_API_BASE ||
   HEALTHCHECK_API_BASE.replace(/\/health$/, "/insights");
+
+/**
+ * Where the integrations endpoints live (Nango Connect session for the Xero
+ * OAuth handshake). Same FastAPI service as the health checks, the sibling
+ * `/integrations` router (e.g. `/api/v1/integrations/nango/connect-session/`).
+ * Derived from HEALTHCHECK_API_BASE so the host stays in sync; override with
+ * VITE_INTEGRATIONS_API_BASE.
+ */
+export const INTEGRATIONS_API_BASE =
+  import.meta.env.VITE_INTEGRATIONS_API_BASE ||
+  HEALTHCHECK_API_BASE.replace(/\/health$/, "/integrations");

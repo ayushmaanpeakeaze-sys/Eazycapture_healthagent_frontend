@@ -21,6 +21,7 @@ import { BatchAuditInspector } from "@/features/batch/BatchAuditInspector";
 import { BookkeepingChecksView } from "@/features/checks/BookkeepingChecksView";
 import { CheckDetailPage } from "@/features/checks/CheckDetailPage";
 import { ClientInsightsView } from "@/features/insights/ClientInsightsView";
+import { ConnectXeroButton } from "@/features/integrations/ConnectXeroButton";
 import { FirmOverview } from "@/features/firm/FirmOverview";
 import { LedgerHealthDashboard } from "@/features/insights/LedgerHealthDashboard";
 import { NotificationsView } from "@/features/practice/NotificationsView";
@@ -487,6 +488,7 @@ const PracticeLayout = () => {
           </nav>
 
           <div className="ml-auto flex items-center gap-3">
+            <ConnectXeroButton />
             <div
               className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-medium text-emerald-700 ring-1 ring-emerald-200"
               title="AI service online"

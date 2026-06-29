@@ -1,10 +1,6 @@
-import { CSSProperties, FormEvent, useEffect, useState } from "react";
+import { CSSProperties, FormEvent, useState } from "react";
 
-import {
-  login,
-  requestRegisterOtp,
-  verifyRegisterOtp,
-} from "../../services/auth.service";
+import { login, register } from "../../services/auth.service";
 
 interface AuthSliderProps {
   onLoggedIn: () => void;
@@ -181,27 +177,15 @@ const SignInForm = ({ onLoggedIn }: { onLoggedIn: () => void }) => {
 };
 
 const SignUpForm = ({ onLoggedIn }: { onLoggedIn: () => void }) => {
-  const [step, setStep] = useState<"form" | "code">("form");
   const [name, setName] = useState("");
   const [firmName, setFirmName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
-  const [cooldown, setCooldown] = useState(0);
 
-  useEffect(() => {
-    if (cooldown <= 0) return;
-    const t = setTimeout(() => setCooldown((c) => c - 1), 1000);
-    return () => clearTimeout(t);
-  }, [cooldown]);
-
-  // Step 1 — send / resend the 6-digit code (account isn't created yet).
-  const sendOtp = async () => {
-    setError(null);
-    setNotice(null);
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
     if (!name.trim() || !email.trim() || !password.trim()) {
       setError("All fields are required.");
       return;
@@ -211,147 +195,24 @@ const SignUpForm = ({ onLoggedIn }: { onLoggedIn: () => void }) => {
       return;
     }
     setLoading(true);
-    const res = await requestRegisterOtp({
-      email: email.trim(),
-      password,
-      firmName,
-      fullName: name,
-    });
+    setError(null);
+    const res = await register(name.trim(), email.trim(), password, firmName);
     setLoading(false);
     if (!res.ok) {
       setError(
         res.status === 409
           ? "This email is already registered — sign in instead."
           : res.status === 422
-            ? "Check your email and use a password of 8+ characters."
-            : "Couldn’t start signup. Please try again.",
-      );
-      return;
-    }
-    if (!res.emailSent) {
-      setNotice("Email delivery isn’t set up yet — ask your admin for the code.");
-    }
-    setCode("");
-    setStep("code");
-    setCooldown(30);
-  };
-
-  // Step 2 — verify the code; this creates the firm + admin and logs in.
-  const verify = async () => {
-    setError(null);
-    if (code.length !== 6) {
-      setError("Enter the 6-digit code from your email.");
-      return;
-    }
-    setLoading(true);
-    const res = await verifyRegisterOtp(email.trim(), code);
-    setLoading(false);
-    if (!res.ok) {
-      if (res.status === 429) {
-        setError("Too many incorrect codes — start again.");
-        setStep("form");
-        setCode("");
-        return;
-      }
-      setError(
-        res.status === 400
-          ? "Wrong or expired code. Check your email or resend."
-          : res.status === 409
-            ? "This email was just registered — sign in instead."
-            : "Couldn’t verify the code. Please try again.",
+            ? "Use a valid email and a password of 8+ characters."
+            : res.error,
       );
       return;
     }
     onLoggedIn();
   };
 
-  if (step === "code") {
-    return (
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          verify();
-        }}
-        className="ec-form"
-      >
-        <AuditSticker />
-        <div className="ec-form-inner">
-          <h1 className="font-display text-4xl tracking-tight text-ink-900">
-            Check your email
-          </h1>
-          <p className="mt-1.5 text-sm text-ink-500">
-            We sent a 6-digit code to{" "}
-            <span className="font-medium text-ink-700">{email}</span>.
-          </p>
-
-          {notice && (
-            <p className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800">
-              {notice}
-            </p>
-          )}
-
-          <div className="mt-7 w-full">
-            <input
-              inputMode="numeric"
-              autoComplete="one-time-code"
-              maxLength={6}
-              value={code}
-              onChange={(e) =>
-                setCode(e.target.value.replace(/\D/g, "").slice(0, 6))
-              }
-              disabled={loading}
-              placeholder="000000"
-              className="ec-input text-center text-lg tracking-[0.5em]"
-            />
-          </div>
-
-          {error && <p className="ec-error">{error}</p>}
-
-          <button
-            type="submit"
-            disabled={loading || code.length !== 6}
-            className="ec-solid-btn mt-6"
-          >
-            {loading && <Spinner />}
-            {loading ? "Verifying…" : "Verify & create account"}
-          </button>
-
-          <div className="mt-4 flex items-center justify-between text-xs">
-            <button
-              type="button"
-              onClick={() => {
-                setStep("form");
-                setError(null);
-                setCode("");
-              }}
-              className="font-medium text-ink-500 transition hover:text-ink-800"
-            >
-              Wrong email? Go back
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                if (cooldown === 0 && !loading) sendOtp();
-              }}
-              disabled={cooldown > 0 || loading}
-              className="font-semibold text-brand-600 transition hover:text-brand-700 disabled:opacity-50"
-            >
-              {cooldown > 0 ? `Resend in ${cooldown}s` : "Resend code"}
-            </button>
-          </div>
-        </div>
-      </form>
-    );
-  }
-
   return (
-    <form
-      onSubmit={(e) => {
-        e.preventDefault();
-        sendOtp();
-      }}
-      className="ec-form"
-    >
+    <form onSubmit={handleSubmit} className="ec-form">
       <AuditSticker />
       <div className="ec-form-inner">
         <h1 className="font-display text-4xl tracking-tight text-ink-900">
@@ -404,7 +265,7 @@ const SignUpForm = ({ onLoggedIn }: { onLoggedIn: () => void }) => {
 
         <button type="submit" disabled={loading} className="ec-solid-btn mt-6">
           {loading && <Spinner />}
-          {loading ? "Sending code…" : "Create account"}
+          {loading ? "Creating…" : "Create account"}
         </button>
       </div>
     </form>

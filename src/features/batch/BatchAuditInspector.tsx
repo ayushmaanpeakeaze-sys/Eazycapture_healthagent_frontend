@@ -199,7 +199,7 @@ export const BatchAuditInspector = () => {
 
   const flagsByTx = useMemo(() => {
     const map = new Map<string, FlaggedIssue[]>();
-    response?.flagged.forEach((issue) => {
+    response?.flagged?.forEach((issue) => {
       const existing = map.get(issue.transaction_id) ?? [];
       existing.push(issue);
       map.set(issue.transaction_id, existing);

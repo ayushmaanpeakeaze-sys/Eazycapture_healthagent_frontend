@@ -84,7 +84,7 @@ export const FirmOverview = () => {
   const rows = useMemo(() => {
     if (!res?.ok) return [];
     const q = search.trim().toLowerCase();
-    const list = res.data.clients.filter(
+    const list = (res.data.clients ?? []).filter(
       (c) => !q || c.name.toLowerCase().includes(q),
     );
     const dir = sortDir === "asc" ? 1 : -1;
@@ -117,8 +117,12 @@ export const FirmOverview = () => {
     }
   };
 
-  // 0 connected orgs → onboarding owns the screen (its own welcome header).
-  const isEmpty = !!res?.ok && res.data.totals.total_clients === 0;
+  // 0 connected orgs (or a brand-new firm with no clients payload yet) →
+  // onboarding owns the screen.
+  const isEmpty =
+    !!res?.ok &&
+    ((res.data.totals?.total_clients ?? 0) === 0 ||
+      (res.data.clients?.length ?? 0) === 0);
 
   return (
     <div className="space-y-5">
@@ -143,7 +147,7 @@ export const FirmOverview = () => {
         <div className="rounded-2xl border border-ink-100 bg-white p-6 text-sm text-ink-600 shadow-card">
           {res.error}
         </div>
-      ) : res.data.totals.total_clients === 0 ? (
+      ) : isEmpty ? (
         <XeroOnboarding
           reloadKey={nonce}
           onChanged={() => setNonce((n) => n + 1)}

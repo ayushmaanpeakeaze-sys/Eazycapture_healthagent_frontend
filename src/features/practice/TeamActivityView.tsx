@@ -6,7 +6,7 @@ import {
 } from "../../services/audit.service";
 import { listUsers } from "../../services/auth.service";
 import { TeamUser } from "../../types/auth.types";
-import { useAuth } from "@/components/Auth/AuthProvider";
+import { useAuth } from "@/features/auth/AuthProvider";
 
 interface TeamActivityViewProps {
   /** Drill into a client when its connection row is clicked. */

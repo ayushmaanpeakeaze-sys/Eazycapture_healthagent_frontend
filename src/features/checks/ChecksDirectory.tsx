@@ -1,7 +1,12 @@
 import { ReactNode, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-import { fetchAuditConfig, fetchHealthStats } from "../../services/audit.service";
+import {
+  fetchAuditConfig,
+  fetchHealthStats,
+  fetchOpeningBalanceDiffs,
+  fetchUnreconciledBankItems,
+} from "../../services/audit.service";
 import { HealthStatsResponse, IssueType } from "../../types/audit.types";
 import { CheckSettingsPanel, SETTINGS_ALIAS } from "@/features/checks/CheckSettingsPanel";
 import {
@@ -87,6 +92,9 @@ export const ChecksDirectory = ({
   const [configurable, setConfigurable] = useState<Set<string>>(new Set());
   const [settingsCheck, setSettingsCheck] = useState<string | null>(null);
   const [nonce, setNonce] = useState(0);
+  // Bank checks whose real counts live in dedicated endpoints, NOT the audit
+  // feed (by_issue_type = 0 for them). Without this they'd show a false "OK".
+  const [extraCounts, setExtraCounts] = useState<Record<string, number>>({});
 
   useEffect(() => {
     let active = true;
@@ -98,6 +106,25 @@ export const ChecksDirectory = ({
       .finally(() => {
         if (active) setLoading(false);
       });
+    return () => {
+      active = false;
+    };
+  }, [companyId, refreshKey, nonce]);
+
+  // Real counts for the dedicated-endpoint bank checks (the audit feed reports 0
+  // for these, so the list would otherwise show a misleading "OK"). Best-effort.
+  useEffect(() => {
+    let active = true;
+    Promise.all([
+      fetchUnreconciledBankItems(companyId),
+      fetchOpeningBalanceDiffs(companyId, false),
+    ]).then(([unrec, obal]) => {
+      if (!active) return;
+      setExtraCounts({
+        unreconciled_bank: unrec?.total_to_reconcile ?? 0,
+        opening_balance_difference: obal?.items?.length ?? 0,
+      });
+    });
     return () => {
       active = false;
     };
@@ -127,15 +154,21 @@ export const ChecksDirectory = ({
     return m;
   }, [stats]);
 
+  // A check's issue count: dedicated-endpoint count if we have one (bank checks),
+  // else the audit-feed count (duplicate pairs folded to matches).
+  const countFor = (key: string) =>
+    extraCounts[key] ?? issueCount(key, byType[key] ?? 0);
+
   // Catalog order — same sequence as the side "All checks" list, grouped.
   const rows = useMemo(
     () =>
       ALL_CHECKS.map((c) => ({
         ...c,
-        count: issueCount(c.key, byType[c.key] ?? 0),
+        count: countFor(c.key),
         importance: importanceOf(c.key),
       })),
-    [byType],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [byType, extraCounts],
   );
 
   const withIssues = rows.filter((r) => r.count > 0).length;
@@ -192,7 +225,7 @@ export const ChecksDirectory = ({
                 </p>
                 <ul className="space-y-0.5">
                   {g.checks.map((c) => {
-                    const count = issueCount(c.key, byType[c.key] ?? 0);
+                    const count = countFor(c.key);
                     return (
                       <li key={c.key}>
                         <button

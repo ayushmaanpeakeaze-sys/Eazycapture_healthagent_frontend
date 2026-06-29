@@ -13,7 +13,7 @@ import {
   fetchCompaniesPanorama,
   PanoramaClient,
 } from "@/services/audit.service";
-import { useAuth } from "@/components/Auth/AuthProvider";
+import { useAuth } from "@/features/auth/AuthProvider";
 import { ActivityFeedView } from "@/features/practice/ActivityFeedView";
 import { TeamActivityView } from "@/features/practice/TeamActivityView";
 import { AllClientsView } from "@/features/firm/AllClientsView";

@@ -78,13 +78,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 };
 
 const LazyAuthSlider = lazy(() =>
-  import("../Auth/AuthSlider").then((m) => ({ default: m.AuthSlider })),
+  import("./AuthSlider").then((m) => ({ default: m.AuthSlider })),
 );
 const LazyTeamLoginPage = lazy(() =>
-  import("../Auth/TeamLoginPage").then((m) => ({ default: m.TeamLoginPage })),
+  import("./TeamLoginPage").then((m) => ({ default: m.TeamLoginPage })),
 );
 const LazyAcceptInvitePage = lazy(() =>
-  import("../Auth/AcceptInvitePage").then((m) => ({ default: m.AcceptInvitePage })),
+  import("./AcceptInvitePage").then((m) => ({ default: m.AcceptInvitePage })),
 );
 
 const LoginGateInner = ({ onLoggedIn }: { onLoggedIn: () => void }) => (

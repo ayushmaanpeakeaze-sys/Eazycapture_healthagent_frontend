@@ -53,30 +53,46 @@ export const SyncButton = ({ companyId }: { companyId: string }) => {
     setSyncing(true);
     setError(null);
     const before = lastSynced ?? 0;
+
+    let res;
     try {
-      const res = await triggerDataSync(companyId);
-      if (!res.ok) {
+      res = await triggerDataSync(companyId);
+    } catch (err) {
+      if (mounted.current) {
+        setError(err instanceof Error ? err.message : "Sync failed");
+        setSyncing(false);
+      }
+      return;
+    }
+    if (!res.ok) {
+      if (mounted.current) {
         setError(res.error ?? "Sync failed");
         setSyncing(false);
-        return;
       }
-      // The sync runs async on the backend with no "in progress" signal — the
-      // only proof is last_sync_at advancing. Poll for it, but cap at ~36s and
-      // always stop: a slow/idle worker (or a no-op incremental) must not leave
-      // the button spinning forever. Whatever timestamp we end with, we show.
-      let latest = before;
-      for (let i = 0; i < 12; i++) {
-        await sleep(3000);
-        if (!mounted.current) return;
-        latest = maxSyncTime(await fetchDataSyncStatus(companyId)) ?? latest;
-        if (latest > before) break;
+      return;
+    }
+
+    // Spin until the sync actually finishes. Primary signal: the backend's
+    // `syncing` flag flipping false — exact, stops the instant the sync is done
+    // (whether that's 3s or 30s). Fallback for older backends that don't send
+    // the flag: last_sync_at advancing. The ~36s cap is a last-resort safety
+    // net so it can never hang (backend off / flag stuck); the flag normally
+    // stops it well before that.
+    let latest = before;
+    for (let i = 0; i < 18; i++) {
+      await sleep(2000);
+      if (!mounted.current) return;
+      const s = await fetchDataSyncStatus(companyId);
+      latest = maxSyncTime(s) ?? latest;
+      if (typeof s?.syncing === "boolean") {
+        if (!s.syncing) break; // exact: sync finished
+      } else if (latest > before) {
+        break; // fallback: timestamp advanced
       }
+    }
+    if (mounted.current) {
       setLastSynced(latest > 0 ? latest : before);
-    } catch (err) {
-      if (mounted.current)
-        setError(err instanceof Error ? err.message : "Sync failed");
-    } finally {
-      if (mounted.current) setSyncing(false);
+      setSyncing(false);
     }
   }, [companyId, lastSynced, syncing]);
 

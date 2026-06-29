@@ -285,6 +285,8 @@ export const fetchSyncStatus = async (
 };
 
 export interface DataSyncStatusResponse {
+  /** True while a Xero→DB sync is in flight. Absent on older backends. */
+  syncing?: boolean;
   /** Per-entity sync state keyed by name (contacts, invoices, bills, …). */
   entities: Record<
     string,

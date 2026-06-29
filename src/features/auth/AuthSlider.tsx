@@ -789,7 +789,7 @@ const SLIDER_CSS = `
   align-items: center;
   justify-content: center;
   /* Extra bottom padding lifts the text block above the bottom illustration. */
-  padding: 40px 48px 22vh;
+  padding: 40px 48px 30vh;
   overflow: hidden;
   transition: transform 0.6s ease-in-out;
 }
@@ -799,14 +799,14 @@ const SLIDER_CSS = `
 .ec-auth.active .ec-overlay-right { transform: translateX(20%); }
 .ec-overlay-art {
   position: absolute;
-  bottom: 9vh;
+  bottom: 5vh;
   left: 50%;
   transform: translateX(-50%);
   width: auto;
-  max-height: 32vh;
-  max-width: 76%;
+  max-height: 40vh;
+  max-width: 88%;
   object-fit: contain;
-  opacity: 0.8;
+  opacity: 0.85;
   pointer-events: none;
   z-index: 1;
 }

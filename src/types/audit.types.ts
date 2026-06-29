@@ -433,6 +433,8 @@ export interface HealthCheckResult {
   kind: HealthCheckKind;
   target_ledger: "xero" | string;
   status: HealthCheckStatus;
+  /** Human-readable summary of the issue (e.g. "ABC LIMITED is missing default account or tax settings"). */
+  title?: string | null;
   error_msgs: string | null;
   result: HealthCheckResultPayload | null;
   ran_at: string;

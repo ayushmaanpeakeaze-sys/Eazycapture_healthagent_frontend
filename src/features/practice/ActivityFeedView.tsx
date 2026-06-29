@@ -2,9 +2,9 @@ import { useEffect, useMemo, useState } from "react";
 
 import {
   fetchCompaniesPanorama,
+  fetchTrappedInvoices,
   PanoramaClient,
 } from "../../services/audit.service";
-import { fetchHealthCheckResults } from "../../services/document.service";
 import {
   HealthCheckKind,
   HealthCheckResult,
@@ -146,25 +146,23 @@ export const ActivityFeedView = ({
     setLoading(true);
     setError(null);
     try {
-      const res = await fetchHealthCheckResults({
+      // Audit log shows currently-trapped issues only (the trapped feed already
+      // excludes dismissed/marked-OK). Status/kind tabs are filtered client-side.
+      const res = await fetchTrappedInvoices({
         company_id: targetCompanyId,
-        ...(statusFilter !== "all" ? { status: statusFilter } : {}),
-        ...(kindFilter !== "all" ? { kind: kindFilter } : {}),
-        limit: 100,
+        limit: 200,
       });
-      setResults(res.results ?? []);
-      setTotal(res.total ?? (res.results ?? []).length);
-      setBackendCounts(
-        res.counts
-          ? {
-              all: res.counts.all,
-              blocked: res.counts.blocked,
-              passed: res.counts.passed,
-              unavailable: res.counts.unavailable,
-              skipped: res.counts.skipped,
-            }
-          : null,
-      );
+      if ("error" in res) {
+        setError(res.error);
+        setResults([]);
+        setTotal(0);
+      } else {
+        const list = res.results ?? [];
+        setResults(list);
+        setTotal(list.length);
+      }
+      // Trapped feed has no status breakdown — count client-side.
+      setBackendCounts(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not load results");
     } finally {
@@ -175,17 +173,21 @@ export const ActivityFeedView = ({
   useEffect(() => {
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [targetCompanyId, statusFilter, kindFilter]);
+  }, [targetCompanyId]);
 
   useEffect(() => {
     if (!autoRefresh || !targetCompanyId) return;
     const id = setInterval(load, 4000);
     return () => clearInterval(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [autoRefresh, statusFilter, kindFilter, targetCompanyId]);
+  }, [autoRefresh, targetCompanyId]);
 
-  // Server already filtered, so the rendered list is just `results`.
-  const filtered = results;
+  // Filter the trapped list client-side for the status / kind tabs.
+  const filtered = results.filter(
+    (r) =>
+      (statusFilter === "all" || r.status === statusFilter) &&
+      (kindFilter === "all" || r.kind === kindFilter),
+  );
 
   const counts = useMemo(() => {
     if (backendCounts) return backendCounts;

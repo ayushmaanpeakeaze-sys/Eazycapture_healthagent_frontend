@@ -399,6 +399,78 @@ const NoSnapshot = ({ refreshing }: { refreshing: boolean }) => (
   </section>
 );
 
+const MONTHS = [
+  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+];
+
+// Parse a period label into {year, month}. Handles "30 Jun 26", "Jun 26",
+// "Jun-26", "June 2026" and "2026-06". Returns null if unrecognised.
+const parsePeriodMonth = (
+  period: string,
+): { year: number; month: number } | null => {
+  const iso = period.match(/(\d{4})-(\d{2})/);
+  if (iso) return { year: +iso[1], month: +iso[2] - 1 };
+  const m = period.match(/([A-Za-z]{3,})\.?\s*-?\s*(\d{2,4})/);
+  if (!m) return null;
+  const idx = MONTHS.findIndex(
+    (x) => x.toLowerCase() === m[1].slice(0, 3).toLowerCase(),
+  );
+  if (idx < 0) return null;
+  let y = +m[2];
+  if (y < 100) y += 2000;
+  return { year: y, month: idx };
+};
+
+const formatMonthLabel = (period: string): string => {
+  const pm = parsePeriodMonth(period);
+  if (!pm) return period;
+  return new Date(pm.year, pm.month, 1).toLocaleString("en-GB", {
+    month: "long",
+    year: "numeric",
+  });
+};
+
+// How far through the month we are — honest about real time. For the current
+// calendar month it's today's progress; past months are complete (100% / 0 days
+// left), future months not started. `known` is false when the label won't parse.
+const monthProgress = (
+  period: string,
+): {
+  elapsedPct: number;
+  daysRemaining: number;
+  isCurrent: boolean;
+  known: boolean;
+} => {
+  const pm = parsePeriodMonth(period);
+  if (!pm)
+    return { elapsedPct: 0, daysRemaining: 0, isCurrent: false, known: false };
+  const now = new Date();
+  const daysInMonth = new Date(pm.year, pm.month + 1, 0).getDate();
+  const isCurrent =
+    pm.year === now.getFullYear() && pm.month === now.getMonth();
+  if (isCurrent) {
+    const day = Math.min(now.getDate(), daysInMonth);
+    return {
+      elapsedPct: (day / daysInMonth) * 100,
+      daysRemaining: daysInMonth - day,
+      isCurrent: true,
+      known: true,
+    };
+  }
+  const isPast =
+    pm.year < now.getFullYear() ||
+    (pm.year === now.getFullYear() && pm.month < now.getMonth());
+  return isPast
+    ? { elapsedPct: 100, daysRemaining: 0, isCurrent: false, known: true }
+    : {
+        elapsedPct: 0,
+        daysRemaining: daysInMonth,
+        isCurrent: false,
+        known: true,
+      };
+};
+
 const SalesTrackerCard = ({ data }: { data: SalesTrackerResponse }) => {
   const rows = [...(data.rows ?? [])].reverse();
   const categories = rows.map((r) => r.period);
@@ -406,8 +478,20 @@ const SalesTrackerCard = ({ data }: { data: SalesTrackerResponse }) => {
   const series = [{ name: "Actual", data: rows.map((r) => r.actual) }];
   // "This month" = newest period (rows are newest-first before the reverse).
   const latest = (data.rows ?? [])[0];
-  const pct = data.target > 0 && latest ? (latest.actual / data.target) * 100 : 0;
-  const met = latest?.met_target;
+  const actualSoFar = latest?.actual ?? 0;
+  const target = data.target ?? 0;
+  const pct = target > 0 ? (actualSoFar / target) * 100 : 0;
+  const met = latest?.met_target ?? pct >= 100;
+  const remaining = Math.max(0, target - actualSoFar);
+  const mp = latest
+    ? monthProgress(latest.period)
+    : { elapsedPct: 0, daysRemaining: 0, isCurrent: false, known: false };
+  const monthLabel = latest ? formatMonthLabel(latest.period) : "This month";
+  const status = met
+    ? "Target met!"
+    : pct >= 50
+      ? "Over halfway!"
+      : "Behind target";
 
   const options: ApexOptions = {
     chart: baseChart(),
@@ -461,36 +545,105 @@ const SalesTrackerCard = ({ data }: { data: SalesTrackerResponse }) => {
       title="Sales Tracker"
       help="Actual monthly sales against your target."
     >
-      <div className="mb-2 flex items-end justify-between">
+      <div className="mb-2 flex items-start justify-between gap-2">
         <div>
           <p className="text-[10px] font-semibold uppercase tracking-wider text-ink-400">
-            This month
+            {monthLabel}
           </p>
           <p className="font-display text-2xl font-semibold tabular-nums text-ink-900">
-            {gbp(latest?.actual ?? 0)}
+            {gbp(actualSoFar)}{" "}
+            <span className="text-sm font-medium text-ink-400">
+              ({Math.round(pct)}%)
+            </span>
+          </p>
+          <p className="text-[10px] uppercase tracking-wider text-ink-400">
+            Actual sales so far
           </p>
         </div>
         <span
           className={[
-            "rounded-full px-2 py-0.5 text-[11px] font-semibold ring-1",
+            "shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold ring-1",
             met
               ? "bg-emerald-50 text-emerald-700 ring-emerald-200"
-              : "bg-rose-50 text-rose-700 ring-rose-200",
+              : pct >= 50
+                ? "bg-amber-50 text-amber-700 ring-amber-200"
+                : "bg-rose-50 text-rose-700 ring-rose-200",
           ].join(" ")}
         >
-          {Math.round(pct)}% of target
+          {status}
         </span>
       </div>
-      <div className="mb-3 h-1.5 overflow-hidden rounded-full bg-ink-100">
-        <div
-          className={met ? "h-full bg-emerald-500" : "h-full bg-rose-400"}
-          style={{ width: `${Math.min(100, Math.max(0, pct))}%` }}
-        />
+
+      <div className="mb-3 grid grid-cols-2 gap-2">
+        <div className="rounded-lg bg-ink-50 px-2.5 py-1.5">
+          <p className="text-[9px] font-semibold uppercase tracking-wider text-ink-400">
+            Target sales
+          </p>
+          <p className="text-sm font-semibold tabular-nums text-ink-800">
+            {gbp(target)}
+          </p>
+        </div>
+        <div className="rounded-lg bg-ink-50 px-2.5 py-1.5">
+          <p className="text-[9px] font-semibold uppercase tracking-wider text-ink-400">
+            {met ? "Surplus" : "To target"}
+          </p>
+          <p className="text-sm font-semibold tabular-nums text-ink-800">
+            {met ? `+${gbp(actualSoFar - target)}` : gbp(remaining)}
+            {mp.isCurrent && (
+              <span className="ml-1 text-[10px] font-medium text-ink-400">
+                · {mp.daysRemaining}d left
+              </span>
+            )}
+          </p>
+        </div>
       </div>
+
+      <div className="mb-2 space-y-1.5">
+        <div>
+          <div className="mb-0.5 flex items-center justify-between text-[10px] font-medium text-ink-500">
+            <span>Sales £</span>
+            <span className="tabular-nums">{Math.round(pct)}%</span>
+          </div>
+          <div className="h-1.5 overflow-hidden rounded-full bg-ink-100">
+            <div
+              className={met ? "h-full bg-emerald-500" : "h-full bg-rose-400"}
+              style={{ width: `${Math.min(100, Math.max(0, pct))}%` }}
+            />
+          </div>
+        </div>
+        {mp.known && (
+          <div>
+            <div className="mb-0.5 flex items-center justify-between text-[10px] font-medium text-ink-500">
+              <span>Time</span>
+              <span className="tabular-nums">{Math.round(mp.elapsedPct)}%</span>
+            </div>
+            <div className="h-1.5 overflow-hidden rounded-full bg-ink-100">
+              <div
+                className="h-full bg-brand-400"
+                style={{
+                  width: `${Math.min(100, Math.max(0, mp.elapsedPct))}%`,
+                }}
+              />
+            </div>
+          </div>
+        )}
+      </div>
+
       <Chart options={options} series={series} type="bar" height={140} />
-      <p className="mt-1 text-[10px] text-ink-400">
-        Target {gbp(data.target)}/mo · {data.target_basis}
-      </p>
+
+      <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] text-ink-400">
+        <span className="inline-flex items-center gap-1">
+          <span className="h-2 w-2 rounded-sm bg-emerald-500" /> Met target
+        </span>
+        <span className="inline-flex items-center gap-1">
+          <span className="h-2 w-2 rounded-sm bg-rose-400" /> Below target
+        </span>
+        <span className="inline-flex items-center gap-1">
+          <span className="inline-block h-0 w-3 border-t-2 border-dashed border-brand-500" />{" "}
+          Target
+        </span>
+        <span className="ml-auto">{data.target_basis}</span>
+      </div>
     </Card>
   );
 };

@@ -376,12 +376,12 @@ const NoSnapshot = ({ refreshing }: { refreshing: boolean }) => (
 );
 
 const SalesTrackerCard = ({ data }: { data: SalesTrackerResponse }) => {
-  const rows = [...data.rows].reverse();
+  const rows = [...(data.rows ?? [])].reverse();
   const categories = rows.map((r) => r.period);
   const colors = rows.map((r) => (r.met_target ? COLOR.emerald : COLOR.rose));
   const series = [{ name: "Actual", data: rows.map((r) => r.actual) }];
   // "This month" = newest period (rows are newest-first before the reverse).
-  const latest = data.rows[0];
+  const latest = (data.rows ?? [])[0];
   const pct = data.target > 0 && latest ? (latest.actual / data.target) * 100 : 0;
   const met = latest?.met_target;
 
@@ -553,11 +553,11 @@ const ProfitabilityCard = ({
   data: ProfitabilityResponse;
   asOf: string;
 }) => {
-  const categories = [...data.periods].reverse();
+  const categories = [...(data.periods ?? [])].reverse();
   const series = [
-    { name: "Sales", data: [...data.series.sales].reverse() },
-    { name: "Gross profit", data: [...data.series.gross_profit].reverse() },
-    { name: "Net profit", data: [...data.series.net_profit].reverse() },
+    { name: "Sales", data: [...(data.series?.sales ?? [])].reverse() },
+    { name: "Gross profit", data: [...(data.series?.gross_profit ?? [])].reverse() },
+    { name: "Net profit", data: [...(data.series?.net_profit ?? [])].reverse() },
   ];
   const options: ApexOptions = {
     chart: baseChart(),

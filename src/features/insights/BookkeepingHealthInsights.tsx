@@ -323,7 +323,7 @@ const WrapTick = ({
 const IssuesByTypeCard = ({ stats }: { stats: HealthStatsResponse }) => {
   const data = useMemo(
     () =>
-      [...stats.by_issue_type]
+      [...(stats.by_issue_type ?? [])]
         .sort((a, b) => b.count - a.count)
         .slice(0, 12)
         .map((r) => ({
@@ -434,7 +434,7 @@ const DonutTooltip = ({
 const SeverityCard = ({ stats }: { stats: HealthStatsResponse }) => {
   const data = useMemo(
     () =>
-      [...stats.by_severity]
+      [...(stats.by_severity ?? [])]
         .filter((r) => SEVERITY_COLOR[r.severity])
         .sort((a, b) => b.count - a.count)
         .map((r) => ({

@@ -178,6 +178,7 @@ const SignInForm = ({ onLoggedIn }: { onLoggedIn: () => void }) => {
 
 const SignUpForm = ({ onLoggedIn }: { onLoggedIn: () => void }) => {
   const [name, setName] = useState("");
+  const [firmName, setFirmName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -195,13 +196,15 @@ const SignUpForm = ({ onLoggedIn }: { onLoggedIn: () => void }) => {
     }
     setLoading(true);
     setError(null);
-    const res = await register(name.trim(), email.trim(), password);
+    const res = await register(name.trim(), email.trim(), password, firmName);
     setLoading(false);
     if (!res.ok) {
       setError(
-        /404|not found|disabled|invite/i.test(res.error)
-          ? "Sign-up is invite-only. Ask your practice admin for an invite link."
-          : res.error,
+        res.status === 409
+          ? "This email is already registered — sign in instead."
+          : res.status === 422
+            ? "Check your email and password (8+ characters)."
+            : res.error,
       );
       return;
     }
@@ -227,6 +230,15 @@ const SignUpForm = ({ onLoggedIn }: { onLoggedIn: () => void }) => {
             onChange={(e) => setName(e.target.value)}
             disabled={loading}
             placeholder="Full name"
+            className="ec-input"
+          />
+          <input
+            type="text"
+            autoComplete="organization"
+            value={firmName}
+            onChange={(e) => setFirmName(e.target.value)}
+            disabled={loading}
+            placeholder="Firm / company name (optional)"
             className="ec-input"
           />
           <input

@@ -85,19 +85,28 @@ export const login = async (
 };
 
 export const register = async (
-  name: string,
+  fullName: string,
   email: string,
   password: string,
-): Promise<{ ok: true; data: LoginResponse } | { ok: false; error: string }> => {
+  firmName?: string,
+): Promise<
+  { ok: true; data: LoginResponse } | { ok: false; error: string; status?: number }
+> => {
   try {
     const { data } = await apiClient.post<LoginResponse>(
       "/api/v1/auth/register",
-      { name, email, password },
+      {
+        email,
+        password,
+        full_name: fullName.trim() || undefined,
+        firm_name: firmName?.trim() || undefined,
+      },
     );
     if (data.access_token) authStorage.set(data.access_token, data.role);
     return { ok: true, data };
   } catch (err) {
-    return { ok: false, error: wrap(err) };
+    const status = err instanceof AxiosError ? err.response?.status : undefined;
+    return { ok: false, error: wrap(err), status };
   }
 };
 

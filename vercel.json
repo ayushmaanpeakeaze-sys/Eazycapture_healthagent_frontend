@@ -1,0 +1,15 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "vite",
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "https://eazycapture-api-production.up.railway.app/api/:path*"
+    },
+    {
+      "source": "/accounting/:path*",
+      "destination": "https://eazycapture-api-production.up.railway.app/accounting/:path*"
+    },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}

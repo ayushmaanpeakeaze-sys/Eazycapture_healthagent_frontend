@@ -159,6 +159,24 @@ src/
 
 ---
 
+## Deploy (Vercel)
+
+The frontend deploys to Vercel as a static Vite build; the API is reached
+same-origin through `vercel.json` rewrites that proxy to the Railway backend
+(no CORS, and the SSE progress stream works unchanged).
+
+- `vercel.json` — rewrites `/api/*` and `/accounting/*` to the backend, and
+  falls back to `index.html` for client-side routes (SPA).
+- `.env.production` — sets `VITE_HEALTHCHECK_API_BASE=/api/v1/health` (relative)
+  so every client uses same-origin paths through the proxy. Vite loads it
+  automatically during `vite build`, so no Vercel dashboard env vars are needed.
+
+To deploy: push to GitHub, import the repo in Vercel (it auto-detects Vite),
+and deploy. To point at a different backend, edit the rewrite destinations in
+`vercel.json`.
+
+---
+
 ## Gotchas
 
 - The app needs the **backend on :8001 and CORS for :3000** — without it you'll

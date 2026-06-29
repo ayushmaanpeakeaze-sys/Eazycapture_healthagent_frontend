@@ -84,25 +84,55 @@ export const login = async (
   }
 };
 
-// Single-step signup: create the firm + admin and log in immediately.
-// (OTP endpoints exist on the backend but stay dormant until email is set up.)
-export const register = async (
-  fullName: string,
+export interface RegisterOtpRequest {
+  email: string;
+  password: string;
+  firmName?: string;
+  fullName?: string;
+}
+
+// Step 1 of signup: email a 6-digit code. The account is NOT created yet — the
+// backend holds the (hashed) details ~10 min until the code is verified.
+// Re-calling overwrites the previous code (used by "Resend").
+export const requestRegisterOtp = async (
+  req: RegisterOtpRequest,
+): Promise<
+  | { ok: true; emailSent: boolean; expiresInSeconds: number }
+  | { ok: false; error: string; status?: number }
+> => {
+  try {
+    const { data } = await apiClient.post<{
+      email: string;
+      expires_in_seconds: number;
+      email_sent: boolean;
+    }>("/api/v1/auth/register/request-otp", {
+      email: req.email,
+      password: req.password,
+      full_name: req.fullName?.trim() || undefined,
+      firm_name: req.firmName?.trim() || undefined,
+    });
+    return {
+      ok: true,
+      emailSent: !!data.email_sent,
+      expiresInSeconds: data.expires_in_seconds ?? 600,
+    };
+  } catch (err) {
+    const status = err instanceof AxiosError ? err.response?.status : undefined;
+    return { ok: false, error: wrap(err), status };
+  }
+};
+
+// Step 2 of signup: verify the code → creates the firm + admin and logs in.
+export const verifyRegisterOtp = async (
   email: string,
-  password: string,
-  firmName?: string,
+  code: string,
 ): Promise<
   { ok: true; data: LoginResponse } | { ok: false; error: string; status?: number }
 > => {
   try {
     const { data } = await apiClient.post<LoginResponse>(
-      "/api/v1/auth/register",
-      {
-        email,
-        password,
-        full_name: fullName.trim() || undefined,
-        firm_name: firmName?.trim() || undefined,
-      },
+      "/api/v1/auth/register/verify",
+      { email, code },
     );
     if (data.access_token) authStorage.set(data.access_token, data.role);
     return { ok: true, data };

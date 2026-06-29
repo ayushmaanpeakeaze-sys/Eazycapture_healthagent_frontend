@@ -26,8 +26,12 @@ const fmtSynced = (ms: number | null): string => {
 export const SyncButton = ({ companyId }: { companyId: string }) => {
   const [lastSynced, setLastSynced] = useState<number | null>(null);
   const [syncing, setSyncing] = useState(false);
+  const [bgBusy, setBgBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const mounted = useRef(true);
+  // Bumped on every tap so a fresh sync supersedes any in-flight background
+  // watch — re-tapping is always responsive, never blocked by the last run.
+  const runId = useRef(0);
 
   useEffect(() => {
     mounted.current = true;
@@ -50,6 +54,7 @@ export const SyncButton = ({ companyId }: { companyId: string }) => {
 
   const onSync = useCallback(async () => {
     if (!companyId || syncing) return;
+    const myRun = ++runId.current; // supersede any background watch still running
     setSyncing(true);
     setError(null);
     const before = lastSynced ?? 0;
@@ -72,27 +77,37 @@ export const SyncButton = ({ companyId }: { companyId: string }) => {
       return;
     }
 
-    // Spin until the sync actually finishes. Primary signal: the backend's
-    // `syncing` flag flipping false — exact, stops the instant the sync is done
-    // (whether that's 3s or 30s). Fallback for older backends that don't send
-    // the flag: last_sync_at advancing. The ~36s cap is a last-resort safety
-    // net so it can never hang (backend off / flag stuck); the flag normally
-    // stops it well before that.
+    // The spinner is just a short acknowledgment that the sync was triggered —
+    // it must NEVER hang. A consecutive tap the backend de-dupes (or an idle
+    // worker) won't advance anything, so we don't keep the spinner hostage to
+    // the backend finishing.
+    await sleep(2000);
+    if (!mounted.current) return;
+    setSyncing(false);
+
+    // Then watch quietly (no spinner, subtle "syncing…") for the result:
+    // last_sync_at advancing, or the backend's `syncing` flag going true→idle.
+    // Capped so it always ends; the displayed time refreshes to whatever is
+    // current — if nothing changed (data already fresh) it stays put, honestly.
+    setBgBusy(true);
     let latest = before;
+    let sawSyncing = false;
     for (let i = 0; i < 18; i++) {
-      await sleep(2000);
-      if (!mounted.current) return;
+      if (!mounted.current || runId.current !== myRun) return; // unmounted or superseded
       const s = await fetchDataSyncStatus(companyId);
       latest = maxSyncTime(s) ?? latest;
+      if (latest > before) break; // data refreshed — done
       if (typeof s?.syncing === "boolean") {
-        if (!s.syncing) break; // exact: sync finished
-      } else if (latest > before) {
-        break; // fallback: timestamp advanced
+        if (s.syncing) sawSyncing = true;
+        // Flag went idle: either the sync finished, or there was nothing to do
+        // (give it a couple polls' grace so a just-started sync isn't missed).
+        else if (sawSyncing || i >= 2) break;
       }
+      await sleep(2000);
     }
-    if (mounted.current) {
+    if (mounted.current && runId.current === myRun) {
       setLastSynced(latest > 0 ? latest : before);
-      setSyncing(false);
+      setBgBusy(false);
     }
   }, [companyId, lastSynced, syncing]);
 
@@ -123,7 +138,10 @@ export const SyncButton = ({ companyId }: { companyId: string }) => {
         {error ? (
           <span className="text-rose-600">{error}</span>
         ) : (
-          <>Last synced: {fmtSynced(lastSynced)}</>
+          <>
+            Last synced: {fmtSynced(lastSynced)}
+            {bgBusy && <span className="text-ink-400"> · syncing…</span>}
+          </>
         )}
       </span>
     </div>

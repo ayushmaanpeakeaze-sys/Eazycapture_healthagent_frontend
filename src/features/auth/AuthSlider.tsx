@@ -523,8 +523,8 @@ const PanelChips = () => (
     <div className="ec-chip ec-chip-tl" aria-hidden>
       <HealthRing />
       <div className="text-left leading-tight">
-        <div className="text-[15px] font-semibold text-white">92%</div>
-        <div className="text-[10px] uppercase tracking-wide text-white/70">
+        <div className="text-[13px] font-semibold text-white">92%</div>
+        <div className="text-[9px] uppercase tracking-wide text-white/70">
           Ledger health
         </div>
       </div>
@@ -537,8 +537,8 @@ const PanelChips = () => (
         </svg>
       </span>
       <div className="text-left leading-tight">
-        <div className="text-[15px] font-semibold text-white">1,284</div>
-        <div className="text-[10px] uppercase tracking-wide text-white/70">
+        <div className="text-[13px] font-semibold text-white">1,284</div>
+        <div className="text-[9px] uppercase tracking-wide text-white/70">
           Issues auto-flagged
         </div>
       </div>
@@ -547,7 +547,7 @@ const PanelChips = () => (
 );
 
 const HealthRing = () => (
-  <svg width="34" height="34" viewBox="0 0 36 36" aria-hidden>
+  <svg width="27" height="27" viewBox="0 0 36 36" aria-hidden>
     <circle cx="18" cy="18" r="15" fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="4" />
     <circle
       cx="18"
@@ -832,9 +832,9 @@ const SLIDER_CSS = `
   z-index: 6;
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px 14px;
-  border-radius: 16px;
+  gap: 8px;
+  padding: 7px 11px;
+  border-radius: 13px;
   background: rgba(255,255,255,0.12);
   border: 1px solid rgba(255,255,255,0.22);
   box-shadow: 0 16px 36px -14px rgba(20,8,60,0.55);
@@ -847,9 +847,9 @@ const SLIDER_CSS = `
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  height: 34px;
-  width: 34px;
-  border-radius: 11px;
+  height: 27px;
+  width: 27px;
+  border-radius: 9px;
   background: rgba(16,185,129,0.92);
   color: #ffffff;
 }
@@ -887,7 +887,7 @@ const SLIDER_CSS = `
 .ec-rope {
   display: block;
   width: 5px;
-  height: 58px;
+  height: 26px;
   border-radius: 3px;
   background: repeating-linear-gradient(
     -52deg,

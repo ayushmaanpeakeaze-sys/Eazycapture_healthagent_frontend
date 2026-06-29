@@ -55,7 +55,6 @@ export const BatchSummaryCard = ({ summary, loading }: BatchSummaryCardProps) =>
       />
 
       <div className="relative grid grid-cols-1 gap-5 p-5 lg:grid-cols-[1.4fr_1fr]">
-        {/* Left — summary paragraph + theme chips */}
         <div>
           <div className="inline-flex items-center gap-1.5 rounded-full bg-white/90 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-brand-700 shadow-sm ring-1 ring-brand-200">
             <svg
@@ -91,7 +90,6 @@ export const BatchSummaryCard = ({ summary, loading }: BatchSummaryCardProps) =>
           )}
         </div>
 
-        {/* Right — numbered cleanup order */}
         <div className="rounded-xl border border-brand-200 bg-white/80 p-4 shadow-sm backdrop-blur-sm">
           <p className="text-[10px] font-semibold uppercase tracking-wider text-brand-700">
             Suggested cleanup order

@@ -11,8 +11,7 @@ export type InsightsResult<T> =
   | { ok: true; data: T }
   | { ok: false; error: string; status?: number };
 
-// Failure modes: 409 = not connected to Xero · 502 = Xero down/rate-limited
-//   404 = unknown company. All return { detail }. Map to friendly copy.
+// Failure modes: 409 = not connected to Xero, 502 = Xero down/rate-limited, 404 = unknown company.
 const toError = (err: unknown): { ok: false; error: string; status?: number } => {
   if (err instanceof AxiosError) {
     const status = err.response?.status;

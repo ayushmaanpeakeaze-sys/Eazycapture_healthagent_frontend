@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
 
-// Client-side pagination over an already-fetched/filtered list. Page resets when
-// the filter identity (resetKey) or page size changes. Server paging can be
-// swapped in later — the trapped query already accepts limit/offset/search.
+// Client-side pagination over an already-fetched list. Page resets when the
+// filter identity (resetKey) or page size changes.
 export function useClientPagination<T>(items: T[], resetKey: string) {
   const [page, setPage] = useState(0);
   const [limit, setLimit] = useState(20);
@@ -25,7 +24,6 @@ export function useClientPagination<T>(items: T[], resetKey: string) {
   };
 }
 
-// Card footer: Results-per-page + "X–Y of N" + prev/next.
 export const TablePager = ({
   page,
   setPage,

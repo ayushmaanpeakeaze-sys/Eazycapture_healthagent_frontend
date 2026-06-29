@@ -41,7 +41,6 @@ const DOC_TYPE_LABEL: Record<string, string> = {
   SPEND: "Money Out",
 };
 
-// Xenon-style colour per document type.
 const DOC_TYPE_CLS: Record<string, string> = {
   ACCREC: "bg-emerald-50 text-emerald-700 ring-emerald-200",
   ACCPAY: "bg-amber-50 text-amber-700 ring-amber-200",
@@ -89,8 +88,6 @@ interface Opt {
   name: string;
 }
 
-// Unexpected Account / Tax Code — table with the editable "Change To" picker
-// (Save) vs read-only "Edit in Xero", plus View / Dismiss / bulk / search.
 export const UnexpectedCodingPage = ({
   companyId,
   ruleId,
@@ -115,7 +112,6 @@ export const UnexpectedCodingPage = ({
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulkBusy, setBulkBusy] = useState(false);
 
-  // Coding options — loaded once per company, cached.
   useEffect(() => {
     let active = true;
     fetchCodingOptions(companyId).then((o) => active && setOptions(o));
@@ -173,7 +169,6 @@ export const UnexpectedCodingPage = ({
     };
   }, [companyId, ruleId, showDismissed, refreshKey]);
 
-  // Code → name lookup + the option list for the picker.
   const { allOpts, nameByCode } = useMemo(() => {
     const src: Opt[] = isTax
       ? (options?.tax_rates ?? [])
@@ -331,7 +326,7 @@ export const UnexpectedCodingPage = ({
             ? "No dismissed items."
             : search
               ? "No matches for your search."
-              : `No unexpected ${noun}s 🎉`}
+              : `No unexpected ${noun}s`}
         </p>
       ) : (
         <div className="overflow-x-auto rounded-2xl border border-ink-100 bg-white shadow-card">
@@ -367,7 +362,6 @@ export const UnexpectedCodingPage = ({
                 const m = mode[r.id] ?? "default";
                 const usedName = f.current_name || nameByCode[f.current_code ?? ""];
                 const sugName = f.suggested_name || nameByCode[suggested] || "";
-                // dropdown = any account other than the suggested default
                 const otherOpts: Opt[] = allOpts.filter((o) => o.code !== suggested);
                 return (
                   <tr key={r.id} className="align-middle transition hover:bg-brand-50/20">
@@ -433,7 +427,6 @@ export const UnexpectedCodingPage = ({
                     <td className="px-2 py-3">
                       {editable ? (
                         <div className="space-y-1.5">
-                          {/* Default = contact's expected account (suggested) */}
                           <label className="flex items-center gap-2 text-xs">
                             <input
                               type="radio"
@@ -449,7 +442,6 @@ export const UnexpectedCodingPage = ({
                               {sugName ? ` – ${sugName}` : ""}
                             </span>
                           </label>
-                          {/* Or pick any other account */}
                           <label className="flex items-center gap-2 text-xs">
                             <input
                               type="radio"

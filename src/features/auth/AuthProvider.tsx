@@ -52,14 +52,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setRole(authStorage.getRole());
   };
 
-  // The accept-invite link must work no matter the current session — an admin
-  // testing the link, or anyone with a stale token, should still land on the
-  // password screen. So this check wins over the logged-in/out branch.
+  // Accept-invite must work regardless of session, so it wins over the
+  // logged-in/out branch below.
   const inviteToken = new URLSearchParams(window.location.search).get("token");
   const isAcceptInvite =
     window.location.pathname === "/accept-invite" && !!inviteToken;
-  // Dedicated team-member login page (reached via the "Log in as a team member"
-  // link on the main sign-in). Same login, separate screen.
   const isTeamLogin = window.location.pathname === "/team-login";
 
   return (
@@ -104,8 +101,7 @@ const AcceptInviteGate = ({ token }: { token: string }) => (
     <LazyAcceptInvitePage
       inviteToken={token}
       onAccepted={() => {
-        // acceptInvite() already stored the new JWT — now drop the ?token from
-        // the URL and load the dashboard (as the invitee) with a clean reload.
+        // Drop the ?token from the URL and reload into the dashboard.
         window.location.href = `${window.location.origin}/`;
       }}
     />

@@ -256,7 +256,6 @@ export const ResolutionDrawer = ({
           {issue.issue_type === "wrong_category" && (
             <section className="mt-5 space-y-3">
               <div className="grid grid-cols-[1fr_auto_1fr] items-stretch gap-2">
-                {/* Currently */}
                 <div className="rounded-lg border border-ink-200 bg-ink-50/60 p-3">
                   <p className="text-[10px] font-semibold uppercase tracking-wider text-ink-500">
                     Currently
@@ -293,7 +292,6 @@ export const ResolutionDrawer = ({
                   </svg>
                 </div>
 
-                {/* Suggested — dropdown pre-selected to suggested_code */}
                 <div className="rounded-lg border border-brand-300 bg-brand-50/60 p-3">
                   <p className="text-[10px] font-semibold uppercase tracking-wider text-brand-700">
                     Move to

@@ -80,8 +80,6 @@ const toneStroke: Record<Tone, string> = {
   red: COLOR.rose,
 };
 
-// ──────────────────────────────────────────────────────────────────────────
-
 export const FinancialInsights = ({ companyId }: { companyId: string }) => {
   const [snap, setSnap] =
     useState<InsightsResult<ClientInsightsSnapshot> | null>(null);
@@ -207,7 +205,6 @@ const InsightsBody = ({
           This snapshot is a little old — hit Refresh for the latest numbers.
         </p>
       )}
-      {/* Xenon-style uniform card grid */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
         <SalesTrackerCard data={payload.sales_tracker} />
         <CashHealthCard data={payload.financial_position} />
@@ -225,9 +222,6 @@ const InsightsBody = ({
     </>
   );
 };
-
-// ──────────────────────────────────────────────────────────────────────────
-// Shared building blocks
 
 const HelpDot = ({ text }: { text: string }) => (
   <span
@@ -272,7 +266,7 @@ const Heart = ({ tone }: { tone: Tone }) => (
   </svg>
 );
 
-// 270° arc gauge (gap at the bottom) with a heart, à la the reference.
+// 270° arc gauge with a gap at the bottom.
 const ArcGauge = ({
   value,
   tone,
@@ -381,9 +375,6 @@ const NoSnapshot = ({ refreshing }: { refreshing: boolean }) => (
   </section>
 );
 
-// ──────────────────────────────────────────────────────────────────────────
-// Sales tracker
-
 const SalesTrackerCard = ({ data }: { data: SalesTrackerResponse }) => {
   const rows = [...data.rows].reverse();
   const categories = rows.map((r) => r.period);
@@ -480,9 +471,6 @@ const SalesTrackerCard = ({ data }: { data: SalesTrackerResponse }) => {
   );
 };
 
-// ──────────────────────────────────────────────────────────────────────────
-// Cash health
-
 const CashHealthCard = ({ data }: { data: FinancialPositionResponse }) => {
   const ch = data.cash_health;
   const covPct = Math.round((ch.coverage_ratio ?? 0) * 100);
@@ -522,9 +510,6 @@ const CashHealthCard = ({ data }: { data: FinancialPositionResponse }) => {
   );
 };
 
-// ──────────────────────────────────────────────────────────────────────────
-// Bookkeeping health
-
 const BookkeepingHealthCard = ({
   data,
 }: {
@@ -560,9 +545,6 @@ const BookkeepingHealthCard = ({
     </Card>
   );
 };
-
-// ──────────────────────────────────────────────────────────────────────────
-// Profitability
 
 const ProfitabilityCard = ({
   data,
@@ -619,9 +601,6 @@ const ProfitabilityCard = ({
   );
 };
 
-// ──────────────────────────────────────────────────────────────────────────
-// Corporation tax
-
 const CorporationTaxCard = ({ data }: { data: CorporationTaxResponse }) => (
   <Card title="Corporation Tax Estimate" help="Provisional CT estimate.">
     <p className="font-display text-4xl font-semibold leading-none tabular-nums tracking-tight text-ink-900">
@@ -650,9 +629,6 @@ const CorporationTaxCard = ({ data }: { data: CorporationTaxResponse }) => (
     </p>
   </Card>
 );
-
-// ──────────────────────────────────────────────────────────────────────────
-// Directors' loans
 
 const DirectorsLoansCard = ({ data }: { data: DirectorsLoansResponse }) => {
   const accounts = data.accounts ?? [];
@@ -731,9 +707,6 @@ const DlaGroup = ({
   </div>
 );
 
-// ──────────────────────────────────────────────────────────────────────────
-// Business valuation
-
 const BusinessValuationCard = ({
   data,
 }: {
@@ -767,9 +740,6 @@ const BusinessValuationCard = ({
     </div>
   </Card>
 );
-
-// ──────────────────────────────────────────────────────────────────────────
-// Working capital
 
 const WorkingCapitalCard = ({
   data,
@@ -825,9 +795,6 @@ const WorkingCapitalCard = ({
     </Card>
   );
 };
-
-// ──────────────────────────────────────────────────────────────────────────
-// Dividend availability
 
 const DividendCard = ({ data }: { data: FinancialPositionResponse }) => {
   const d = data.dividend;
@@ -891,9 +858,7 @@ const LedgerRow = ({
   </div>
 );
 
-// ──────────────────────────────────────────────────────────────────────────
-// Bank reconciliation (display-only — from Xero's IsReconciled flag)
-
+// Display-only — sourced from Xero's IsReconciled flag.
 const BankReconciliationCard = ({ data }: { data: BankReconciliation }) => {
   const clean = data.unreconciled_count === 0;
   const reconciled = Math.max(0, data.total_transactions - data.unreconciled_count);
@@ -949,9 +914,6 @@ const BankReconciliationCard = ({ data }: { data: BankReconciliation }) => {
     </Card>
   );
 };
-
-// ──────────────────────────────────────────────────────────────────────────
-// Shared ApexCharts config (compact, for the card grid)
 
 const baseChart = (): ApexOptions["chart"] => ({
   toolbar: { show: false },

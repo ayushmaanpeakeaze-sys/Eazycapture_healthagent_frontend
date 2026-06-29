@@ -169,7 +169,6 @@ export const RuleSettingsDrawer = ({
             </div>
 
             <div className="flex-1 overflow-y-auto px-6 py-5">
-              {/* General settings */}
               <section className="mb-6">
                 <h3 className="text-[11px] font-semibold uppercase tracking-wider text-ink-500">
                   General
@@ -197,7 +196,6 @@ export const RuleSettingsDrawer = ({
                 </div>
               </section>
 
-              {/* Rule groups — straight from the backend catalog */}
               {groups.map((group) => {
                 const builtRules = group.rules.filter((r) => r.built);
                 const unbuiltRules = group.rules.filter((r) => !r.built);
@@ -234,7 +232,6 @@ export const RuleSettingsDrawer = ({
                     </header>
 
                     <ul className="overflow-hidden rounded-lg border border-ink-200 bg-white">
-                      {/* Built rules — full interactive */}
                       {builtRules.map((rule, i) => {
                         const isOn = !disabledRules.has(rule.key);
                         return (
@@ -274,7 +271,7 @@ export const RuleSettingsDrawer = ({
                         );
                       })}
 
-                      {/* Unbuilt rules — no toggle, visually recessed */}
+                      {/* Unbuilt rules — no toggle. */}
                       {unbuiltRules.map((rule, i) => (
                         <li
                           key={rule.key}

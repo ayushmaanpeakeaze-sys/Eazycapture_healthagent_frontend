@@ -10,9 +10,8 @@ interface AcceptInvitePageProps {
   onAccepted: () => void;
 }
 
-// Read the current user's email straight from the stored JWT payload — available
-// synchronously on first render (unlike getMe(), which resolves async), so the
-// "wrong account" gate decides reliably without a flash of the password form.
+// Read email from the stored JWT synchronously, so the wrong-account gate
+// decides on first render without a flash of the password form.
 const currentEmailFromToken = (): string | null => {
   try {
     const t = window.localStorage.getItem("eazy.auth.token");
@@ -37,7 +36,6 @@ export const AcceptInvitePage = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Resolve the token → invited email before showing the password form.
   useEffect(() => {
     let active = true;
     fetchInviteInfo(inviteToken)
@@ -83,7 +81,6 @@ export const AcceptInvitePage = ({
     window.location.href = `${window.location.origin}/`;
   };
 
-  // ── Loading: checking the invite ──────────────────────────────────────────
   if (infoLoading) {
     return (
       <AuthShell
@@ -101,7 +98,6 @@ export const AcceptInvitePage = ({
     );
   }
 
-  // ── Invalid / expired / already-used invite ───────────────────────────────
   if (info && !info.valid) {
     return (
       <AuthShell
@@ -132,11 +128,10 @@ export const AcceptInvitePage = ({
     );
   }
 
-  // ── Valid invite (or info unavailable → graceful fallback to the form) ─────
+  // Valid invite, or info unavailable: fall through to the form.
   const invitedEmail = info?.email ?? null;
   const sessionEmail = me?.email ?? currentEmailFromToken();
-  // Someone is signed in, but this invite is for a different address. Don't let
-  // them silently claim it — make them sign out and accept AS the invitee.
+  // Signed in as someone else: force a sign-out so they accept as the invitee.
   const wrongAccount =
     isLoggedIn &&
     !!sessionEmail &&

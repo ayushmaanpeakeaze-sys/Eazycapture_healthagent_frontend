@@ -52,8 +52,7 @@ interface MatchGroup {
   dup: HealthCheckResult | null; // duplicate (void candidate); null if partner not in feed
   dupFromFlag?: { invoice_number?: string | null; date?: string | null };
   flag: FlaggedIssue;
-  // Review pair: this_is_likely_original is null → no original/duplicate label,
-  // no void recommended; just show both sides with the confidence badge.
+  // true when the engine can't tell which copy is the duplicate (no void recommended).
   undecided: boolean;
 }
 
@@ -62,8 +61,7 @@ export type DuplicateRuleId =
   | "duplicate_bill"
   | "duplicate_credit_note";
 
-// Duplicate Invoices / Bills / Credit Notes — grouped pairs + match_reasons
-// chips, tier badge (words, never a confidence number), keep-vs-void actions.
+// Duplicate invoices / bills / credit notes as grouped keep-vs-void pairs.
 export const DuplicateInvoicesPage = ({
   companyId,
   ruleId,
@@ -92,9 +90,7 @@ export const DuplicateInvoicesPage = ({
 
     const load = async () => {
       if (showDismissed) {
-        // Dismissed-only view. The backend exposes no per-row dismissed flag,
-        // so dismissed = (everything incl. dismissed) − (currently active).
-        // Empty when nothing has been dismissed yet.
+        // No per-row dismissed flag, so dismissed = (incl. dismissed) − (active).
         const [all, act] = await Promise.all([
           fetchTrappedInvoices({
             company_id: companyId,
@@ -172,8 +168,7 @@ export const DuplicateInvoicesPage = ({
         undecided,
       });
     }
-    // High-risk (money already moved on one copy) rises to the top; recurring
-    // (subscription-like, probably fine) sinks to the bottom.
+    // High-risk to the top, recurring (probably fine) to the bottom.
     const rank = (g: MatchGroup) => {
       const m = g.flag.match_reasons;
       if (m?.risk === "high") return -1;
@@ -223,7 +218,6 @@ export const DuplicateInvoicesPage = ({
 
   return (
     <div className="space-y-4">
-      {/* AI insight / engine recommendation for the strongest match. */}
       {!loading && topAiText && (
         <div className="rounded-2xl border border-brand-100 bg-gradient-to-br from-brand-50 to-white p-4 shadow-card">
           <p className="flex flex-wrap items-center gap-2">
@@ -246,7 +240,6 @@ export const DuplicateInvoicesPage = ({
         </div>
       )}
 
-      {/* Controls — settings now live on the Checks landing & this check's full page */}
       <div className="flex flex-wrap items-center gap-3">
         <label className="inline-flex cursor-pointer items-center gap-2 text-xs font-medium text-ink-600">
           <button
@@ -282,7 +275,7 @@ export const DuplicateInvoicesPage = ({
         </p>
       ) : groups.length === 0 ? (
         <p className="rounded-2xl border border-ink-100 bg-white px-5 py-10 text-center text-sm italic text-ink-400 shadow-card">
-          {showDismissed ? "No dismissed matches." : `No duplicate ${noun}s 🎉`}
+          {showDismissed ? "No dismissed matches." : `No duplicate ${noun}s`}
         </p>
       ) : (
         <div className="space-y-3">
@@ -309,8 +302,6 @@ export const DuplicateInvoicesPage = ({
     </div>
   );
 };
-
-// ── Match card ───────────────────────────────────────────────────────────────
 
 const MatchCard = ({
   g,
@@ -350,8 +341,7 @@ const MatchCard = ({
   };
 
   const mr = g.flag.match_reasons;
-  // Badge: render the High/Medium/Low TIER as words. Confidence % is optional
-  // and printed as a muted suffix — the tier word stays primary.
+  // Render the tier as words; confidence % is an optional muted suffix.
   const tl = (mr?.tier ?? g.flag.severity ?? "").toString().toLowerCase();
   const badge =
     tl === "low"
@@ -382,12 +372,11 @@ const MatchCard = ({
         highRisk ? "border-rose-300 ring-1 ring-rose-200" : "border-ink-100",
       ].join(" ")}
     >
-      {/* group header: contact + risk + tier badge + "what matched" chips */}
       <header className="flex flex-wrap items-center gap-x-3 gap-y-1.5 border-b border-ink-100 bg-ink-50/50 px-4 py-2.5">
         <span className="text-sm font-semibold text-ink-900">{contact}</span>
         {highRisk && (
           <span className="inline-flex items-center gap-1 rounded-full bg-rose-600 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white">
-            ⚠ One already paid — high risk
+            One already paid — high risk
           </span>
         )}
         {badge && (
@@ -409,7 +398,7 @@ const MatchCard = ({
           <DateChip g={g} mr={mr} />
           {mr && <RefChip match={mr.reference_match} />}
           {mr?.cross_contact && <Chip warn>Across 2 contact records</Chip>}
-          {mr?.recurring && <Chip warn>⚠ Could be recurring</Chip>}
+          {mr?.recurring && <Chip warn>Could be recurring</Chip>}
         </div>
         <div className="relative ml-auto flex items-center gap-2">
           <button
@@ -452,14 +441,13 @@ const MatchCard = ({
                 >
                   Mark OK (not a duplicate)
                 </MenuItem>
-                <MenuItem onClick={openSuggestFix}>Suggest fix ✨</MenuItem>
+                <MenuItem onClick={openSuggestFix}>Suggest fix</MenuItem>
               </div>
             </>
           )}
         </div>
       </header>
 
-      {/* Dismiss reason — inline, optional. */}
       {dismissOpen && (
         <div className="flex flex-wrap items-center gap-2 border-b border-ink-100 bg-ink-50/40 px-4 py-2">
           <input
@@ -487,17 +475,14 @@ const MatchCard = ({
         </div>
       )}
 
-      {/* Soft hint when everything matches but the doc numbers differ. */}
       {mr?.distinct_documents_possible && (
         <div className="flex items-start gap-1.5 border-b border-amber-100 bg-amber-50/60 px-4 py-2 text-[11px] text-amber-800">
-          <span aria-hidden>⚠</span>
           <span>
             Different invoice numbers — could be 2 distinct documents. Please check.
           </span>
         </div>
       )}
 
-      {/* the two documents */}
       <div className="grid gap-px bg-ink-100 sm:grid-cols-2">
         <InvoiceCell
           r={g.keep}
@@ -577,8 +562,6 @@ const MenuItem = ({
   </button>
 );
 
-// ── Suggest-fix modal ─────────────────────────────────────────────────────────
-
 const DOC_TYPE_LABEL: Record<string, string> = {
   ACCREC: "Sales invoice",
   ACCPAY: "Bill",
@@ -626,7 +609,6 @@ const SuggestFixModal = ({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-ink-900/40 backdrop-blur-sm" onClick={onClose} />
       <div className="relative w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-ink-100">
-        {/* gradient header */}
         <div className="relative bg-brand-gradient px-5 py-4 text-white">
           <button
             type="button"
@@ -639,7 +621,7 @@ const SuggestFixModal = ({
             </svg>
           </button>
           <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-white/80">
-            <span>✨</span> {undecided ? "AI review" : "Suggested fix"}
+            {undecided ? "AI review" : "Suggested fix"}
           </p>
           <h3 className="mt-1 text-lg font-semibold leading-tight">
             {undecided ? "Review this match" : "Void this duplicate"}
@@ -647,7 +629,6 @@ const SuggestFixModal = ({
         </div>
 
         <div className="space-y-4 p-5">
-          {/* target document card */}
           <div
             className={[
               "rounded-xl border p-3.5",
@@ -694,7 +675,6 @@ const SuggestFixModal = ({
             )}
           </div>
 
-          {/* AI body */}
           {loading ? (
             <p className="py-2 text-center text-sm text-ink-500">Thinking…</p>
           ) : error ? (
@@ -722,7 +702,6 @@ const SuggestFixModal = ({
             </div>
           )}
 
-          {/* actions */}
           <div className="flex items-center justify-end gap-2 border-t border-ink-100 pt-3">
             {fix?.xero_url && (
               <a
@@ -826,7 +805,6 @@ const InvoiceCell = ({
   );
 };
 
-// One labelled, line-by-line field in an invoice cell.
 const Field = ({
   label,
   value,
@@ -869,8 +847,6 @@ const roleTagInner = (role: "keep" | "void") => (
     {role === "keep" ? "Keep · original" : "Duplicate"}
   </span>
 );
-
-// ── Chips ─────────────────────────────────────────────────────────────────────
 
 const Chip = ({
   children,
@@ -937,8 +913,8 @@ const DateChip = ({ g, mr }: { g: MatchGroup; mr?: MatchReasons | null }) => {
 };
 
 const RefChip = ({ match }: { match: MatchReasons["reference_match"] }) => {
-  if (match === "exact") return <Chip ok>🟢 Same reference</Chip>;
-  if (match === "different") return <Chip bad>🔴 Different reference</Chip>;
-  return <Chip>⚪ No reference</Chip>;
+  if (match === "exact") return <Chip ok>Same reference</Chip>;
+  if (match === "different") return <Chip bad>Different reference</Chip>;
+  return <Chip>No reference</Chip>;
 };
 

@@ -18,8 +18,7 @@ import {
 } from "../../services/audit.service";
 import { HealthStatsResponse } from "../../types/audit.types";
 
-// The ONLY palette the app uses for severity. Keep these tokens in sync
-// with SEVERITY_STYLES in TrappedInvoicesList and every chip elsewhere.
+// Severity palette — keep in sync with SEVERITY_STYLES in TrappedInvoicesList.
 const COLOR = {
   critical: "#f43f5e", // rose-500
   high: "#f97316",     // orange-500
@@ -53,8 +52,6 @@ const scoreTone = (score: number | null) => {
   return { label: "At risk", chip: "text-rose-700 ring-rose-200", ring: "stroke-rose-500" };
 };
 
-// ──────────────────────────────────────────────────────────────────────────
-
 export const BookkeepingHealthInsights = ({
   companyId,
   onDrillToIssueType,
@@ -78,8 +75,7 @@ export const BookkeepingHealthInsights = ({
       .finally(() => {
         if (active) setLoading(false);
       });
-    // The real health score lives on /summary/ (stats returns null) — pull it
-    // so Insights matches the Overview gauge and the panorama row.
+    // Real health score lives on /summary/ — stats returns null for it.
     fetchLedgerHealthSummary(companyId)
       .then((s) => {
         if (!active || !s) return;
@@ -130,9 +126,7 @@ export const BookkeepingHealthInsights = ({
 
       {stats && (
         <>
-          {/* HERO ROW — gradient feature gauge card + 4 elevated KPI cards */}
           <div className="grid shrink-0 grid-cols-1 gap-4 lg:grid-cols-[1.1fr_2fr]">
-            {/* Gradient feature card with the score gauge */}
             <section className="relative overflow-hidden rounded-2xl bg-brand-gradient p-6 text-white shadow-float-brand">
               <span
                 aria-hidden
@@ -161,9 +155,7 @@ export const BookkeepingHealthInsights = ({
               </div>
             </section>
 
-            {/* KPI cards — each elevated with a corner mini-ring. When the
-                backend provides the split, documents (the score driver) and
-                contacts (separate hygiene) are shown apart, never lumped. */}
+            {/* Documents (score driver) and contacts (hygiene) are shown apart, never lumped. */}
             <div className="grid grid-cols-2 gap-4">
               {stats.open_document_issues !== undefined ? (
                 <KpiCard
@@ -253,7 +245,6 @@ export const BookkeepingHealthInsights = ({
             </div>
           </div>
 
-          {/* BOTTOM REGION — issues list (scrolls internally) + donuts side by side */}
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.5fr_1fr]">
             <IssuesByTypeCard stats={stats} />
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-1">
@@ -266,8 +257,6 @@ export const BookkeepingHealthInsights = ({
     </div>
   );
 };
-
-// ──────────────────────────────────────────────────────────────────────────
 
 const BarTooltip = ({
   active,
@@ -288,8 +277,7 @@ const BarTooltip = ({
   );
 };
 
-// Centered, multi-line x-axis label so full category names stay readable
-// without clipping at the chart edges (max 3 lines, ~12 chars each).
+// Multi-line x-axis label so long category names don't clip (max 3 lines, ~12 chars each).
 const WrapTick = ({
   x,
   y,
@@ -386,8 +374,7 @@ const IssuesByTypeCard = ({ stats }: { stats: HealthStatsResponse }) => {
               stroke="#e2e8f0"
               tickLine={false}
             />
-            {/* Hidden axis — on-bar labels carry the numbers; a little headroom
-                so the tallest column's label isn't clipped. */}
+            {/* Hidden axis with headroom so the tallest column's label isn't clipped. */}
             <YAxis
               hide
               domain={[0, (max: number) => Math.ceil(max * 1.12)]}
@@ -418,8 +405,6 @@ const IssuesByTypeCard = ({ stats }: { stats: HealthStatsResponse }) => {
     </section>
   );
 };
-
-// ──────────────────────────────────────────────────────────────────────────
 
 const DonutTooltip = ({
   active,
@@ -539,8 +524,6 @@ const SeverityCard = ({ stats }: { stats: HealthStatsResponse }) => {
   );
 };
 
-// ──────────────────────────────────────────────────────────────────────────
-
 const LifecycleCard = ({ stats }: { stats: HealthStatsResponse }) => {
   const data = [
     { name: "Open", value: stats.open_issues, fill: COLOR.critical },
@@ -622,9 +605,6 @@ const LifecycleCard = ({ stats }: { stats: HealthStatsResponse }) => {
   );
 };
 
-// ──────────────────────────────────────────────────────────────────────────
-
-// Score gauge rendered on the dark gradient feature card — white track + ring.
 const GaugeOnDark = ({ score }: { score: number | null }) => {
   const hasScore = score !== null;
   const pct = hasScore ? Math.max(0, Math.min(100, score)) : 0;
@@ -669,7 +649,6 @@ const GaugeOnDark = ({ score }: { score: number | null }) => {
   );
 };
 
-// Elevated KPI card with a small corner ring gauge (reference-style).
 const KpiCard = ({
   label,
   value,
@@ -729,7 +708,6 @@ const KpiCard = ({
           </p>
         )}
       </div>
-      {/* Corner mini-ring */}
       <div className="relative h-11 w-11 shrink-0">
         <svg viewBox="0 0 44 44" className="h-full w-full -rotate-90">
           <circle

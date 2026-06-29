@@ -115,15 +115,12 @@ export const subscribeBatchProgress = (
         es.close();
       }
     } catch {
-      // Skip non-JSON lines (shouldn't normally happen — heartbeats are
-      // comment lines that EventSource never delivers as onmessage events).
+      // Skip non-JSON lines.
     }
   };
 
   es.onerror = () => {
-    // EventSource fires onerror for both transient drops (will auto-retry)
-    // and for fatal failures. Treating any error as fatal for our UX —
-    // tear down and surface to the caller.
+    // Treat any error as fatal: tear down and surface to the caller.
     onError?.();
     es.close();
   };
@@ -141,12 +138,6 @@ export const fetchTrappedTransactions = async (): Promise<BatchTransaction[]> =>
     return unwrap(err);
   }
 };
-
-/**
- * Per-client aggregate counts feeding the Insights dashboards.
- * GET /health/stats/?company_id=<id>
- */
-// ── Audit config ─────────────────────────────────────────────────────────────
 
 export interface AuditConfigRule {
   key: string;
@@ -450,8 +441,6 @@ export const bulkTrappedAction = async (
   }
 };
 
-// ── Bank Balance Check (own endpoints, not the trapped feed) ─────────────────
-
 export const fetchBankBalanceCheck = async (
   companyId: string,
   periodEnd: string,
@@ -488,7 +477,7 @@ export const setStatementBalance = async (
   }
 };
 
-/** ✕ — exclude / re-include a bank account from the check. */
+/** Exclude / re-include a bank account from the check. */
 export const excludeBankAccount = async (
   companyId: string,
   accountCode: string,
@@ -523,8 +512,6 @@ export const markBankBalanceOk = async (
   }
 };
 
-// ── Unreconciled Bank Items (own endpoint, not the trapped feed) ─────────────
-
 export const fetchUnreconciledBankItems = async (
   companyId: string,
 ): Promise<UnreconciledBankResponse | null> => {
@@ -538,7 +525,7 @@ export const fetchUnreconciledBankItems = async (
   }
 };
 
-/** ✕ — exclude / reinstate a bank account from the unreconciled check. */
+/** Exclude / reinstate a bank account from the unreconciled check. */
 export const excludeUnreconciledBankAccount = async (
   companyId: string,
   accountCode: string,
@@ -554,8 +541,6 @@ export const excludeUnreconciledBankAccount = async (
     return { ok: false, error: err instanceof Error ? err.message : "Exclude failed" };
   }
 };
-
-// ── Opening Balance Differences (own endpoints) ──────────────────────────────
 
 export const fetchOpeningBalanceDiffs = async (
   companyId: string,
@@ -848,10 +833,7 @@ export interface HistoricalAuditDispatchOptions {
   date_from?: string | null;
   /** ISO date YYYY-MM-DD; omit for unbounded end. */
   date_to?: string | null;
-  /**
-   * "duplicates" runs only duplicate invoices + bills (~8s, no AI; refreshes
-   * only the duplicate cards). "full" (or omitted) runs the whole audit (~60s).
-   */
+  /** "duplicates" runs only the duplicate checks; "full" (or omitted) runs the whole audit. */
   scope?: "full" | "duplicates";
 }
 
@@ -859,8 +841,7 @@ export const dispatchHistoricalAudit = async (
   companyId: string,
   range?: HistoricalAuditDispatchOptions,
 ): Promise<HistoricalAuditDispatchResponse | ServiceErrorDict> => {
-  // Backend: POST /sync-xero-history/{id}/?date_from=&date_to=&scope= (all
-  // optional; dates omitted → all transactions; scope omitted → full audit).
+  // All query params optional: dates omitted → all transactions; scope omitted → full audit.
   const params = new URLSearchParams();
   if (range?.date_from) params.set("date_from", range.date_from);
   if (range?.date_to) params.set("date_to", range.date_to);
@@ -961,13 +942,7 @@ export const fetchCompaniesPanorama = async (
   }
 };
 
-/**
- * Disconnect (deactivate) a connected org — sets is_active=false so it drops off
- * the dashboard and stops syncing/auditing. The Xero grant, Nango connection,
- * and already-synced data are kept; reconnecting via "Connect to Xero" flips it
- * back active with full history (no re-import).
- *   POST /api/v1/health/disconnect/{company_id}/
- */
+/** Deactivate a connected org (is_active=false). Grant, connection and synced data are kept for reconnect. */
 export const disconnectCompany = async (
   companyId: string,
 ): Promise<{ ok: boolean; error?: string }> => {
@@ -1007,11 +982,7 @@ export const fetchDisconnectedCompanies = async (): Promise<
   }
 };
 
-/**
- * One-click reconnect — flips is_active back to true and triggers an incremental
- * sync. No re-OAuth (the Xero grant was never revoked); the org returns with full
- * history. POST /api/v1/health/reconnect/{company_id}/
- */
+/** Reconnect — flips is_active back to true and triggers an incremental sync (no re-OAuth). */
 export const reconnectCompany = async (
   companyId: string,
 ): Promise<{ ok: boolean; error?: string }> => {

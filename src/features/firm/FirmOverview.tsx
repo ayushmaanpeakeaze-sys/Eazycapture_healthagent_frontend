@@ -144,7 +144,6 @@ export const FirmOverview = () => {
           {res.error}
         </div>
       ) : res.data.totals.total_clients === 0 ? (
-        // No connected orgs yet → onboarding empty state, front and center.
         <XeroOnboarding
           reloadKey={nonce}
           onChanged={() => setNonce((n) => n + 1)}
@@ -281,8 +280,6 @@ export const FirmOverview = () => {
   );
 };
 
-// ── Summary tiles ──────────────────────────────────────────────────────────
-
 const SummaryTiles = ({ data }: { data: FirmSummaryResponse }) => {
   const t = data.totals;
   return (
@@ -356,8 +353,6 @@ const Tile = ({
     </div>
   );
 };
-
-// ── Table bits ───────────────────────────────────────────────────────────
 
 const Th = ({
   label,

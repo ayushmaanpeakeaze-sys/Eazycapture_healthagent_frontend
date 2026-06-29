@@ -12,9 +12,7 @@ import {
 
 export type PaymentMatchRuleId = "bill_direct_payment" | "invoice_direct_deposit";
 
-// Each check is a 2-row match: an unpaid document + a matching bank movement.
-// The only differences between bill→payment and invoice→deposit are the field
-// prefixes + the badge labels, so one config drives both.
+// One config drives both directions; only the field prefixes and badge labels differ.
 interface Side {
   date?: string | null;
   desc?: string | null;
@@ -33,7 +31,7 @@ const CONFIG: Record<PaymentMatchRuleId, RuleConfig> = {
   bill_direct_payment: {
     leftBadge: "Unpaid Bill",
     rightBadge: "Direct Payment",
-    empty: "No bill / direct-payment matches 🎉",
+    empty: "No bill / direct-payment matches",
     left: (mr) => ({
       date: mr.bill_date,
       desc: mr.bill_description,
@@ -50,7 +48,7 @@ const CONFIG: Record<PaymentMatchRuleId, RuleConfig> = {
   invoice_direct_deposit: {
     leftBadge: "Unpaid Invoice",
     rightBadge: "Direct Deposit",
-    empty: "No invoice / direct-deposit matches 🎉",
+    empty: "No invoice / direct-deposit matches",
     left: (mr) => ({
       date: mr.invoice_date,
       desc: mr.invoice_description,
@@ -87,8 +85,7 @@ const shortDate = (iso: string | null | undefined) => {
   });
 };
 
-// Bank-transaction deep link for the movement side (§5). Org shortcode is
-// embedded in the document's xero_url.
+// Org shortcode for the bank-transaction deep link is embedded in the document's xero_url.
 const shortcodeOf = (url?: string | null): string | null => {
   const m = (url || "").match(/[?&]shortcode=([^&]+)/i);
   return m ? m[1] : null;
@@ -111,8 +108,6 @@ const matchesRule = (r: HealthCheckResult, ruleId: string): boolean =>
   (r.result?.rule_ids ?? []).includes(ruleId) ||
   (r.result?.flagged ?? []).some((f) => f.issue_type === ruleId);
 
-// Bill or Direct Payment / Invoice or Direct Deposit — read-only review. Each
-// flag is a 2-row match block (unpaid doc + bank movement): View + Dismiss.
 export const PaymentMatchReviewPage = ({
   companyId,
   ruleId,

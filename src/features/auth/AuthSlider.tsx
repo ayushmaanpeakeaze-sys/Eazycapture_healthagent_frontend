@@ -7,12 +7,9 @@ interface AuthSliderProps {
 }
 
 /**
- * Full-screen animated auth (Florin Pop "sliding overlay" pattern, in
- * EazyCapture purple). The whole viewport is split 50/50; the colored overlay
- * slides across to swap between Sign In and Create account. Sign In is wired to
- * the real /auth/login. Because the app is invite-only, Create account attempts
- * /auth/register and gracefully degrades to an invite-only message if the
- * backend has no public registration.
+ * Full-screen animated auth: a sliding overlay swaps between Sign In and Create
+ * account. The app is invite-only, so Create account degrades to an invite-only
+ * message when the backend has no public registration.
  */
 export const AuthSlider = ({ onLoggedIn }: AuthSliderProps) => {
   const [rightActive, setRightActive] = useState(false);
@@ -22,20 +19,17 @@ export const AuthSlider = ({ onLoggedIn }: AuthSliderProps) => {
       <style>{SLIDER_CSS}</style>
 
       <div className={`ec-auth ${rightActive ? "active" : ""}`}>
-        {/* CREATE ACCOUNT (revealed when overlay slides left) */}
         <div className="ec-form-c ec-signup-c">
           <SignUpForm onLoggedIn={onLoggedIn} />
         </div>
 
-        {/* SIGN IN (default visible) */}
         <div className="ec-form-c ec-signin-c">
           <SignInForm onLoggedIn={onLoggedIn} />
         </div>
 
-        {/* OVERLAY — the sliding purple panel */}
         <div className="ec-overlay-c">
           <div className="ec-overlay">
-            {/* shown over the SIGN UP form → invites you back to Sign In */}
+            {/* Over the sign-up form: invites back to Sign In. */}
             <div className="ec-overlay-panel ec-overlay-left">
               <Ambient />
               <PanelChips />
@@ -62,7 +56,7 @@ export const AuthSlider = ({ onLoggedIn }: AuthSliderProps) => {
               <OverlayArt />
             </div>
 
-            {/* shown over the SIGN IN form → invites you to Create account */}
+            {/* Over the sign-in form: invites to Create account. */}
             <div className="ec-overlay-panel ec-overlay-right">
               <Ambient />
               <PanelChips />
@@ -94,8 +88,6 @@ export const AuthSlider = ({ onLoggedIn }: AuthSliderProps) => {
     </div>
   );
 };
-
-/* ------------------------------- Sign in ------------------------------- */
 
 const SignInForm = ({ onLoggedIn }: { onLoggedIn: () => void }) => {
   const [email, setEmail] = useState("");
@@ -184,8 +176,6 @@ const SignInForm = ({ onLoggedIn }: { onLoggedIn: () => void }) => {
   );
 };
 
-/* ----------------------------- Create account ---------------------------- */
-
 const SignUpForm = ({ onLoggedIn }: { onLoggedIn: () => void }) => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -270,11 +260,7 @@ const SignUpForm = ({ onLoggedIn }: { onLoggedIn: () => void }) => {
   );
 };
 
-/* -------------------------------- Visuals -------------------------------- */
-
-// "Eat / Sleep / Audit / Repeat" die-cut sticker — a bit of brand personality
-// stuck onto the white sign-in panel. Recreated in CSS (no image asset) so it
-// stays crisp at any size; hidden on narrow screens where the panel is tight.
+// Die-cut sticker recreated in CSS so it stays crisp; hidden on narrow screens.
 const AuditSticker = () => (
   <div className="ec-sticker-hang" aria-hidden>
     <div className="ec-sticker-swing">
@@ -313,10 +299,7 @@ const AuditSticker = () => (
   </div>
 );
 
-// Bookkeeper illustration, pre-processed to white line-art on a transparent
-// background (see scripts that produced auth-illustration-white.png), so it
-// drops cleanly onto the purple panel with no blend-mode fragility. Hides
-// itself if the asset is missing.
+// White line-art illustration; hides itself if the asset is missing.
 const OverlayArt = () => {
   const [ok, setOk] = useState(true);
   if (!ok) return null;
@@ -344,7 +327,6 @@ const Ambient = () => (
   </>
 );
 
-// EazyCapture logo — the real brand asset (white variant on the purple panel).
 const Wordmark = () => (
   <img
     src="/eazycapture-logo-white.png"
@@ -353,8 +335,7 @@ const Wordmark = () => (
   />
 );
 
-// Rising ledger papers behind the panel content — the on-brand "documents
-// drifting up" ambient. Each sheet has a width, position, speed, delay, tilt.
+// Rising ledger papers: width, position, speed, delay, tilt per sheet.
 const DOCS = [
   { left: "9%", w: 46, dur: 18, delay: 0, rot: -8 },
   { left: "24%", w: 30, dur: 14, delay: 3.5, rot: 7 },
@@ -385,8 +366,7 @@ const Docs = () => (
   </div>
 );
 
-// Floating glassmorphic stat cards — the premium "live dashboard" touch over
-// the gradient. Purely decorative, product-flavored.
+// Floating glassmorphic stat cards. Purely decorative.
 const PanelChips = () => (
   <>
     <div className="ec-chip ec-chip-tl" aria-hidden>
@@ -482,8 +462,6 @@ const Spinner = () => (
     <path d="M21 12a9 9 0 0 0-9-9" strokeLinecap="round" />
   </svg>
 );
-
-/* --------------------------------- CSS ---------------------------------- */
 
 const SLIDER_CSS = `
 .ec-auth-stage {
@@ -605,15 +583,12 @@ const SLIDER_CSS = `
   transform: translateX(0);
   transition: transform 0.6s ease-in-out;
   color: #ffffff;
-  /* Brand purple (from the logo #482890), lightened a touch. Clearly purple,
-     not blue. Subtle brand-toned flares for depth. */
+  /* Brand purple (logo #482890), lightened, with brand-toned flares. */
   background-color: #7d4ee0;
   background-image:
     radial-gradient(at 22% 16%, rgba(186,168,253,0.40) 0px, transparent 55%),
     radial-gradient(at 84% 88%, rgba(91,45,176,0.45) 0px, transparent 55%);
 }
-/* Rising ledger papers — on-brand ambient (the "documents" drifting up), not
-   generic bubbles. Each is a small ruled sheet floating up at a slight tilt. */
 .ec-docs {
   position: absolute;
   inset: 0;
@@ -659,8 +634,7 @@ const SLIDER_CSS = `
   display: flex;
   align-items: center;
   justify-content: center;
-  /* Extra bottom padding lifts the vertically-centered text block up so it
-     reads as balanced against the illustration anchored at the bottom. */
+  /* Extra bottom padding lifts the text block above the bottom illustration. */
   padding: 40px 48px 22vh;
   overflow: hidden;
   transition: transform 0.6s ease-in-out;
@@ -732,8 +706,7 @@ const SLIDER_CSS = `
 @media (max-width: 900px) {
   .ec-chip { display: none; }
 }
-/* The whole thing hangs from a rope pinned to the top edge: it drops in once
-   on render, then swings like a pendulum around the pin (transform-origin top). */
+/* Hangs from a rope pinned to the top edge, then swings like a pendulum. */
 .ec-sticker-hang {
   position: absolute;
   top: 0;
@@ -751,16 +724,12 @@ const SLIDER_CSS = `
   align-items: center;
   transform-origin: top center;
   will-change: transform;
-  /* ease from rest into the first swing once, then a smooth alternating
-     pendulum (2 keyframes + alternate = fastest at center, no mid-swing stall) */
+  /* alternate keyframes keep the pendulum fastest at center, no mid-swing stall */
   animation:
     ec-swing-in 0.9s ease-in-out 1.85s both,
     ec-swing 1.8s ease-in-out 2.75s infinite alternate;
 }
-/* A single twined rope. The multi-stop diagonal gradient shades the twisted
-   strands; the inset side shadows round it into a cylinder. Revealed by scaling
-   from the top — a GPU transform, so no per-frame layout reflow = smooth. The
-   rope keeps a fixed height, so the sticker below never shifts during reveal. */
+/* Fixed height so the sticker never shifts; revealed via a GPU scale transform. */
 .ec-rope {
   display: block;
   width: 5px;
@@ -782,8 +751,7 @@ const SLIDER_CSS = `
   animation: ec-rope-grow 0.9s ease-out 0.25s both;
 }
 .ec-rope-cap {
-  /* metal eyelet where the rope pins to the "ceiling" (its own element so the
-     rope's scale-reveal doesn't squash it) */
+  /* separate element so the rope's scale-reveal doesn't squash the eyelet */
   position: absolute;
   top: -4px;
   left: 50%;
@@ -797,13 +765,10 @@ const SLIDER_CSS = `
   animation: ec-cap-in 0.3s ease-out 0.2s both;
 }
 .ec-sticker {
-  /* No card — the artwork (text + ribbon + calculator) floats directly on the
-     panel. Just keeps the slight 3D tilt and the fly-in. */
   padding: 4px;
   margin-top: -2px;
   transform: perspective(720px) rotateX(8deg) rotateY(-12deg);
-  /* flies in from the left as the rope finishes drawing down (slight overlap so
-     motion never fully stops), then settles onto the rope */
+  /* flies in as the rope finishes drawing down, slightly overlapping it */
   animation: ec-sticker-in 0.85s cubic-bezier(0.22, 1, 0.36, 1) 1.05s both;
 }
 .ec-sticker-inner {
@@ -817,8 +782,7 @@ const SLIDER_CSS = `
   text-transform: uppercase;
   line-height: 0.95;
   color: #16161d;
-  /* clean, subtle depth: two light faces + one tight low shadow. Just enough
-     lift to feel dimensional without going heavy or blackish. */
+  /* subtle depth: two light faces + one tight low shadow */
   text-shadow:
     0 1px 0 #d8d8df,
     0 2px 0 #c6c6cf,
@@ -842,15 +806,12 @@ const SLIDER_CSS = `
   font-size: 14px;
   letter-spacing: 0.3px;
   color: #ffffff;
-  /* glossy 3D ribbon: light top → deep bottom */
   background: linear-gradient(#7d8af6 0%, #4450dd 55%, #3540bf 100%);
   /* fishtail ribbon ends */
   clip-path: polygon(0 0, 100% 0, 91% 50%, 100% 100%, 0 100%, 9% 50%);
-  /* top sheen + dark outline, both clipped to the ribbon shape */
   box-shadow:
     inset 0 1.5px 0 rgba(255, 255, 255, 0.4),
     inset 0 0 0 2px #2c2ca0;
-  /* lift the ribbon off the page along the fishtail outline */
   filter: drop-shadow(0 3px 3px rgba(20, 8, 60, 0.4));
   text-shadow: 0 1px 1px rgba(0, 0, 0, 0.45);
 }

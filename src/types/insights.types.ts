@@ -1,7 +1,5 @@
-// Response shapes for the Insights snapshot API (FastAPI /api/v1/insights/*).
-// The KPI shapes below are the SUB-objects inside a snapshot `payload`
-// (GET /{company_id}/). Some fields (company_id/kpi/report_date/note) are only
-// present on the legacy live endpoints, so they're optional here.
+// Response shapes for the Insights snapshot API. The KPI shapes are sub-objects
+// of a snapshot `payload`; fields only on the legacy live endpoints are optional here.
 
 export interface ProfitabilityResponse {
   company_id?: string;
@@ -121,8 +119,7 @@ export interface BookkeepingHealthSnapshot {
   last_audit_at: string | null;
 }
 
-// Bank reconciliation — display-only, derived from Xero's IsReconciled flag on
-// bank transactions (not the raw feed). There is NO reconcile action.
+// Display-only, derived from Xero's IsReconciled flag (not the raw feed); no reconcile action.
 export interface BankReconciliation {
   total_transactions: number;
   unreconciled_count: number;
@@ -132,8 +129,6 @@ export interface BankReconciliation {
   /** ISO date of the most recent bank transaction; null if none. */
   most_recent_transaction: string | null;
 }
-
-// ── Snapshot envelope (GET /api/v1/insights/{company_id}/) ──────────────────
 
 export interface InsightsPayload {
   profitability: ProfitabilityResponse;
@@ -154,8 +149,6 @@ export interface ClientInsightsSnapshot {
   stale: boolean;
   payload: InsightsPayload | null;
 }
-
-// ── Firm overview / panorama (GET /api/v1/insights/firm-summary/) ───────────
 
 export interface FirmSummaryClient {
   company_id: string;

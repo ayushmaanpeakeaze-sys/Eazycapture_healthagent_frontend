@@ -9,9 +9,8 @@ interface TeamLoginPageProps {
 }
 
 /**
- * Dedicated team-member login page (route: /team-login). A clean single sign-in
- * card — no slider, no sign-up — reached from the "Log in as a team member"
- * link on the main login. Same backend login(); the JWT's role drives the UI.
+ * Dedicated team-member login page (route: /team-login). Same backend login();
+ * the JWT's role drives the UI.
  */
 export const TeamLoginPage = ({ onLoggedIn }: TeamLoginPageProps) => {
   const [email, setEmail] = useState("");
@@ -34,8 +33,7 @@ export const TeamLoginPage = ({ onLoggedIn }: TeamLoginPageProps) => {
       setError(res.error);
       return;
     }
-    // This page is team-members only. login() already stored the token, so if
-    // an admin (or any non-member) signs in here, undo it and bounce them.
+    // Team-members only: login() already stored the token, so undo it for others.
     if (res.data.role !== "team_member") {
       authStorage.clear();
       setLoading(false);

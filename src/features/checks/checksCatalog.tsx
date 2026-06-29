@@ -2,9 +2,8 @@ import { ReactNode } from "react";
 
 import { IssueType } from "../../types/audit.types";
 
-// The canonical catalog of bookkeeping checks, grouped. Each check maps to the
-// backend issue_type key; labels are the full, human names. This is the single
-// source of truth for the Checks directory + the per-check pages.
+// Canonical catalog of bookkeeping checks, keyed by backend issue_type. Single
+// source of truth for the Checks directory and the per-check pages.
 
 export interface CheckDef {
   key: IssueType;
@@ -296,7 +295,6 @@ export const CHECK_GROUPS: CheckGroup[] = [
   },
 ];
 
-// Flat lookup by issue_type key.
 export const CHECK_BY_KEY: Record<string, CheckDef & { group: string }> = (() => {
   const map: Record<string, CheckDef & { group: string }> = {};
   for (const g of CHECK_GROUPS) {
@@ -308,8 +306,7 @@ export const CHECK_BY_KEY: Record<string, CheckDef & { group: string }> = (() =>
 export const ALL_CHECKS: (CheckDef & { group: string })[] =
   CHECK_GROUPS.flatMap((g) => g.checks.map((c) => ({ ...c, group: g.group })));
 
-// Inherent importance of each check (independent of whether it found anything),
-// à la the reference's Critical / High / Medium "Importance" column.
+// Inherent importance of each check, independent of whether it found anything.
 export type Importance = "critical" | "high" | "medium";
 
 const IMPORTANCE: Record<string, Importance> = {

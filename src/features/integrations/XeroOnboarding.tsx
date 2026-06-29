@@ -1,10 +1,7 @@
 import { ConnectXeroButton } from "./ConnectXeroButton";
 import { DisconnectedOrgs } from "./DisconnectedOrgs";
 
-// First-run / empty state — shown when the firm has no active orgs. A big,
-// front-and-center "Connect to Xero" CTA. If the user actually has disconnected
-// orgs (not a brand-new account), the Disconnected section lets them reconnect
-// instead of starting fresh.
+// Empty state shown when the firm has no active orgs: a Connect-to-Xero CTA, plus a Disconnected section for returning users.
 export const XeroOnboarding = ({
   reloadKey = 0,
   onChanged,
@@ -21,7 +18,7 @@ export const XeroOnboarding = ({
         </svg>
       </div>
       <h2 className="mt-4 text-2xl font-semibold tracking-tight text-ink-900">
-        Welcome to EazyCapture 👋
+        Welcome to EazyCapture
       </h2>
       <p className="mx-auto mt-2 max-w-md text-sm text-ink-500">
         Connect your first Xero organisation to start auditing. We’ll import the
@@ -36,7 +33,6 @@ export const XeroOnboarding = ({
       </p>
     </div>
 
-    {/* Returning user who disconnected everything → let them reconnect. */}
     <DisconnectedOrgs reloadKey={reloadKey} onChanged={onChanged} defaultOpen />
   </div>
 );

@@ -6,11 +6,8 @@ import { createNangoConnectSession } from "@/services/integrations.service";
 
 type State = "idle" | "opening" | "importing" | "done" | "error" | "unavailable";
 
-// Nango's hosted Connect modal handles the Xero login + org picker. The backend
-// webhook (auth.creation) does the real work — creates a Company per org, runs
-// the initial sync + first audit. The browser `connect` event is just our UI
-// signal, so after it we poll companies-panorama until the org(s) land, then
-// reload into the clients view. Reconnect (expired token) uses this same flow.
+// The backend webhook (auth.creation) creates orgs and runs the first sync; the browser `connect` event is
+// only a UI signal, so we poll companies-panorama until the org(s) land. Reconnect uses the same flow.
 export const ConnectXeroButton = ({
   size = "sm",
 }: {
@@ -49,14 +46,12 @@ export const ConnectXeroButton = ({
     const ui = nango.openConnectUI({
       onEvent: (event: ConnectUIEvent) => {
         if (event.type === "connect") {
-          // OAuth done — backend is now creating orgs + syncing. Close the
-          // modal so our own "importing" state is visible, then poll.
+          // OAuth done; close the modal so our "importing" state shows, then poll.
           connectedRef.current = true;
           uiRef.current?.close();
           setState("importing");
           pollForOrgs().then(() => {
             setState("done");
-            // Reflect the new org(s) — reload into the clients panorama.
             window.location.assign("/clients");
           });
         } else if (event.type === "close") {
@@ -126,7 +121,6 @@ export const ConnectXeroButton = ({
   );
 };
 
-// Simple Xero-style disc mark (brand blue is applied by the button background).
 const XeroGlyph = ({ className }: { className?: string }) => (
   <svg viewBox="0 0 24 24" className={className} fill="currentColor" aria-hidden>
     <circle cx="12" cy="12" r="11" fill="currentColor" opacity="0.18" />

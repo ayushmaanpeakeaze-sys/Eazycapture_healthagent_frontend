@@ -46,8 +46,7 @@ const groupRows = (
   return groups;
 };
 
-// Split one CSV line into fields, honoring double-quoted values that may
-// contain commas and escaped ("") quotes.
+// Split a CSV line, honoring quoted values with commas and escaped ("") quotes.
 const splitCsvLine = (line: string): string[] => {
   const out: string[] = [];
   let cur = "";
@@ -78,8 +77,7 @@ const splitCsvLine = (line: string): string[] => {
   return out.map((f) => f.trim());
 };
 
-// Parse CSV with a header row into BatchTransaction[]. Header names are
-// matched case-insensitively; underscores/spaces are normalized.
+// Parse header-row CSV; header names match case-insensitively with normalized spaces/underscores.
 const parseCsv = (raw: string): BatchTransaction[] => {
   const lines = raw
     .split(/\r?\n/)
@@ -101,7 +99,6 @@ const parseCsv = (raw: string): BatchTransaction[] => {
   const idxInv = col("invoice_number");
   const idxAcct = col("current_account_code");
 
-  // Required columns must be present
   if (idxId < 0 || idxDate < 0 || idxDesc < 0 || idxVendor < 0) return [];
 
   const txs: BatchTransaction[] = [];

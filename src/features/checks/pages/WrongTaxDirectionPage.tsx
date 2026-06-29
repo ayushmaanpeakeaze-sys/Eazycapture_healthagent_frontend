@@ -58,8 +58,6 @@ const matchesRule = (r: HealthCheckResult, kind: string): boolean =>
   (r.result?.rule_ids ?? []).includes(kind) ||
   (r.result?.flagged ?? []).some((f) => f.issue_type === kind);
 
-// Sales Tax on Bills / Purchase Tax on Invoices — a wrong-direction VAT code.
-// Review: Edit-in-Xero / Dismiss / Ignore-contact, + "Show bank payments" toggle.
 export const WrongTaxDirectionPage = ({
   companyId,
   ruleId,
@@ -334,7 +332,7 @@ export const WrongTaxDirectionPage = ({
             ? "No dismissed items."
             : search
               ? "No matches for your search."
-              : "No wrong-direction tax items 🎉"}
+              : "No wrong-direction tax items"}
         </p>
       ) : (
         <div className="overflow-x-auto rounded-2xl border border-ink-100 bg-white shadow-card">

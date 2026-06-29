@@ -366,12 +366,8 @@ const flaggedFromRow = (row: HealthCheckResult): FlaggedIssue[] => {
   }));
 };
 
-/**
- * Renders the chart-of-accounts diff for a wrong_category flag.
- *   With both sides: "461 (Office Supplies) → 412 (Software Subscriptions)"
- *   When current_code is null (Xero invoice had no LineItems / no AccountCode):
- *   single-value: "→ 412 (Software Subscriptions)"
- */
+// Chart-of-accounts diff for a wrong_category flag. Falls back to a single
+// value when current_code is null (Xero invoice had no LineItems/AccountCode).
 const CategoryDiff = ({ issue }: { issue: FlaggedIssue }) => {
   const fmtSide = (
     code: string | null | undefined,
@@ -539,7 +535,6 @@ const FilterSidebar = ({
 }: FilterSidebarProps) => {
   return (
     <aside className="space-y-4 lg:sticky lg:top-4 lg:self-start">
-      {/* Severity */}
       <div className="overflow-hidden rounded-xl border border-ink-200 bg-white shadow-card">
         <div className="border-b border-ink-100 bg-ink-50/50 px-4 py-2.5">
           <p className="text-[10px] font-semibold uppercase tracking-wider text-ink-500">
@@ -599,7 +594,6 @@ const FilterSidebar = ({
         </ul>
       </div>
 
-      {/* Improvement checklist — semantically grouped */}
       <div className="overflow-hidden rounded-xl border border-ink-200 bg-white shadow-card">
         <div className="flex items-center justify-between border-b border-ink-100 bg-ink-50/50 px-4 py-2.5">
           <p className="text-[10px] font-semibold uppercase tracking-wider text-ink-500">
@@ -611,9 +605,8 @@ const FilterSidebar = ({
         </div>
         <div className="max-h-[60vh] overflow-y-auto">
           {(() => {
-            // Collect known types across all groups
             const knownTypes = new Set(ISSUE_GROUPS.flatMap((g) => g.types as string[]));
-            // Find any types from the actual data not in our known groups
+            // Surface data types not in our known groups under "Other".
             const unknownTypes = Object.keys(issueCounts).filter(
               (t) => !knownTypes.has(t) && (issueCounts[t as IssueType] ?? 0) > 0,
             );
@@ -641,7 +634,6 @@ const FilterSidebar = ({
                       const count = issueCounts[t] ?? 0;
                       const meta = ISSUE_META[t as IssueType] ?? ISSUE_META.anomaly;
                       if (count === 0 && !active) return null;
-                      // Humanize unknown types
                       const label = meta?.label ?? t.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
                       return (
                         <li key={t}>
@@ -712,15 +704,9 @@ interface TrappedInvoicesListProps {
   initialIssueType?: IssueType | null;
 }
 
-/**
- * Per-row AI enrichment panel. One enrichment record per transaction, shared
- * across all flagged issues for that row.
- *
- * States:
- *   ai present                      → render panel
- *   ai null + summary not ready yet → "AI insights pending…"
- *   ai null + summary ready         → "AI enrichment unavailable — rule output only"
- */
+// Per-row AI enrichment panel. One enrichment record per transaction, shared
+// across all flagged issues. Renders the panel when present, else a pending or
+// unavailable note depending on whether the summary is ready.
 const AI_SEVERITY_TONE: Record<
   AiEnrichment["severity_ai"],
   { badge: string; dot: string; label: string }
@@ -896,9 +882,8 @@ interface ActiveResolve {
   flaggedIndex: number;
 }
 
-// "Latest run" = rows whose ran_at is within this window of the newest row.
-// One audit stamps its rows close together; distinct runs are far apart, so a
-// few-minute window cleanly isolates the most recent sweep without merging runs.
+// "Latest run" = rows within this window of the newest row. A single sweep
+// stamps rows close together; distinct runs are far enough apart not to merge.
 const LATEST_RUN_WINDOW_MS = 5 * 60_000;
 
 export const TrappedInvoicesList = ({
@@ -918,9 +903,7 @@ export const TrappedInvoicesList = ({
     initialIssueType,
   );
 
-  // Sync with the drill-in target: apply it when arriving from an Insights KPI,
-  // and clear it when it becomes null (e.g. manual tab nav), so a stale KPI
-  // filter never lingers and silently empties the table.
+  // Track the drill-in target so a stale filter never lingers and empties the table.
   useEffect(() => {
     setIssueFilter(initialIssueType);
   }, [initialIssueType]);
@@ -966,15 +949,9 @@ export const TrappedInvoicesList = ({
     [rows],
   );
 
-  // (Sidebar facet counts are computed below — after latestCutoffMs — so they
-  //  can be cross-filtered against the active search / latest-run window.)
-
-  // "Latest run only" — rows from the most recent audit *that produced these
-  // rows*. We anchor on the newest row's own ran_at (NOT summary.last_audit_at,
-  // which tracks the latest audit overall — e.g. a narrow period run that
-  // flagged nothing — and can be days newer than the broadest sweep shown
-  // here). A generous window absorbs a single sweep stamping rows over minutes;
-  // distinct runs are far enough apart not to merge.
+  // Anchor "latest run" on the newest row's own ran_at, not
+  // summary.last_audit_at — that tracks the latest audit overall and can be days
+  // newer than the broadest sweep shown here.
   const newestRanAtMs = useMemo(() => {
     if (enriched.length === 0) return null;
     return Math.max(...enriched.map((x) => new Date(x.row.ran_at).getTime()));
@@ -1001,15 +978,9 @@ export const TrappedInvoicesList = ({
   const passIssue = (x: Enriched) =>
     !issueFilter || x.issues.some((i) => i.issue_type === issueFilter);
 
-  // Sidebar facet counts — CROSS-FILTERED so the number shown always equals what
-  // you get when you click it. Each facet is counted within every *other* active
-  // filter, but NOT itself:
-  //   severityCounts: rows whose worst severity is X, within the active issue +
-  //                   search + latest-run filters.
-  //   issueCounts:    rows containing issue type X, within the active severity +
-  //                   search + latest-run filters.
-  // (Previously these counted all rows, so e.g. "Medium 36" could yield 0 rows
-  //  once an issue-type filter was also active.)
+  // Sidebar facet counts, cross-filtered so a shown number equals what you get
+  // when you click it: each facet is counted within every other active filter
+  // but not itself.
   const { severityCounts, issueCounts } = useMemo(() => {
     const sev: Record<Severity, number> = { critical: 0, high: 0, medium: 0 };
     const ity: Record<string, number> = {};

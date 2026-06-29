@@ -17,7 +17,7 @@ const matchesRule = (r: HealthCheckResult): boolean =>
   (r.result?.rule_ids ?? []).includes(RULE) ||
   (r.result?.flagged ?? []).some((f) => f.issue_type === RULE);
 
-// "Most recent transaction" date — null = never used.
+// null last_activity_date → never used.
 const recentTxn = (r: HealthCheckResult): string => {
   const raw = flagFor(r)?.last_activity_date;
   if (!raw) return "Never";
@@ -31,13 +31,12 @@ const recentTxn = (r: HealthCheckResult): string => {
       });
 };
 
-// "Age (days)" — null = never used.
 const ageText = (r: HealthCheckResult): string => {
   const a = flagFor(r)?.age_days;
   return a == null ? "Never" : `${a} days`;
 };
 
-// Inactive Contacts — contacts with no recent activity. View / Archive / Dismiss.
+// Contacts with no recent activity.
 export const InactiveContactsPage = ({
   companyId,
   refreshKey = 0,
@@ -220,7 +219,7 @@ export const InactiveContactsPage = ({
             ? "No dismissed contacts."
             : search
               ? "No matches for your search."
-              : "No inactive contacts 🎉"}
+              : "No inactive contacts"}
         </p>
       ) : (
         <div className="overflow-x-auto rounded-2xl border border-ink-100 bg-white shadow-card">

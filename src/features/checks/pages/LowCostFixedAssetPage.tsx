@@ -57,8 +57,7 @@ const matchesRule = (r: HealthCheckResult): boolean =>
   (r.result?.rule_ids ?? []).includes(RULE) ||
   (r.result?.flagged ?? []).some((f) => f.issue_type === RULE);
 
-// Low Cost Fixed Asset — capital items below the threshold posted to a
-// fixed-asset account (consider expensing). Review + Dismiss, optional re-code.
+// Capital items below the threshold posted to a fixed-asset account; consider expensing.
 export const LowCostFixedAssetPage = ({
   companyId,
   refreshKey = 0,
@@ -270,7 +269,7 @@ export const LowCostFixedAssetPage = ({
             ? "No dismissed items."
             : search
               ? "No matches for your search."
-              : "No low-cost fixed assets 🎉"}
+              : "No low-cost fixed assets"}
         </p>
       ) : (
         <div className="overflow-x-auto rounded-2xl border border-ink-100 bg-white shadow-card">

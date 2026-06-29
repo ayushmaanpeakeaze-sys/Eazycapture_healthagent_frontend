@@ -1,10 +1,8 @@
 import { CSSProperties } from "react";
 
 /**
- * Rising ledger papers — the on-brand ambient (small ruled sheets drifting up
- * at slight tilts) used on auth purple panels. Self-contained (markup + scoped
- * <style>) so any panel can drop it in. Pin inside a `relative; overflow:hidden`
- * container.
+ * Rising ledger papers used on auth purple panels. Self-contained (markup +
+ * scoped <style>); pin inside a `relative; overflow:hidden` container.
  */
 const PAPERS = [
   { left: "10%", w: 46, dur: 18, delay: 0, rot: -8 },

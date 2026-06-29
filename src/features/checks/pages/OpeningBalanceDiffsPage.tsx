@@ -36,8 +36,6 @@ const shortDate = (iso: string | null | undefined) => {
   });
 };
 
-// Opening Balance Differences — Xero net assets vs filed (Companies House /
-// manual) at each period end, with a late-transactions drill-down.
 export const OpeningBalanceDiffsPage = ({
   companyId,
   refreshKey = 0,
@@ -151,7 +149,6 @@ export const OpeningBalanceDiffsPage = ({
         )}
       </div>
 
-      {/* Companies House setup prompt */}
       {needsSetup && (
         <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-900">
           <p className="font-semibold">Companies House not connected</p>
@@ -191,7 +188,7 @@ export const OpeningBalanceDiffsPage = ({
         </p>
       ) : items.length === 0 ? (
         <p className="rounded-2xl border border-ink-100 bg-white px-5 py-10 text-center text-sm italic text-ink-400 shadow-card">
-          {showAll ? "No dismissed periods." : "Opening balances tie out 🎉"}
+          {showAll ? "No dismissed periods." : "Opening balances tie out"}
         </p>
       ) : (
         <div className="overflow-x-auto rounded-2xl border border-ink-100 bg-white shadow-card">
@@ -360,8 +357,6 @@ export const OpeningBalanceDiffsPage = ({
     </div>
   );
 };
-
-// ── Late transactions modal (lazy-loaded, "Show more" paged) ─────────────────
 
 const PAGE = 5;
 

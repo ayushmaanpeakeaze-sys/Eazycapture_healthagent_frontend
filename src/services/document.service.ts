@@ -34,11 +34,7 @@ export class DocumentServiceError extends Error {
   }
 }
 
-/**
- * Turn whatever a backend stuffs into `detail` into a readable string.
- * Handles FastAPI's `detail: [{loc, msg, type}]` arrays and `{message|error}`
- * objects, so error banners never render the dreaded "[object Object]".
- */
+/** Coerce FastAPI's `detail` (string | array | object) into a readable string. */
 const formatDetail = (detail: unknown, fallback: string): string => {
   if (detail == null) return fallback;
   if (typeof detail === "string") return detail;
@@ -96,19 +92,7 @@ export const validateInvoice = async (
   }
 };
 
-/**
- * Pre-Ledger Firewall precheck — the production publish-time gate.
- *
- * Frontend → Django: POST /accounting/health/precheck/
- *   body:   { publishing_document_id, publishing_document_type }
- *   header: Authorization: Bearer ${jwt}      (injected by apiClient)
- *
- * Django loads the document, formats the FastAPI payload, calls FastAPI's
- * /api/v1/validate-invoice internally, and returns { blocked, result }.
- *
- * - blocked === true  → publish is blocked, show result.validation_errors
- * - blocked === false → ok to push to Xero
- */
+/** Publish-time gate: returns { blocked, result }; blocked === true shows validation_errors. */
 export const precheckPublishingDocument = async (
   payload: PrecheckRequest,
 ): Promise<PrecheckResponse> => {
@@ -123,10 +107,7 @@ export const precheckPublishingDocument = async (
   }
 };
 
-/**
- * List persisted firewall results — every precheck/publish attempt is saved.
- * GET /accounting/health/results/?status=&kind=&document_id=&company_id=&limit=
- */
+/** List persisted firewall results — every precheck/publish attempt is saved. */
 export const fetchHealthCheckResults = async (
   query: HealthCheckResultsQuery = {},
 ): Promise<HealthCheckResultsResponse> => {
@@ -151,12 +132,7 @@ export const fetchHealthCheckResults = async (
   }
 };
 
-/**
- * Org's valid tax rates for the invalid_tax_code / missing_tax dropdowns.
- * GET /accounting/tax-rate/list/?company_id=<uuid>&page=1&limit=100
- * Use tax_type as the value sent back to /resolve/, name as the display label.
- * Filter to status === "active" + can_apply_to_expenses (bills) or can_apply_to_revenue (invoices).
- */
+/** Org's valid tax rates for the tax-code dropdowns; send tax_type to /resolve/, show name. */
 export const fetchTaxRates = async (
   companyId: string,
   limit = 100,
@@ -173,11 +149,7 @@ export const fetchTaxRates = async (
   }
 };
 
-/**
- * AI enrichment status for a completed audit batch.
- * Django reads Redis (health_check_ai:* + xero_historical_audit_batch:{id}._meta.audit_summary)
- * and returns a snapshot. Poll until status === "complete" && ai_summary_ready.
- */
+/** AI enrichment status for a completed batch — poll until status complete && ai_summary_ready. */
 export const fetchAiStatus = async (
   batchId: string,
 ): Promise<AiStatusResponse> => {
@@ -191,15 +163,7 @@ export const fetchAiStatus = async (
   }
 };
 
-/**
- * Ask the AI to draft a fix plan for a single trapped row.
- * Django proxies to FastAPI's /api/v1/suggest-fix synchronously (~1–3s).
- *
- * Canonical URL: /accounting/health/trapped/{row_id}/suggest-fix/ (matches
- * /trapped/{id}/resolve/ and /trapped/{id}/dismiss/). Backend keeps a
- * /results/ alias for backward compat — both GET and POST work — but new
- * code should use the canonical /trapped/ path.
- */
+/** Ask the AI to draft a fix plan for a single trapped row (synchronous). */
 export const suggestFix = async (
   rowId: string,
   companyId: string,
@@ -214,18 +178,7 @@ export const suggestFix = async (
   }
 };
 
-/**
- * Apply the AI-drafted fix straight to Xero through Django.
- * Optionally pass the suggestion you've already shown in the modal to skip
- * a second LLM call (and avoid non-determinism between the two calls).
- *
- * Possible outcomes (mapped to ApplyAiFixResult):
- *   200 ok=true              — fix landed, row marked resolved
- *   400 LINE_ITEM_FIX_NOT_SUPPORTED — line-item fields not in allow-list (Phase 2)
- *   400 NO_FIELD_UPDATES     — no top-level updates derivable from the suggestion
- *   400 XERO_REJECTED        — Xero refused; xero_response carries the reason
- *   503 AI_UNAVAILABLE       — LLM couldn't draft a suggestion
- */
+/** Apply the AI-drafted fix to Xero. Pass the shown suggestion to skip a second LLM call. */
 const KNOWN_ERROR_CODES: ApplyAiFixErrorCode[] = [
   "LINE_ITEM_FIX_NOT_SUPPORTED",
   "NO_FIELD_UPDATES",
@@ -282,12 +235,7 @@ export const applyAiFix = async (
   }
 };
 
-/**
- * Resolve a single trapped health-check row.
- * POST /accounting/health/trapped/{row_id}/resolve/
- * After success the row is marked result.resolved = true and disappears from
- * the default trapped feed; it stays in DB for audit.
- */
+/** Resolve a trapped row — marks resolved=true and drops it from the default feed (kept in DB). */
 export const resolveHealthCheckRow = async (
   rowId: string,
   companyId: string,
@@ -304,10 +252,7 @@ export const resolveHealthCheckRow = async (
   }
 };
 
-/**
- * Mark a trapped row as a false positive — drops it from the feed.
- * POST /trapped/{row_id}/dismiss/?company_id={uuid}
- */
+/** Mark a trapped row as a false positive — drops it from the feed. */
 export const dismissTrapped = async (
   rowId: string,
   companyId: string,

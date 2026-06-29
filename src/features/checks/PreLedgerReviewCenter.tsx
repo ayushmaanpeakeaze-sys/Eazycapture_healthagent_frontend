@@ -380,11 +380,8 @@ export const PreLedgerReviewCenter = ({
     setLoading(true);
     setError(null);
     try {
-      // Pre-checks tab shows only OUTBOUND publish reviews:
-      //   - kind === "preview"     (sandbox / test publish)
-      //   - kind === "pre_ledger"  (at-publish gate from EazyCapture)
-      // Post-ledger rows belong on the Checks / Trapped feed.
-      // Fetch all statuses (passed + blocked) so users see what cleared too.
+      // Outbound publish reviews only (kind preview | pre_ledger); post-ledger
+      // rows live on the Trapped feed. All statuses, so cleared rows show too.
       const res = await fetchHealthCheckResults({
         company_id: companyId,
         limit: 100,

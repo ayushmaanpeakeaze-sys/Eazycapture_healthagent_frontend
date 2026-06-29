@@ -165,7 +165,7 @@ export interface MatchReasons {
   tax_code?: string | null;
 }
 
-/** The ✓/✗ columns for one contact in a duplicate-contact match. */
+/** The status columns for one contact in a duplicate-contact match. */
 export interface ContactHelper {
   has_invoices: boolean;
   has_bills: boolean;
@@ -199,7 +199,7 @@ export interface FlaggedIssue {
   contact_name?: string | null;
   partner_id?: string | null;
   partner_name?: string | null;
-  /** Xenon "Similarity %" = name_similarity × 100. */
+  /** "Similarity %" = name_similarity × 100. */
   name_similarity?: number | null;
   vat_status?: "match" | "mismatch" | "unknown" | string;
   /** Customer/Supplier split — review, don't merge. */
@@ -209,9 +209,9 @@ export interface FlaggedIssue {
   last_activity_date?: string | null;
   /** Days since last activity, or null = never used. */
   age_days?: number | null;
-  /** ✓/✗ columns for the subject (this) contact. */
+  /** Status columns for the subject (this) contact. */
   helper?: ContactHelper | null;
-  /** ✓/✗ columns for the partner contact — render the 2nd line from this. */
+  /** Status columns for the partner contact — render the 2nd line from this. */
   partner_helper?: ContactHelper | null;
 }
 
@@ -313,11 +313,7 @@ export interface OutboundDemoSummary {
   duplicate_groups: number;
 }
 
-/**
- * POST /api/v1/demo/run-outbound — seeds an instant demo batch.
- * Returns 4 keys: transactions[], flagged[] (flat), flags_by_txn{}
- * (pre-grouped by transaction_id), and summary{}.
- */
+/** Response from the run-outbound demo batch. */
 export interface OutboundDemoResponse {
   transactions?: BatchTransaction[];
   flagged?: FlaggedIssue[];
@@ -440,11 +436,7 @@ export interface HealthCheckResult {
   error_msgs: string | null;
   result: HealthCheckResultPayload | null;
   ran_at: string;
-  /**
-   * Per-transaction AI enrichment from Redis. One record per transaction_id
-   * (NOT per flagged issue). Null when enrichment hasn't landed yet or
-   * failed for this row.
-   */
+  /** AI enrichment — one record per transaction_id (NOT per flagged issue); null until it lands. */
   ai?: AiEnrichment | null;
   /** Deep-link to this document in Xero — always present (manual fallback). */
   xero_url?: string | null;
@@ -507,18 +499,9 @@ export interface ApplyAiFixFailure {
   ok: false;
   error_code: ApplyAiFixErrorCode;
   error: string;
-  /**
-   * Human-friendly explanation from the backend (e.g. for XERO_REJECTED:
-   * "The status VOIDED cannot be applied to the invoice because it has
-   *  payments or credit notes allocated to it.")
-   * Preferred over walking xero_response when present.
-   */
+  /** Human-friendly explanation from the backend; preferred over walking xero_response. */
   error_detail?: string;
-  /**
-   * Deep-link to the document in Xero — backend includes this on
-   * MANUAL_FIX_REQUIRED / NO_SUPPORTED_FIELDS / NO_FIELD_UPDATES (and
-   * sometimes XERO_REJECTED) so the UI can offer a guaranteed manual path.
-   */
+  /** Deep-link to the document in Xero, so the UI can offer a guaranteed manual path. */
   xero_url?: string;
   xero_response?: unknown;
 }
@@ -602,10 +585,7 @@ export interface LedgerHealthSummaryTopIssue {
   message?: string;
 }
 
-/**
- * GET /api/v1/health/stats/?company_id=<id>
- * Per-client aggregate counts for the Insights dashboard.
- */
+/** Per-client aggregate counts for the Insights dashboard. */
 export interface HealthStatsIssueTypeRow {
   issue_type: string;
   count: number;
@@ -622,11 +602,7 @@ export interface HealthStatsResponse {
   health_score: number | null;
   total_issues: number;
   open_issues: number;
-  /**
-   * Open issues split by what they're attached to. Documents (invoices/bills)
-   * drive the health score; contacts are a separate hygiene pool and are NOT
-   * part of `audited_documents`. Both optional for older backends.
-   */
+  /** Documents drive the health score; contacts are a separate pool, NOT in audited_documents. */
   open_document_issues?: number;
   open_contact_issues?: number;
   /** Documents audited in the broadest completed audit. */

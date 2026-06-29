@@ -12,17 +12,7 @@ export type ConnectSessionResult =
   | { ok: true; session: NangoConnectSession }
   | { ok: false; status?: number; error: string };
 
-/**
- * Ask our backend for a Nango Connect session token (the signed-in accountant's
- * JWT is attached by the axios interceptor). The modal is then authorised with
- * this token — no Nango keys ever touch the client.
- *
- * Backend: POST /api/v1/integrations/nango/connect-session/?provider=xero
- *   200 → { data: { token, expires_at } }
- *   401 → JWT missing/expired (send to login)
- *   503 → Nango not configured on this deployment (hide/disable the button)
- *   502 → Nango refused the call (retry)
- */
+/** Fetch a Nango Connect session token to authorise the hosted OAuth modal — no Nango keys touch the client. */
 export const createNangoConnectSession = async (
   provider = "xero",
 ): Promise<ConnectSessionResult> => {

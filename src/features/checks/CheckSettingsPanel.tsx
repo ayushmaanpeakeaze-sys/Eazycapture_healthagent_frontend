@@ -18,17 +18,15 @@ const DUP_CHECKS = new Set([
   "duplicate_credit_note",
 ]);
 
-// Checks that reuse another check's settings schema. Duplicate settings are
-// stored globally by field key and drive one duplicate engine, so duplicate
-// bills share the duplicate-invoice knobs. The master on/off toggle still
-// targets the scoped check itself (see the re-key below).
+// Checks that reuse another's schema: duplicate settings are stored globally by
+// field key and drive one engine, so duplicate bills share the invoice knobs.
+// The master on/off toggle still targets the scoped check (see re-key below).
 export const SETTINGS_ALIAS: Record<string, string> = {
   duplicate_bill: "duplicate_invoice",
   duplicate_credit_note: "duplicate_invoice",
 };
 
-// When a check borrows another's schema, swap the noun so the copy reads right
-// (duplicate bills reuse the duplicate-invoice fields but should say "bill").
+// When a check borrows another's schema, swap the noun so the copy reads right.
 const SETTINGS_NOUN: Record<string, { from: RegExp; to: string }[]> = {
   duplicate_bill: [
     { from: /\bInvoices\b/g, to: "Bills" },
@@ -54,9 +52,8 @@ const relabel = (
   return subs.reduce((acc, s) => acc.replace(s.from, s.to), text);
 };
 
-// Backend-driven check settings (rendered from audit-config `settings_schema`
-// + `groups`). Used as a drawer on the Checks landing (all checks) or scoped to
-// one check from its full page. Save → optionally re-run the audit.
+// Backend-driven check settings rendered from audit-config `settings_schema` +
+// `groups`. Used as the Checks-landing drawer or scoped to one check.
 export const CheckSettingsPanel = ({
   companyId,
   onClose,
@@ -116,9 +113,8 @@ export const CheckSettingsPanel = ({
     return m;
   }, [cfg]);
 
-  // Resolve any alias, then re-key the matched entry to the scoped check so the
-  // master on/off toggle targets the right rule (e.g. duplicate_bill) while the
-  // fields stay the shared duplicate-engine knobs.
+  // Resolve any alias, then re-key the entry to the scoped check so the on/off
+  // toggle targets the right rule while the fields stay the shared engine knobs.
   const resolved = scopeCheck ? SETTINGS_ALIAS[scopeCheck] ?? scopeCheck : null;
   const schema = (cfg?.settings_schema ?? [])
     .filter((e) => !resolved || e.check === resolved)
@@ -205,8 +201,7 @@ export const CheckSettingsPanel = ({
   };
 
   const busy = saving || running;
-  // Duplicate checks only change the cards after a re-run, so a bare "Save" is
-  // pointless there — show just "Save & run check".
+  // Duplicate checks only update after a re-run, so a bare "Save" is pointless.
   const isDup = !!scopeCheck && DUP_CHECKS.has(scopeCheck);
 
   return (
@@ -318,8 +313,6 @@ export const CheckSettingsPanel = ({
     </div>
   );
 };
-
-// ── Field control by type ────────────────────────────────────────────────────
 
 const FieldControl = ({
   field,

@@ -37,8 +37,8 @@ const endOfThisMonth = (): string => {
   ).padStart(2, "0")}`;
 };
 
-// Bank Balance Check — one card per account: ledger (Xero TB) vs the manually
-// entered statement balance at a chosen period end. Process / Mark-OK / exclude.
+// One card per account: ledger (Xero TB) vs the manually entered statement
+// balance at a chosen period end.
 export const BankBalanceCheckPage = ({
   companyId,
   refreshKey = 0,
@@ -165,7 +165,7 @@ export const BankBalanceCheckPage = ({
         </p>
       ) : items.length === 0 ? (
         <p className="rounded-2xl border border-ink-100 bg-white px-5 py-10 text-center text-sm italic text-ink-400 shadow-card">
-          All bank balances reconcile 🎉
+          All bank balances reconcile
         </p>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">

@@ -119,8 +119,7 @@ export const confirmContactDefault = async (
       `/contact-defaults/${encodeURIComponent(contactId)}/confirm/?company_id=${encodeURIComponent(companyId)}`,
       changed,
     );
-    // The write path to Xero isn't fully validated yet — treat ok:false as a
-    // soft failure the user can retry, not a crash.
+    // Treat ok:false as a soft failure the user can retry, not a crash.
     if (data.ok === false || data.error)
       return {
         ok: false,

@@ -1,7 +1,6 @@
 import { ReactNode, useState } from "react";
 
-// Same brand purple as the main slider panel, so /team-login
-// and /accept-invite match the primary login.
+// Same brand purple as the main slider panel.
 const PANEL_BG: React.CSSProperties = {
   backgroundColor: "#7d4ee0",
   backgroundImage:
@@ -21,10 +20,7 @@ interface AuthShellProps {
 }
 
 /**
- * Split-screen auth layout: purple brand panel on the left (logo + tagline +
- * illustration), form on the right. Drop an illustration at
- * public/auth-illustration.png to fill the left panel; an abstract brand
- * composition shows until then.
+ * Split-screen auth layout: purple brand panel on the left, form on the right.
  */
 export const AuthShell = ({
   title,
@@ -36,12 +32,11 @@ export const AuthShell = ({
 
   return (
     <div className="flex h-screen w-full overflow-hidden bg-white">
-      {/* LEFT — brand panel (hidden on small screens) */}
+      {/* Left brand panel (hidden below lg) */}
       <div
         className="relative hidden w-1/2 flex-col overflow-hidden p-10 text-white lg:flex"
         style={PANEL_BG}
       >
-        {/* ambient shapes */}
         <span
           aria-hidden
           className="pointer-events-none absolute -right-16 top-10 h-64 w-64 rounded-full bg-white/10 blur-3xl"
@@ -51,14 +46,12 @@ export const AuthShell = ({
           className="pointer-events-none absolute -bottom-20 -left-10 h-72 w-72 rounded-full bg-white/10 blur-3xl"
         />
 
-        {/* logo */}
         <img
           src="/eazycapture-logo-white.png"
           alt="EazyCapture"
           className="relative h-7 w-auto self-start"
         />
 
-        {/* tagline */}
         <div className="relative mt-12 max-w-sm">
           <h2 className="font-display text-3xl leading-tight tracking-tight">
             {title}
@@ -68,10 +61,7 @@ export const AuthShell = ({
           </p>
         </div>
 
-        {/* illustration — pre-processed white line-art on a transparent
-            background (auth-illustration-white.png), drawn plainly so it reads
-            as a clean sketch on the panel (no blend-mode fragility / black box).
-            Falls back to the built-in SVG. */}
+        {/* White line-art illustration; falls back to the built-in SVG. */}
         <div className="relative mt-auto flex items-end justify-center">
           {imgOk ? (
             <img
@@ -86,11 +76,11 @@ export const AuthShell = ({
         </div>
       </div>
 
-      {/* RIGHT — form */}
+      {/* Right form panel */}
       <div className="relative flex w-full items-center justify-center overflow-y-auto px-6 py-10 lg:w-1/2">
         {sticker}
         <div className="w-full max-w-sm">
-          {/* mobile logo (left panel is hidden < lg) */}
+          {/* Mobile-only logo */}
           <img
             src="/eazycapture-logo.png"
             alt="EazyCapture"
@@ -140,32 +130,25 @@ const AuditArt = () => (
     fill="none"
     aria-hidden
   >
-    {/* soft ground glow */}
     <ellipse cx="180" cy="250" rx="150" ry="18" fill="rgba(255,255,255,0.08)" />
 
-    {/* back ledger sheet */}
     <g transform="rotate(-6 120 140)">
       <rect x="48" y="70" width="150" height="190" rx="12" fill="rgba(255,255,255,0.12)" />
       <rect x="48" y="70" width="150" height="190" rx="12" stroke="rgba(255,255,255,0.25)" strokeWidth="1.5" />
     </g>
 
-    {/* main audited document */}
     <rect x="96" y="48" width="168" height="210" rx="14" fill="#ffffff" />
     <rect x="96" y="48" width="168" height="210" rx="14" stroke="rgba(255,255,255,0.6)" strokeWidth="1.5" />
-    {/* doc header bar */}
     <rect x="118" y="74" width="74" height="10" rx="5" fill="#7142ee" />
-    {/* doc rows */}
     {[110, 132, 154, 176].map((y) => (
       <g key={y}>
         <rect x="118" y={y} width="92" height="7" rx="3.5" fill="#e6dcff" />
         <rect x="222" y={y} width="24" height="7" rx="3.5" fill="#cdb8ff" />
       </g>
     ))}
-    {/* total row */}
     <rect x="118" y="200" width="60" height="9" rx="4.5" fill="#c4b5fd" />
     <rect x="206" y="198" width="40" height="13" rx="6" fill="#7142ee" />
 
-    {/* approved check badge */}
     <circle cx="250" cy="206" r="34" fill="#10b981" />
     <circle cx="250" cy="206" r="34" stroke="rgba(255,255,255,0.5)" strokeWidth="3" />
     <path
@@ -177,7 +160,6 @@ const AuditArt = () => (
       fill="none"
     />
 
-    {/* magnifying glass — the "audit" motif */}
     <g transform="translate(60 150)">
       <circle cx="34" cy="34" r="30" fill="rgba(255,255,255,0.16)" />
       <circle cx="34" cy="34" r="30" stroke="#ffffff" strokeWidth="5" fill="none" />
@@ -190,7 +172,6 @@ const AuditArt = () => (
         strokeWidth="8"
         strokeLinecap="round"
       />
-      {/* tiny rising bars inside the lens */}
       <rect x="22" y="38" width="6" height="10" rx="2" fill="#ffffff" />
       <rect x="31" y="30" width="6" height="18" rx="2" fill="#ffffff" />
       <rect x="40" y="24" width="6" height="24" rx="2" fill="#ffffff" />

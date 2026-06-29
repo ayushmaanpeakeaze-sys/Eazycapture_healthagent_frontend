@@ -150,7 +150,7 @@ export const TeamActivityView = ({ onPickClient }: TeamActivityViewProps) => {
           at: u.created_at ?? null,
         });
       } else {
-        // active team member = accepted the invite
+        // Active team member has accepted the invite.
         out.push({
           id: `${u.id}-joined`,
           kind: "joined",
@@ -213,7 +213,6 @@ export const TeamActivityView = ({ onPickClient }: TeamActivityViewProps) => {
         </div>
       )}
 
-      {/* Stat cards */}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatCard label="Active members" value={stats.active} />
         <StatCard label="Pending invites" value={stats.pending} accent="amber" />
@@ -232,7 +231,6 @@ export const TeamActivityView = ({ onPickClient }: TeamActivityViewProps) => {
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">
-        {/* Team & invitations */}
         <section className="lg:col-span-3">
           <h3 className="mb-2 text-sm font-semibold text-ink-700">
             Team &amp; invitations
@@ -295,7 +293,6 @@ export const TeamActivityView = ({ onPickClient }: TeamActivityViewProps) => {
           </div>
         </section>
 
-        {/* Connected ledgers */}
         <section className="lg:col-span-2">
           <h3 className="mb-2 text-sm font-semibold text-ink-700">
             Connected ledgers
@@ -361,8 +358,6 @@ export const TeamActivityView = ({ onPickClient }: TeamActivityViewProps) => {
     </div>
   );
 };
-
-/* -------------------------------- helpers -------------------------------- */
 
 const StatCard = ({
   label,

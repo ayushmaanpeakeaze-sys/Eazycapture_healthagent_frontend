@@ -22,7 +22,6 @@ export const SettingsView = () => {
         </p>
       </header>
 
-      {/* ACCOUNT */}
       <section className="relative overflow-hidden rounded-2xl border border-ink-200 bg-white p-6 shadow-float">
         <span
           aria-hidden
@@ -69,7 +68,6 @@ export const SettingsView = () => {
         </div>
       </section>
 
-      {/* ROADMAP */}
       <section className="rounded-2xl border border-ink-200 bg-white p-5 shadow-card">
         <h2 className="text-sm font-semibold text-ink-900">On the roadmap</h2>
         <p className="mt-1 text-xs text-ink-500">
@@ -102,8 +100,6 @@ export const SettingsView = () => {
     </div>
   );
 };
-
-/* --------------------------------- bits --------------------------------- */
 
 const ROADMAP = [
   {

@@ -60,8 +60,8 @@ const IMP_STYLE: Record<Importance, { label: string; chip: string }> = {
   medium: { label: "Medium", chip: "bg-amber-50 text-amber-700 ring-amber-200" },
 };
 
-// A duplicate match is a PAIR of rows = ONE issue. The backend counts rows, so
-// fold duplicate counts to matches (round up for an orphaned partner row).
+// A duplicate match is a pair of rows = one issue, but the backend counts rows,
+// so fold to matches (round up for an orphaned partner row).
 const DUP_KEYS = new Set([
   "duplicate_invoice",
   "duplicate_bill",
@@ -73,9 +73,8 @@ const issueCount = (key: string, rawRows: number) =>
 
 type CheckFilter = "all" | "attention" | "critical" | "high" | "medium";
 
-// "Bookkeeping Health Check Overview": main = detailed-results list where View
-// Issues opens an inline dropdown of that check's issues; side = the full list
-// of checks (tap → that check's dedicated page).
+// Checks overview: main column lists detailed results with an inline expand;
+// side lists every check (tap → its dedicated page).
 export const ChecksDirectory = ({
   companyId,
   refreshKey = 0,
@@ -88,12 +87,11 @@ export const ChecksDirectory = ({
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<CheckFilter>("all");
   const [expanded, setExpanded] = useState<string | null>(null);
-  // Checks that expose backend-driven settings (from audit-config schema).
   const [configurable, setConfigurable] = useState<Set<string>>(new Set());
   const [settingsCheck, setSettingsCheck] = useState<string | null>(null);
   const [nonce, setNonce] = useState(0);
-  // Bank checks whose real counts live in dedicated endpoints, NOT the audit
-  // feed (by_issue_type = 0 for them). Without this they'd show a false "OK".
+  // Bank checks whose real counts live in dedicated endpoints, not the audit
+  // feed (by_issue_type = 0), which would otherwise show a false "OK".
   const [extraCounts, setExtraCounts] = useState<Record<string, number>>({});
 
   useEffect(() => {
@@ -111,8 +109,7 @@ export const ChecksDirectory = ({
     };
   }, [companyId, refreshKey, nonce]);
 
-  // Real counts for the dedicated-endpoint bank checks (the audit feed reports 0
-  // for these, so the list would otherwise show a misleading "OK"). Best-effort.
+  // Real counts for the dedicated-endpoint bank checks (best-effort).
   useEffect(() => {
     let active = true;
     Promise.all([
@@ -136,8 +133,7 @@ export const ChecksDirectory = ({
     fetchAuditConfig(companyId).then((c) => {
       if (!active || !c) return;
       const own = new Set((c.settings_schema ?? []).map((e) => e.check));
-      // Checks that reuse another's schema (e.g. duplicate_bill) are also
-      // configurable once their target has a schema.
+      // Aliased checks (e.g. duplicate_bill) are configurable once their target has a schema.
       const conf = new Set(own);
       for (const [alias, target] of Object.entries(SETTINGS_ALIAS))
         if (own.has(target)) conf.add(alias);
@@ -154,8 +150,7 @@ export const ChecksDirectory = ({
     return m;
   }, [stats]);
 
-  // A check's issue count: dedicated-endpoint count if we have one (bank checks),
-  // else the audit-feed count (duplicate pairs folded to matches).
+  // Dedicated-endpoint count if we have one, else the audit-feed count.
   const countFor = (key: string) =>
     extraCounts[key] ?? issueCount(key, byType[key] ?? 0);
 
@@ -185,8 +180,7 @@ export const ChecksDirectory = ({
         ? r.count > 0
         : r.importance === filter,
   );
-  // Sum the per-check counts (duplicates already folded to matches) so the
-  // headline agrees with the rows — a duplicate pair is one issue, not two.
+  // Sum per-check counts (duplicates folded) so the headline agrees with rows.
   const totalIssues = rows.reduce((a, r) => a + r.count, 0);
   const itemsChecked =
     (stats?.audited_documents ?? 0) + (stats?.audited_contacts ?? 0);
@@ -196,7 +190,6 @@ export const ChecksDirectory = ({
 
   return (
     <div className="grid gap-5 lg:grid-cols-[250px_1fr]">
-      {/* LEFT — gauge + every check (tap → dedicated page) */}
       <aside className="space-y-4">
         <div className="rounded-2xl border border-ink-100 bg-white p-5 text-center shadow-card">
           <Gauge score={checksHealth} />
@@ -251,7 +244,6 @@ export const ChecksDirectory = ({
         </div>
       </aside>
 
-      {/* MAIN — tiles + filter pills + detailed results (inline expand) */}
       <div className="space-y-4">
         <div className="grid grid-cols-3 gap-3">
           <BasisTile label="Items checked" value={loading ? "—" : itemsChecked || "—"} />
@@ -332,8 +324,6 @@ export const ChecksDirectory = ({
   );
 };
 
-// ── Row (with inline expandable issues) ──────────────────────────────────────
-
 const CheckRow = ({
   companyId,
   checkKey,
@@ -399,7 +389,6 @@ const CheckRow = ({
           <p className="truncate text-sm font-medium text-ink-900">{label}</p>
           <p className="truncate text-[11px] text-ink-400">{blurb}</p>
         </button>
-        {/* Importance — fixed-width, centered column */}
         <div className="hidden w-24 shrink-0 justify-center sm:flex">
           <span
             className={[
@@ -410,7 +399,6 @@ const CheckRow = ({
             {imp.label}
           </span>
         </div>
-        {/* Issues count — fixed-width, centered column */}
         <div className="w-24 shrink-0 text-center text-sm font-semibold tabular-nums">
           {loading ? (
             <span className="text-ink-300">…</span>
@@ -422,7 +410,6 @@ const CheckRow = ({
             </span>
           )}
         </div>
-        {/* Status badge — centered column */}
         <div className="flex w-7 shrink-0 justify-center">
           {!loading && (
             <span
@@ -444,8 +431,7 @@ const CheckRow = ({
             </span>
           )}
         </div>
-        {/* Settings gear — only for configurable checks (e.g. Duplicate Invoices).
-            Always present as a fixed slot so rows stay aligned. */}
+        {/* Fixed slot even when empty so rows stay aligned. */}
         <div className="flex w-8 shrink-0 justify-center">
           {configurable && (
             <button
@@ -461,7 +447,6 @@ const CheckRow = ({
             </button>
           )}
         </div>
-        {/* Action — fixed-width, right-aligned column */}
         <div className="w-24 shrink-0 text-right">
           <button
             type="button"
@@ -478,7 +463,6 @@ const CheckRow = ({
         </div>
       </div>
 
-      {/* Inline dropdown — the issues for this check, right below its name. */}
       {expanded && !ok && (
         <div className="border-t border-ink-100 bg-ink-50/40 px-5 py-4">
           <div className="mb-2 flex items-center justify-between">
@@ -579,8 +563,6 @@ const CheckRow = ({
     </li>
   );
 };
-
-// ── Small bits ──────────────────────────────────────────────────────────────
 
 const Num = ({ children }: { children: ReactNode }) => (
   <span className="ml-0.5 opacity-60">{children}</span>

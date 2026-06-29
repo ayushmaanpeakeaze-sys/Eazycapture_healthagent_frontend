@@ -58,8 +58,6 @@ const matchesRule = (r: HealthCheckResult, kind: string): boolean =>
   (r.result?.rule_ids ?? []).includes(kind) ||
   (r.result?.flagged ?? []).some((f) => f.issue_type === kind);
 
-// Sales / Purchase Tax Missing — lines with no VAT that probably need it.
-// Read-only review: View/Edit in Xero, Dismiss, "Ignore this contact".
 export const TaxMissingPage = ({
   companyId,
   ruleId,
@@ -179,9 +177,7 @@ export const TaxMissingPage = ({
     else setError(res.error ?? "Dismiss failed");
   };
 
-  // Add the contact to tax_missing_ignore_contacts (audit config) + clear its
-  // rows. Prefer the stable contact_id; fall back to vendor_name. Stored
-  // uppercased to match the backend's case-insensitive compare.
+  // Stored uppercased to match the backend's case-insensitive compare.
   const onIgnoreContact = async (r: HealthCheckResult) => {
     const cid = r.result?.contact_id ?? null;
     const name = r.result?.vendor_name ?? null;
@@ -316,7 +312,7 @@ export const TaxMissingPage = ({
             ? "No dismissed items."
             : search
               ? "No matches for your search."
-              : "No missing-tax items 🎉"}
+              : "No missing-tax items"}
         </p>
       ) : (
         <div className="overflow-x-auto rounded-2xl border border-ink-100 bg-white shadow-card">

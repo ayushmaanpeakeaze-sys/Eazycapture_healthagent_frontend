@@ -4,14 +4,12 @@ import App from "./App";
 import { AuthProvider } from "./features/auth/AuthProvider";
 import "./index.css";
 
-// One-time cleanup: remove stale demo flags.
+// Remove stale demo flags.
 try {
   window.localStorage.removeItem("eazy.demo.mode");
 } catch { /* ignore */ }
 
-// NOTE: StrictMode intentionally omitted — react-apexcharts throws
-// "reading 'node'" under StrictMode's dev double-invoke (charts render fine, but
-// it spams the console). StrictMode has no effect in production builds anyway.
+// StrictMode omitted: its dev double-invoke makes react-apexcharts throw "reading 'node'".
 createRoot(document.getElementById("root")!).render(
   <BrowserRouter>
     <AuthProvider>

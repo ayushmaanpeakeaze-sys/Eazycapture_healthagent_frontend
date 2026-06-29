@@ -1,10 +1,8 @@
 import { CSSProperties, ReactNode } from "react";
 
 /**
- * Accountancy icons drifting upward behind auth panels — calculator, pen,
- * documents, receipt, %, coins, chart, ledger. Subtle white line-icons, slow
- * rise + gentle rotation. Self-contained (markup + scoped <style>); pin inside a
- * `relative; overflow:hidden` container.
+ * Accountancy icons drifting upward behind auth panels. Self-contained (markup +
+ * scoped <style>); pin inside a `relative; overflow:hidden` container.
  */
 const S = {
   fill: "none" as const,

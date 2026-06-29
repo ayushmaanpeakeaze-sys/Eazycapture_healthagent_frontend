@@ -111,9 +111,8 @@ export const NotificationsView = ({ onPickClient }: NotificationsViewProps) => {
   useEffect(() => {
     let active = true;
     setLoading(true);
-    // Alerts are derived entirely from the panorama (per-client score, trapped
-    // count, top issue, last audit). The old global /results/ call can't work
-    // on a per-tenant backend (company_id required) and is no longer used.
+    // Alerts are derived from the panorama; the global /results/ call can't run
+    // on a per-tenant backend (company_id required).
     fetchCompaniesPanorama(30)
       .then((p) => {
         if (active) setPanorama(p.results ?? []);
@@ -129,7 +128,6 @@ export const NotificationsView = ({ onPickClient }: NotificationsViewProps) => {
   const alerts = useMemo<Alert[]>(() => {
     const out: Alert[] = [];
 
-    // 1) Score-below-60 alerts
     for (const c of panorama) {
       if (c.health_score !== null && c.health_score < 60) {
         out.push({
@@ -159,7 +157,7 @@ export const NotificationsView = ({ onPickClient }: NotificationsViewProps) => {
       }
     }
 
-    // 2) Stale-audit alerts (>14 days since last audit)
+    // Flag clients not audited in over 14 days.
     const STALE_MS = 14 * 24 * 3600 * 1000;
     for (const c of panorama) {
       if (!c.last_audit_at) continue;

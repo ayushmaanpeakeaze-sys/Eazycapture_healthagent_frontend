@@ -48,8 +48,7 @@ interface NavItem {
   label: string;
   description: string;
   icon: ReactNode;
-  /** Route. Practice items use an absolute path (e.g. "/activity"); client items
-   *  use the segment relative to /clients/:companyId (e.g. "insights"). */
+  /** Practice items use an absolute path; client items use a segment relative to /clients/:companyId. */
   path: string;
 }
 
@@ -82,8 +81,7 @@ const BatchIcon = (
 );
 const LogoMark = (
   <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 ring-1 ring-white/20">
-    {/* White icon-only mark for the purple sidebar (square crop of the brand
-        logo). Falls back to the SVG below if the file is missing. */}
+    {/* Falls back to the inline SVG below if the image is missing. */}
     <img
       src="/eazycapture-icon-white.png"
       alt="EazyCapture"
@@ -101,12 +99,10 @@ const LogoMark = (
       fill="none"
       aria-hidden
     >
-      {/* Four corner brackets */}
       <path d="M17 6 H10 a4 4 0 0 0-4 4 V17" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
       <path d="M31 6 H38 a4 4 0 0 1 4 4 V17" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
       <path d="M17 42 H10 a4 4 0 0 1-4-4 V31" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
       <path d="M31 42 H38 a4 4 0 0 0 4-4 V31" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-      {/* ec infinity */}
       <path d="M11 24 C11 17, 19 17, 24 24 C29 31, 37 31, 37 24" stroke="white" strokeWidth="2.8" strokeLinecap="round" fill="none" />
       <path d="M11 24 C11 31, 19 31, 24 24 C29 17, 37 17, 37 24" stroke="white" strokeWidth="2.8" strokeLinecap="round" fill="none" />
       <path d="M13 24 H20" stroke="white" strokeWidth="2.8" strokeLinecap="round" />
@@ -450,8 +446,6 @@ const ClientBreadcrumb = ({
   );
 };
 
-/* ----------------------------- Practice layout ---------------------------- */
-// Top nav bar + <Outlet/>. Wraps the practice-mode pages (/clients, /activity…).
 const PracticeLayout = () => {
   const { role } = useAuth();
   const isAdmin = role === "admin";
@@ -466,7 +460,6 @@ const PracticeLayout = () => {
       <header className="shrink-0 border-b border-ink-200 bg-white/95 backdrop-blur">
         <div className="mx-auto flex h-14 max-w-[1280px] items-center gap-5 px-8">
           <div className="flex items-center">
-            {/* Exact brand wordmark (icon + EAZYCAPTURE) — same asset as login */}
             <img
               src="/eazycapture-logo.png"
               alt="EazyCapture"
@@ -522,10 +515,7 @@ const PracticeLayout = () => {
   );
 };
 
-/* ------------------------------ Client layout ----------------------------- */
-// Floating left rail + breadcrumb + <Outlet/>. The client is resolved from the
-// :companyId in the URL (panorama lookup) so the breadcrumb survives a refresh
-// or a shared deep link.
+// Client resolved from :companyId via panorama lookup so the breadcrumb survives a refresh or deep link.
 const ClientLayout = () => {
   const { companyId = "" } = useParams();
   const navigate = useNavigate();
@@ -597,9 +587,7 @@ const ClientLayout = () => {
   );
 };
 
-/* ------------------------------- Page wrappers ---------------------------- */
-// Thin adapters: read route params/search and hand the existing views their
-// props + navigation callbacks.
+// Thin adapters: read route params and hand the views their props + navigation callbacks.
 const useCompanyId = () => useParams().companyId ?? "";
 
 const FirmOverviewPage = () => <FirmOverview />;
@@ -657,7 +645,6 @@ const ClientCheckDetail = () => {
 const ClientOutbound = () => <PreLedgerReviewCenter companyId={useCompanyId()} />;
 const ClientAuditLogs = () => <ActivityFeedView companyId={useCompanyId()} />;
 
-/* -------------------------------- Routes ---------------------------------- */
 export const App = () => (
   <Routes>
     <Route element={<PracticeLayout />}>

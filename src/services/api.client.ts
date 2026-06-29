@@ -40,7 +40,6 @@ const buildClient = (
           window.localStorage.removeItem("eazy.auth.token");
           window.localStorage.removeItem("eazy.auth.role");
           window.localStorage.removeItem("eazy.company.id");
-          // A reload will cause the AuthGate to re-render the login screen.
           window.location.reload();
         }
       }
@@ -54,28 +53,17 @@ const buildClient = (
 /** Default client — Vite proxy routes /accounting/* and /api/* paths. */
 export const apiClient = buildClient(API_BASE_URL);
 
-/**
- * Dedicated client for health-check endpoints. Hits HEALTHCHECK_API_BASE
- * directly (cross-origin during the POC), so the backend must serve CORS.
- * Cookies disabled — JWT goes via the Authorization header.
- */
+/** Health-check client — hits HEALTHCHECK_API_BASE cross-origin (CORS), Bearer JWT only. */
 export const healthClient = buildClient(HEALTHCHECK_API_BASE, {
   withCredentials: false,
 });
 
-/**
- * Client for the Insights KPI endpoints (`/api/v1/insights/{company_id}/…`).
- * Same FastAPI service as healthClient, different router. Bearer JWT only.
- */
+/** Insights KPI client — same FastAPI service as healthClient, different router. */
 export const insightsClient = buildClient(INSIGHTS_API_BASE, {
   withCredentials: false,
 });
 
-/**
- * Client for the integrations endpoints (`/api/v1/integrations/nango/…`).
- * Used to open a Nango Connect session for the Xero OAuth handshake. Same
- * FastAPI service as healthClient, the `/integrations` router. Bearer JWT only.
- */
+/** Integrations client — opens a Nango Connect session for the Xero OAuth handshake. */
 export const integrationsClient = buildClient(INTEGRATIONS_API_BASE, {
   withCredentials: false,
 });

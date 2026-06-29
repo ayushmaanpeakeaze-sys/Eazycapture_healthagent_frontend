@@ -31,9 +31,7 @@ export const authStorage = {
   isLoggedIn: () => !!window.localStorage.getItem(TOKEN_KEY)?.trim(),
 };
 
-// FastAPI returns `detail` as a string ("Invalid invite") OR an array of
-// validation objects ([{loc, msg, type}]). Coerce either into readable text so
-// error banners never render "[object Object]" (or crash React with raw arrays).
+// FastAPI returns `detail` as a string or an array of validation objects — coerce either to text.
 const fmtDetail = (detail: unknown): string | null => {
   if (detail == null) return null;
   if (typeof detail === "string") return detail;
@@ -103,12 +101,7 @@ export const register = async (
   }
 };
 
-/**
- * Public — resolves an invite token to the invited email so the accept page
- * can confirm which account is being claimed (and detect invalid/expired/used
- * links). Returns null only on a transport failure (caller falls back to the
- * plain form).
- */
+/** Public — resolves an invite token to the invited email. Returns null only on transport failure. */
 export const fetchInviteInfo = async (
   token: string,
 ): Promise<InviteInfoResponse | null> => {

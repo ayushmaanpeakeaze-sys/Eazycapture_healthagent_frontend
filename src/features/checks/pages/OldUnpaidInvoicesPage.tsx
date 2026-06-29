@@ -56,8 +56,6 @@ const ageDays = (r: HealthCheckResult, f: FlaggedIssue | undefined): number | nu
 const cantVoid = (r: HealthCheckResult): boolean =>
   r.result?.reconciled === true || Number(r.result?.amount_paid ?? 0) > 0;
 
-// Old Unpaid Customer Invoices / Bills — Xenon-style table with Age + per-row
-// actions (View / Void / Credit Note / Dismiss / Ignore 30d) + search + bulk.
 export const OldUnpaidInvoicesPage = ({
   companyId,
   ruleId,
@@ -206,7 +204,6 @@ export const OldUnpaidInvoicesPage = ({
 
   return (
     <div className="space-y-4">
-      {/* Controls: search · show dismissed */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <label className="inline-flex cursor-pointer items-center gap-2 text-xs font-medium text-ink-600">
           <button
@@ -237,7 +234,6 @@ export const OldUnpaidInvoicesPage = ({
         />
       </div>
 
-      {/* Bulk action bar */}
       {selected.size > 0 && (
         <div className="flex flex-wrap items-center gap-2 rounded-lg border border-brand-200 bg-brand-50 px-3 py-2 text-xs">
           <span className="font-semibold text-brand-700">{selected.size} selected</span>
@@ -283,7 +279,7 @@ export const OldUnpaidInvoicesPage = ({
             ? "No dismissed items."
             : search
               ? "No matches for your search."
-              : `No old unpaid ${noun}s 🎉`}
+              : `No old unpaid ${noun}s`}
         </p>
       ) : (
         <div className="overflow-x-auto rounded-2xl border border-ink-100 bg-white shadow-card">

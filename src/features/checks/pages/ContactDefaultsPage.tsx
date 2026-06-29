@@ -17,9 +17,7 @@ const EMPTY: CdDefaults = {
   purchases_tax: "",
 };
 
-// Xenon-style editable Contact Defaults table: a dropdown per default, Confirm
-// writes back to Xero via the backend. Data + dropdown options come live from
-// /contact-defaults/.
+// Editable contact-defaults table; Confirm writes the changed fields back to Xero.
 export const ContactDefaultsPage = ({ companyId }: { companyId: string }) => {
   const [data, setData] = useState<ContactDefaultsResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -69,8 +67,7 @@ export const ContactDefaultsPage = ({ companyId }: { companyId: string }) => {
     );
   }, [data, search, includeDismissed]);
 
-  // Flip a contact's dismissed flag locally so the row updates without a refetch
-  // (the backend persists it; the next load reflects the same state).
+  // Flip dismissed locally so the row updates without a refetch (backend persists it).
   const setDismissedFlag = (id: string, val: boolean) =>
     setData((d) => {
       if (!d) return d;
@@ -135,7 +132,6 @@ export const ContactDefaultsPage = ({ companyId }: { companyId: string }) => {
 
   return (
     <div className="space-y-4">
-      {/* Info banner */}
       <div className="rounded-xl border border-ink-100 bg-brand-50/40 px-4 py-3 text-[12px] leading-relaxed text-ink-600">
         <span className="mr-1.5 rounded bg-brand-600 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white">
           Issue
@@ -148,7 +144,6 @@ export const ContactDefaultsPage = ({ companyId }: { companyId: string }) => {
         save them back to Xero.
       </div>
 
-      {/* Controls */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-4">
           <label className="inline-flex cursor-pointer items-center gap-2 text-xs font-medium text-ink-600">
@@ -212,7 +207,6 @@ export const ContactDefaultsPage = ({ companyId }: { companyId: string }) => {
         </span>
       </div>
 
-      {/* Table */}
       <section className="overflow-hidden rounded-2xl border border-ink-100 bg-white shadow-card">
         {loading ? (
           <p className="px-5 py-10 text-center text-sm text-ink-500">
@@ -234,7 +228,7 @@ export const ContactDefaultsPage = ({ companyId }: { companyId: string }) => {
             {includeDismissed
               ? "Nothing dismissed yet."
               : missingOnly
-                ? "No contacts missing defaults 🎉"
+                ? "No contacts missing defaults"
                 : "No contacts."}
           </p>
         ) : (
@@ -380,7 +374,6 @@ export const ContactDefaultsPage = ({ companyId }: { companyId: string }) => {
           </div>
         )}
 
-        {/* Pagination */}
         {!loading && !error && pageCount > 1 && (
           <div className="flex items-center justify-between border-t border-ink-100 px-4 py-2.5 text-xs text-ink-500">
             <span>
@@ -410,8 +403,6 @@ export const ContactDefaultsPage = ({ companyId }: { companyId: string }) => {
     </div>
   );
 };
-
-// ── Dropdown cells ──────────────────────────────────────────────────────────
 
 const selectCls = (missing: boolean) =>
   [

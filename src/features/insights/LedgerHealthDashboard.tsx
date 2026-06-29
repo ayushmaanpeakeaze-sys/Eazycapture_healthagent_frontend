@@ -67,7 +67,6 @@ const SeverityDonut = ({
   return (
     <div className="relative h-24 w-24 shrink-0">
       <svg viewBox="0 0 100 100" className="h-full w-full -rotate-90">
-        {/* Track */}
         <circle
           cx="50"
           cy="50"
@@ -76,7 +75,7 @@ const SeverityDonut = ({
           stroke="rgba(15,23,42,0.07)"
           strokeWidth="8"
         />
-        {/* Segments — only render when we have real flagged data */}
+        {/* Only render segments when there's real flagged data. */}
         {total > 0 &&
           segments.map((seg) => {
             if (seg.count === 0) return null;
@@ -387,17 +386,14 @@ export const LedgerHealthDashboard = ({
   const [error, setError] = useState<string | null>(null);
   const [severityCounts, setSeverityCounts] =
     useState<SeverityCounts>(ZERO_SEV);
-  // Outbound pre-publish counts derived from the audit log (pre_ledger +
-  // preview), NOT the summary's placeholder fields — so anything reviewed
-  // in Outbound reflects here.
+  // Outbound counts derive from the audit log (pre_ledger + preview), not the summary's placeholder fields.
   const [prePublish, setPrePublish] = useState({ blocked: 0, passed: 0 });
 
   const load = async () => {
     setLoading(true);
     setError(null);
     try {
-      // Summary drives the health score; stats carries the honest document vs
-      // contact split (open_document_issues / open_contact_issues).
+      // Summary drives the health score; stats carries the document vs contact split.
       const [data, statsData] = await Promise.all([
         fetchLedgerHealthSummary(companyId),
         fetchHealthStats(companyId),
@@ -447,8 +443,7 @@ export const LedgerHealthDashboard = ({
     }
   };
 
-  // Pull trapped invoices alongside the summary so we can show the
-  // severity breakdown ring (critical / high / medium counts).
+  // Trapped invoices feed the severity breakdown ring (critical / high / medium).
   useEffect(() => {
     let active = true;
     fetchTrappedInvoices({ company_id: companyId, limit: 200 })
@@ -478,9 +473,7 @@ export const LedgerHealthDashboard = ({
     [severityCounts],
   );
 
-  // Honest split: documents (invoices/bills) drive the score; contacts are a
-  // separate hygiene pool, NOT part of audited_documents. Fall back to the
-  // summary's combined trapped_count when an older backend has no split.
+  // Documents drive the score; contacts are a separate pool. Older backends have no split, so fall back to trapped_count.
   const auditedDocs =
     stats?.audited_documents ?? summary?.post_audited_total ?? null;
   const docIssues =
@@ -496,9 +489,7 @@ export const LedgerHealthDashboard = ({
     auditedDocs !== null || auditedContacts !== null
       ? (auditedDocs ?? 0) + (auditedContacts ?? 0)
       : null;
-  // "Top issues" lists only the most frequent types; its counts sum to less
-  // than the real total. Anchor the header/percentages to the true total
-  // (open_issues) and surface the long-tail remainder so nothing looks lost.
+  // Top-issue counts sum to less than the real total, so anchor percentages to open_issues and show the remainder.
   const topIssuesShownSum =
     summary?.top_issues.reduce((acc, i) => acc + i.count, 0) ?? 0;
   const topIssuesTotal = totalIssues ?? topIssuesShownSum;
@@ -548,7 +539,6 @@ export const LedgerHealthDashboard = ({
         </div>
       )}
 
-      {/* HERO */}
       <section className="relative overflow-hidden rounded-3xl bg-brand-gradient px-8 py-7 shadow-brand">
         <span
           aria-hidden
@@ -631,9 +621,7 @@ export const LedgerHealthDashboard = ({
         </div>
       </section>
 
-      {/* BENTO ROW */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        {/* Trapped in ledger */}
         <div className="group relative overflow-hidden rounded-2xl border border-ink-200 bg-white p-6 shadow-card transition duration-200 hover:-translate-y-0.5 hover:shadow-card-hover">
           <span
             aria-hidden
@@ -681,7 +669,6 @@ export const LedgerHealthDashboard = ({
           </div>
         </div>
 
-        {/* Pre-publish gate */}
         <div className="group relative overflow-hidden rounded-2xl border border-ink-200 bg-white p-6 shadow-card transition duration-200 hover:-translate-y-0.5 hover:shadow-card-hover">
           <span
             aria-hidden
@@ -726,7 +713,6 @@ export const LedgerHealthDashboard = ({
           </div>
         </div>
 
-        {/* Health score */}
         <div className="group relative overflow-hidden rounded-2xl border border-ink-200 bg-white p-6 shadow-card transition duration-200 hover:-translate-y-0.5 hover:shadow-card-hover">
           <span
             aria-hidden
@@ -800,7 +786,6 @@ export const LedgerHealthDashboard = ({
         </div>
       </div>
 
-      {/* TOP ISSUES */}
       <section className="overflow-hidden rounded-2xl border border-ink-200 bg-white shadow-card">
         <header className="flex items-center justify-between border-b border-ink-100 px-5 py-4">
           <div>
@@ -837,8 +822,7 @@ export const LedgerHealthDashboard = ({
               );
               const max = summary.top_issues[0]?.count ?? 1;
               const widthPct = Math.max(6, (issue.count / max) * 100);
-              // New shape: { issue_type, sample_msg, count }
-              // Legacy:    { message, count }
+              // New shape: { issue_type, sample_msg, count }; legacy: { message, count }.
               const label =
                 issue.sample_msg ??
                 issue.message ??

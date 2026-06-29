@@ -1,11 +1,6 @@
 /**
- * Hanging "ACCOUNTING — ACT. COUNT. THINK." sticker for the team-login page.
- *
- * Self-contained (markup + scoped <style>) so it doesn't depend on AuthSlider's
- * styles. Same staged entrance as the main-page sticker: a metal eyelet pops in,
- * the rope draws down, the card flies in from the side and clasps on, then it
- * swings like a pendulum. Drop it into AuthShell's `sticker` slot — it pins to
- * the top-centre of the white panel (which AuthShell makes `relative`).
+ * Hanging "Accounting" sticker for the team-login page. Self-contained (markup +
+ * scoped <style>); pins to the top of AuthShell's `sticker` slot.
  */
 export const AccountingSticker = () => (
   <>
@@ -43,14 +38,12 @@ const ACCOUNTING_STICKER_CSS = `
   align-items: center;
   transform-origin: top center;
   will-change: transform;
-  /* ease from rest into the first swing once, then a smooth alternating
-     pendulum (2 keyframes + alternate = fastest at centre, no mid-swing stall) */
+  /* alternate keyframes keep the pendulum fastest at centre, no mid-swing stall */
   animation:
     ec-as-swing-in 0.9s ease-in-out 1.85s both,
     ec-as-swing 1.8s ease-in-out 2.75s infinite alternate;
 }
 .ec-as-cap {
-  /* metal eyelet pinned to the "ceiling" */
   position: absolute;
   top: -4px;
   left: 50%;
@@ -81,11 +74,11 @@ const ACCOUNTING_STICKER_CSS = `
     inset 1.2px 0 1px rgba(255, 255, 255, 0.22);
   transform-origin: top center;
   will-change: transform;
-  /* GPU scale reveal — no layout reflow, so it stays smooth */
+  /* scale reveal (GPU transform, no reflow) */
   animation: ec-as-rope-grow 0.9s ease-out 0.25s both;
 }
 .ec-as-sticker {
-  /* white die-cut frame around the black card, with a 3D tilt + lift */
+  /* white die-cut frame with a 3D tilt */
   padding: 4px;
   margin-top: -2px;
   background: #ffffff;

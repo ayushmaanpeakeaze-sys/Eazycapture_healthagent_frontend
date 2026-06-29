@@ -36,9 +36,8 @@ interface ContactMatch {
   b: ContactLine;
 }
 
-// Xenon-style Duplicate Contacts — two-line match blocks with the ✓/✗ helper
-// columns, VAT / split badges, View-Merge + Dismiss. Fed by a FULL audit
-// ("Reanalyse Xero data"), not the duplicates-only run.
+// Two-line match blocks per duplicate pair. Fed by a full audit, not the
+// duplicates-only run.
 export const DuplicateContactsPage = ({
   companyId,
   refreshKey = 0,
@@ -106,12 +105,9 @@ export const DuplicateContactsPage = ({
     };
   }, [companyId, showDismissed, refreshKey]);
 
-  // The backend emits two rows per match (A→B and B→A). Pair them on the sorted
-  // {contact_id, partner_id} key, building a two-line block.
+  // Backend emits two rows per match (A→B and B→A); pair them on the sorted key.
   const matches = useMemo<ContactMatch[]>(() => {
-    // Index each row by every id it might be referenced by — the contact id can
-    // live in flag.transaction_id OR the row's document_id, and the partner is
-    // referenced by partner_id. Indexing both makes the partner lookup robust.
+    // Index by both transaction_id and document_id so partner lookup is robust.
     const byId = new Map<string, HealthCheckResult>();
     for (const r of rows) {
       const f = contactFlag(r);
@@ -128,8 +124,7 @@ export const DuplicateContactsPage = ({
       const key = [myId, partnerId].sort().join("|");
       if (seen.has(key)) continue;
       seen.add(key);
-      // The flag carries BOTH contacts' columns (helper = subject, partner_helper
-      // = partner). The partner row is only needed for its Xero link + dismiss id.
+      // The partner row is only needed for its Xero link + dismiss id.
       const partnerRow = partnerId ? byId.get(partnerId) : undefined;
       out.push({
         key,
@@ -168,7 +163,6 @@ export const DuplicateContactsPage = ({
 
   return (
     <div className="space-y-4">
-      {/* Controls */}
       <div className="flex flex-wrap items-center gap-3">
         <label className="inline-flex cursor-pointer items-center gap-2 text-xs font-medium text-ink-600">
           <button
@@ -204,7 +198,7 @@ export const DuplicateContactsPage = ({
         </p>
       ) : matches.length === 0 ? (
         <p className="rounded-2xl border border-ink-100 bg-white px-5 py-10 text-center text-sm italic text-ink-400 shadow-card">
-          {showDismissed ? "No dismissed matches." : "No duplicate contacts 🎉"}
+          {showDismissed ? "No dismissed matches." : "No duplicate contacts"}
         </p>
       ) : (
         <div className="space-y-3">
@@ -221,8 +215,6 @@ export const DuplicateContactsPage = ({
     </div>
   );
 };
-
-// ── Match card ───────────────────────────────────────────────────────────────
 
 const COLS: { key: keyof ContactHelper; label: string }[] = [
   { key: "has_invoices", label: "Invoices" },
@@ -288,7 +280,6 @@ const MatchCard = ({
 
       <div className="overflow-x-auto">
         <div className="min-w-[640px]">
-          {/* column headers */}
           <div className="grid grid-cols-[1fr_repeat(6,3.25rem)_8rem] items-center gap-2 border-b border-ink-50 px-4 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-ink-400">
             <span>Contact</span>
             {COLS.map((c) => (

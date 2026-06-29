@@ -107,17 +107,15 @@ export const ActivityFeedView = ({
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [autoRefresh, setAutoRefresh] = useState<boolean>(false);
 
-  // Global tab: the client list to pick from, and which one is selected.
   const [companies, setCompanies] = useState<PanoramaClient[]>([]);
   const [picked, setPicked] = useState<string | null>(null);
   const [companiesLoading, setCompaniesLoading] = useState<boolean>(isGlobal);
 
-  // /results/ is per-tenant, so we always resolve a single company_id to query:
-  // the drilled-in client (companyId), or the one picked in the global tab.
+  // /results/ is per-tenant, so resolve a single company_id: the drilled-in
+  // client, or the one picked in the global tab.
   const targetCompanyId = companyId ?? picked ?? undefined;
   const pickedClient = companies.find((c) => c.company_id === picked) ?? null;
 
-  // Global tab: load the client list once to populate the picker.
   useEffect(() => {
     if (!isGlobal) return;
     let active = true;
@@ -140,7 +138,6 @@ export const ActivityFeedView = ({
 
   const load = async () => {
     if (!targetCompanyId) {
-      // Global tab with no client picked yet — nothing to query.
       setResults([]);
       setTotal(0);
       setBackendCounts(null);
@@ -175,7 +172,6 @@ export const ActivityFeedView = ({
     }
   };
 
-  // Re-fetch when the target company OR either filter changes.
   useEffect(() => {
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -193,7 +189,7 @@ export const ActivityFeedView = ({
 
   const counts = useMemo(() => {
     if (backendCounts) return backendCounts;
-    // Fallback: compute from the current page if backend didn't send counts.
+    // Fall back to counting the current page if backend didn't send counts.
     const out: Record<HealthCheckStatus | "all", number> = {
       all: results.length,
       blocked: 0,
@@ -451,7 +447,7 @@ export const ActivityFeedView = ({
                             </ul>
                           ) : (
                             <p className="mt-2 text-sm text-emerald-700">
-                              ✓ None.
+                              None.
                             </p>
                           )}
                           {r.result?.reasoning && (

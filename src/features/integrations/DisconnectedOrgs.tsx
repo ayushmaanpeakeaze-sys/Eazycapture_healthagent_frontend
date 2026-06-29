@@ -6,13 +6,8 @@ import {
   reconnectCompany,
 } from "@/services/audit.service";
 
-// Collapsible "Disconnected" section — orgs the user deactivated. One-click
-// Reconnect flips them back active (no re-OAuth; data + history intact). Renders
-// nothing when there are none.
-//
-// `reloadKey` — bump it (e.g. after a disconnect elsewhere) to refetch.
-// `onChanged` — called after a reconnect so the parent can refresh its active
-// list (the org reappears there).
+// Collapsible list of deactivated orgs; Reconnect flips them back active with no re-OAuth (data + history intact).
+// `reloadKey` bumps to refetch; `onChanged` fires after a reconnect so the parent can refresh.
 export const DisconnectedOrgs = ({
   reloadKey = 0,
   onChanged,

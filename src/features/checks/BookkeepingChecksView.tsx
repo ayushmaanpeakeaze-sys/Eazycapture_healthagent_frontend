@@ -30,9 +30,8 @@ type PeriodKey =
   | "year"
   | "custom";
 
-// Format using LOCAL calendar components — NOT toISOString(), which converts
-// to UTC and shifts month/quarter boundaries a day in +offset timezones (e.g.
-// IST turns local 1 Jun into 2026-05-31).
+// Local calendar components, not toISOString() — UTC shifts boundaries a day
+// in +offset timezones (IST turns local 1 Jun into 2026-05-31).
 const isoDate = (d: Date) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
     d.getDate(),
@@ -45,10 +44,8 @@ const endOfQuarter = (d: Date) => {
   return new Date(d.getFullYear(), q * 3 + 3, 0);
 };
 
-// Maps a Period option to an inclusive { from, to } date range (YYYY-MM-DD).
-// The backend just filters by the range — the frontend owns "which dates".
-// Quarter/Year/Current-month end at the period's last day to match their
-// labels ("…ending 30 Jun 2026"), not at today.
+// Period option → inclusive { from, to } range. Quarter/Year/Current-month
+// end at the period's last day (to match their labels), not at today.
 const periodToRange = (
   key: PeriodKey,
   customStart: string,
@@ -132,7 +129,7 @@ const HistoricalAuditPanel = ({
     newTrapped: number;
     stageLabel: string | null;
   }>({ total: 0, trapped: 0, newTrapped: 0, stageLabel: null });
-  // Full doc + contact split (the live audit status only reports documents).
+  // Full doc + contact split — the live audit status only reports documents.
   const [stats, setStats] = useState<HealthStatsResponse | null>(null);
   const [period, setPeriod] = useState<PeriodKey>("all");
   const [customStart, setCustomStart] = useState<string>("");
@@ -141,7 +138,6 @@ const HistoricalAuditPanel = ({
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [settingsVersion, setSettingsVersion] = useState(0);
 
-  // Pull last_audit_at from the summary for the "Last sync" display.
   useEffect(() => {
     let active = true;
     fetchLedgerHealthSummary(companyId)
@@ -182,9 +178,7 @@ const HistoricalAuditPanel = ({
     setStats(null);
     setBatchId(null);
     const { start, end } = periodToRange(period, customStart, customEnd);
-    // Settings: clamp start to ignore-before, and pass active rule keys so
-    // the backend can scope the audit. Backend support is pending; sending
-    // these now means the call lights up the moment endpoints accept them.
+    // Clamp start to the ignore-before setting.
     const ignoreBefore = getIgnoreBeforeDate(companyId);
     const effectiveStart =
       ignoreBefore && (!start || ignoreBefore > start) ? ignoreBefore : start;
@@ -200,7 +194,7 @@ const HistoricalAuditPanel = ({
     setBatchId(resp.batch_id);
   };
 
-  // Phase 1: poll the audit dispatch status until completed/failed.
+  // Phase 1: poll dispatch status until completed/failed.
   useEffect(() => {
     if (!batchId || phase !== "in_progress") return;
     const id = window.setInterval(async () => {
@@ -221,10 +215,9 @@ const HistoricalAuditPanel = ({
           setPhase("failed");
           if (data.error) setError(data.error);
         } else {
-          // Audit done — flip into enriching so we can poll AI status.
+          // Audit done — enrich phase polls AI status next.
           setPhase("enriching");
           onComplete();
-          // Pull the full doc + contact split now that the sweep is complete.
           fetchHealthStats(companyId).then((s) => s && setStats(s));
         }
       }
@@ -232,7 +225,7 @@ const HistoricalAuditPanel = ({
     return () => window.clearInterval(id);
   }, [batchId, phase, onComplete, companyId]);
 
-  // Phase 2: poll AI enrichment status until ai_summary_ready (or 60s timeout).
+  // Phase 2: poll AI enrichment until ai_summary_ready (or 60s timeout).
   useEffect(() => {
     if (!batchId || phase !== "enriching") return;
     const startedAt = Date.now();
@@ -251,7 +244,7 @@ const HistoricalAuditPanel = ({
         // ignore transient errors — keep polling until the 60s timeout
       }
       if (Date.now() - startedAt > 60_000) {
-        // Give up; show what we have and fall back to rule-based output.
+        // Timed out — fall back to rule-based output.
         setPhase("completed");
         return;
       }
@@ -266,8 +259,8 @@ const HistoricalAuditPanel = ({
 
   const running = phase === "in_progress" || phase === "enriching";
 
-  // Display counts: documents come live from the audit status; contacts (and
-  // the true totals) come from /stats once the sweep completes.
+  // Documents come live from audit status; contacts and totals from /stats
+  // once the sweep completes.
   const docAudited = stats?.audited_documents ?? progress.total;
   const contactAudited = stats?.audited_contacts ?? null;
   const docFlagged = stats?.open_document_issues ?? progress.trapped;
@@ -278,7 +271,6 @@ const HistoricalAuditPanel = ({
 
   return (
     <section className="rounded-xl border border-ink-200 bg-white p-5 shadow-card">
-      {/* Top row: Period selector on the left · Last sync + button on the right */}
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div className="flex flex-wrap items-end gap-3">
           <div>
@@ -337,7 +329,6 @@ const HistoricalAuditPanel = ({
         </div>
 
         <div className="flex flex-col items-end gap-2">
-          {/* Row 1: Last sync indicator + Run audit button */}
           <div className="flex flex-wrap items-end gap-3">
             <div className="flex items-center gap-1.5 text-[11px] text-ink-500">
               <svg
@@ -386,7 +377,6 @@ const HistoricalAuditPanel = ({
             </button>
           </div>
 
-          {/* Row 2: Rules settings — sits below the Run button, right-aligned */}
           <button
             type="button"
             onClick={() => setSettingsOpen(true)}
@@ -437,8 +427,7 @@ const HistoricalAuditPanel = ({
           )}
 
           {phase === "in_progress" ? (
-            // Live document progress — contacts are checked in the same sweep
-            // and appear in the split once the sweep completes.
+            // Live document progress; contacts appear in the split once done.
             <span>
               Auditing ledger… <strong>{progress.total}</strong> document
               {progress.total === 1 ? "" : "s"} fetched
@@ -505,7 +494,6 @@ export const BookkeepingChecksView = ({
   const [refreshKey, setRefreshKey] = useState(0);
   const [aiStatus, setAiStatus] = useState<AiStatusResponse | null>(null);
 
-  // Reset AI summary when the active company changes.
   useEffect(() => {
     setAiStatus(null);
   }, [companyId]);
@@ -536,7 +524,6 @@ export const BookkeepingChecksView = ({
         loading={aiStatus !== null && !aiSummaryReady}
       />
 
-      {/* Directory of all checks — click one to open its dedicated page. */}
       <ChecksDirectory companyId={companyId} refreshKey={refreshKey} />
     </div>
   );

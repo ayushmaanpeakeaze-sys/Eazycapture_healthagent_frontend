@@ -180,7 +180,7 @@ export const TeamView = () => {
                 onClick={copyNoticeLink}
                 className="shrink-0 rounded-md border border-emerald-300 bg-white px-2.5 py-1 text-[11px] font-semibold text-emerald-700 transition hover:bg-emerald-100"
               >
-                {noticeCopied ? "Copied ✓" : "Copy link"}
+                {noticeCopied ? "Copied" : "Copy link"}
               </button>
             </div>
           )}
@@ -271,7 +271,7 @@ export const TeamView = () => {
                       <span className="text-[11px] text-ink-300">Owner</span>
                     ) : (
                       <div className="flex items-center justify-end gap-3">
-                        {/* active → Disable only (must disable before removing) */}
+                        {/* Must disable a member before they can be removed. */}
                         {u.status === "active" && (
                           <button
                             type="button"
@@ -282,7 +282,6 @@ export const TeamView = () => {
                             Disable
                           </button>
                         )}
-                        {/* disabled → Enable + Remove */}
                         {u.status === "disabled" && (
                           <>
                             <button
@@ -303,7 +302,6 @@ export const TeamView = () => {
                             </button>
                           </>
                         )}
-                        {/* invited → Resend invite + Remove */}
                         {u.status === "invited" && (
                           <>
                             <button
@@ -336,8 +334,6 @@ export const TeamView = () => {
     </div>
   );
 };
-
-// ── InviteForm ───────────────────────────────────────────────────────────────
 
 const InviteForm = ({
   companies,
@@ -391,8 +387,7 @@ const InviteForm = ({
       setError(res.error);
       return;
     }
-    // Prefer the backend's ready-made link (matches the emailed one); fall back
-    // to building it from the current origin (safer in local dev).
+    // Prefer the backend's ready-made link; fall back to the current origin.
     const link =
       res.data.accept_url ||
       `${window.location.origin}/accept-invite?token=${res.data.invite_token}`;
@@ -540,22 +535,22 @@ const InviteForm = ({
         <div className="space-y-3">
           {emailSent === true && emailChannel === "console" ? (
             <p className="text-sm font-medium text-amber-800">
-              ℹ️ Invite created, but email delivery isn't configured (logged to
+              Invite created, but email delivery isn't configured (logged to
               console). Share the link below.
             </p>
           ) : emailSent === true ? (
             <p className="text-sm font-medium text-emerald-800">
-              ✅ Invite emailed to <strong>{email}</strong>.
+              Invite emailed to <strong>{email}</strong>.
             </p>
           ) : emailSent === false ? (
             <p className="text-sm font-medium text-amber-800">
-              ⚠️ Invite created, but the email failed
+              Invite created, but the email failed
               {emailError ? `: ${emailError}` : ""}. It's still valid — share
               the link below or hit Resend later.
             </p>
           ) : (
             <p className="text-sm font-medium text-emerald-800">
-              ✅ Invite created for <strong>{email}</strong>.
+              Invite created for <strong>{email}</strong>.
             </p>
           )}
           <p className="text-xs text-ink-500">
@@ -570,7 +565,7 @@ const InviteForm = ({
               onClick={copyLink}
               className="shrink-0 rounded-lg border border-brand-200 bg-brand-50 px-3 py-1.5 text-xs font-semibold text-brand-700 transition hover:bg-brand-100"
             >
-              {copied ? "Copied ✓" : "Copy"}
+              {copied ? "Copied" : "Copy"}
             </button>
           </div>
           <button

@@ -40,8 +40,6 @@ const matchesRule = (r: HealthCheckResult, ruleId: string): boolean =>
   (r.result?.rule_ids ?? []).includes(ruleId) ||
   (r.result?.flagged ?? []).some((f) => f.issue_type === ruleId);
 
-// Unapproved Invoices / Bills — draft/submitted docs not yet in the accounts.
-// Approve / Delete / Ignore / Dismiss.
 export const UnapprovedDocsPage = ({
   companyId,
   ruleId,
@@ -127,7 +125,6 @@ export const UnapprovedDocsPage = ({
 
   const pg = useClientPagination(visible, `${search}|${showDismissed}`);
 
-  // "Total potential errors" — sum of the visible docs' values.
   const total = useMemo(
     () =>
       visible.reduce((sum, r) => sum + (Number(r.result?.amount) || 0), 0),
@@ -255,7 +252,7 @@ export const UnapprovedDocsPage = ({
             ? "No dismissed items."
             : search
               ? "No matches for your search."
-              : `No unapproved ${noun}s 🎉`}
+              : `No unapproved ${noun}s`}
         </p>
       ) : (
         <div className="overflow-x-auto rounded-2xl border border-ink-100 bg-white shadow-card">
@@ -287,7 +284,6 @@ export const UnapprovedDocsPage = ({
                 const status = (res?.invoice_status || "").toUpperCase();
                 const canApprove = res?.editable !== false;
                 const busy = busyKey === r.id;
-                // Deep link: xero_url, else xero_reference when it's a URL.
                 const editUrl =
                   r.xero_url ||
                   (res?.xero_reference?.startsWith("http")

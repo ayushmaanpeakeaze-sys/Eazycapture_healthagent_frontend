@@ -63,8 +63,6 @@ const fileToBase64 = (file: File): Promise<string> =>
     reader.readAsDataURL(file);
   });
 
-// Undocumented Bills — supplier bills with no file attachment. Upload a doc,
-// re-check, edit in Xero, dismiss, or ignore the contact.
 export const UndocumentedBillsPage = ({
   companyId,
   refreshKey = 0,
@@ -76,8 +74,8 @@ export const UndocumentedBillsPage = ({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showDismissed, setShowDismissed] = useState(false);
-  const [showBank, setShowBank] = useState(false); // "Also show direct payments"
-  const [taxOnly, setTaxOnly] = useState(false); // "Show only with tax"
+  const [showBank, setShowBank] = useState(false);
+  const [taxOnly, setTaxOnly] = useState(false);
   const [search, setSearch] = useState("");
   const [busyKey, setBusyKey] = useState<string | null>(null);
   const [removed, setRemoved] = useState<Set<string>>(new Set());
@@ -356,7 +354,7 @@ export const UndocumentedBillsPage = ({
             ? "No dismissed items."
             : search
               ? "No matches for your search."
-              : "No undocumented bills 🎉"}
+              : "No undocumented bills"}
         </p>
       ) : (
         <div className="overflow-x-auto rounded-2xl border border-ink-100 bg-white shadow-card">

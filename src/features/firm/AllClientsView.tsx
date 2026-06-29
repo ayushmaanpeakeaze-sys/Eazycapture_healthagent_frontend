@@ -9,8 +9,7 @@ import { fetchFirmSummary } from "../../services/insights.service";
 import { DisconnectedOrgs } from "@/features/integrations/DisconnectedOrgs";
 import { XeroOnboarding } from "@/features/integrations/XeroOnboarding";
 
-// Bank-reconciliation fields live on firm-summary, not companies-panorama, so we
-// fetch that too and merge by company_id to complete the Xenon-style table.
+// Bank-reconciliation fields live on firm-summary, not companies-panorama, so we fetch and merge by company_id.
 interface BankBits {
   unreconciled: number | null;
   lastReconciled: string | null;
@@ -66,11 +65,7 @@ const scoreTone = (score: number | null): ScoreTone => {
   return { text: "text-rose-700", dot: "bg-rose-500", label: "At risk" };
 };
 
-/**
- * Backend currently doesn't send `integration_provider` — derive it from the
- * connection IDs it does send. `xero_tenant_id` is the giveaway for XERO.
- * QBO equivalent will land later (e.g. a quickbooks_realm_id field).
- */
+// Backend doesn't always send `integration_provider`; derive it from the connection IDs (xero_tenant_id ⇒ XERO).
 const effectiveProvider = (
   r: Pick<
     PanoramaClient,
@@ -140,7 +135,6 @@ const ProviderBadge = ({ provider }: { provider?: string | null }) => {
   );
 };
 
-// ── Status column icons (provider + connection), à la the Xenon panorama ──
 const HeartIcon = ({ className }: { className?: string }) => (
   <svg viewBox="0 0 24 24" className={className} fill="currentColor" aria-hidden>
     <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
@@ -215,7 +209,6 @@ const StatusIcons = ({ r }: { r: PanoramaClient }) => {
   );
 };
 
-// ── Bookkeeping-health gauge with heart (270° arc) ──────────────────────────
 const HealthGauge = ({ score }: { score: number | null }) => {
   if (score === null)
     return (
@@ -275,7 +268,6 @@ const HealthGauge = ({ score }: { score: number | null }) => {
   );
 };
 
-// Small rounded "stat box" — gives each metric cell a distinct pill look.
 const Pill = ({
   children,
   tone = "neutral",
@@ -396,8 +388,7 @@ export const AllClientsView = ({ onPick, restrictToIds }: AllClientsViewProps) =
     }
   };
 
-  // Bank-reconciliation columns come from firm-summary (merged by company_id).
-  // Best-effort: if it fails, those cells just show "—".
+  // Bank-rec columns come from firm-summary, merged by company_id. Best-effort: failure just shows "—".
   useEffect(() => {
     let active = true;
     fetchFirmSummary().then((r) => {
@@ -420,10 +411,7 @@ export const AllClientsView = ({ onPick, restrictToIds }: AllClientsViewProps) =
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
 
-    // Defensive client-side filter: even if the backend returns mixed
-    // providers when we ask for one (e.g. a Xero org leaking into the
-    // QBO bucket), respect the user's chip selection here. QUICKBOOKS and
-    // QBO are treated as the same provider.
+    // Defensive: re-apply the provider chip client-side in case the backend returns mixed providers. QBO and QUICKBOOKS are equivalent.
     const providerMatches = (p?: string | null): boolean => {
       if (provider === "all") return true;
       if (!p) return false;
@@ -482,9 +470,7 @@ export const AllClientsView = ({ onPick, restrictToIds }: AllClientsViewProps) =
     return { risky, healthy, trapped };
   }, [filtered]);
 
-  // First-run / empty state: no active orgs → big "Connect to Xero" onboarding
-  // (with a Disconnected section for returning users who deactivated everything).
-  // Only firm-wide (not when scoped to a fixed set of ids).
+  // Empty state: no active orgs shows onboarding — firm-wide only, never when scoped to fixed ids.
   if (!loading && !restrictToIds && rows.length === 0 && !loadError && !authRequired) {
     return (
       <XeroOnboarding reloadKey={nonce} onChanged={() => setNonce((n) => n + 1)} />
@@ -539,7 +525,6 @@ export const AllClientsView = ({ onPick, restrictToIds }: AllClientsViewProps) =
         </div>
       )}
       <header className="grid grid-cols-1 items-start gap-8 lg:grid-cols-[1fr_auto]">
-        {/* Left — title block */}
         <div className="max-w-2xl">
           <div className="inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-brand-700">
             <span className="relative inline-flex h-1.5 w-1.5">
@@ -557,7 +542,6 @@ export const AllClientsView = ({ onPick, restrictToIds }: AllClientsViewProps) =
           </p>
         </div>
 
-        {/* Right — KPI strip (premium: hairline divider, mono numerals, no shadows) */}
         <div className="grid grid-cols-3 divide-x divide-ink-200 rounded-xl border border-ink-200 bg-white">
           <KpiStat
             label="Connected"
@@ -591,7 +575,6 @@ export const AllClientsView = ({ onPick, restrictToIds }: AllClientsViewProps) =
       </header>
 
       <div className="rounded-xl border border-ink-200 bg-white shadow-card">
-        {/* Filter toolbar */}
         <div className="flex flex-wrap items-end gap-4 border-b border-ink-100 px-5 py-3.5">
           <div className="min-w-[220px] flex-1">
             <label className="block text-[10px] font-semibold uppercase tracking-wider text-ink-500">
@@ -686,7 +669,6 @@ export const AllClientsView = ({ onPick, restrictToIds }: AllClientsViewProps) =
           </span>
         </div>
 
-        {/* Table */}
         {loading ? (
           <div className="px-5 py-10 text-center text-sm text-ink-500">
             Loading panorama…

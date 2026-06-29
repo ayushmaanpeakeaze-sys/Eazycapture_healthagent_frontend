@@ -70,12 +70,8 @@ const matchesRule = (r: HealthCheckResult): boolean =>
   (r.result?.rule_ids ?? []).includes(RULE) ||
   (r.result?.flagged ?? []).some((f) => f.issue_type === RULE);
 
-// Capital Item Review — an expense line above the threshold may really be a
-// capital item (fixed asset) mis-coded to an expense. Re-code it to a FIXED
-// asset account (so it's capitalised + depreciated), or dismiss if the expense
-// treatment is correct. This is a *review* suggestion: there's no single
-// "correct" target, so we offer the fixed-asset accounts and surface the
-// reasoning rather than auto-picking one.
+// Expense lines above the threshold that may be mis-coded capital items.
+// Re-code to a fixed-asset account, or dismiss if the expense is correct.
 export const CapitalItemReviewPage = ({
   companyId,
   refreshKey = 0,
@@ -311,7 +307,7 @@ export const CapitalItemReviewPage = ({
             ? "No dismissed items."
             : search
               ? "No matches for your search."
-              : "No capital items to review 🎉"}
+              : "No capital items to review"}
         </p>
       ) : (
         <div className="overflow-x-auto rounded-2xl border border-ink-100 bg-white shadow-card">

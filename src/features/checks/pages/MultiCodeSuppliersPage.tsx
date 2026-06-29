@@ -14,12 +14,12 @@ const CONFIG: Record<MultiCodeRuleId, { codeLabel: string; groupLabel: string; e
   multi_account_supplier: {
     codeLabel: "Account code used",
     groupLabel: "Accounts used",
-    empty: "No multi-account suppliers 🎉",
+    empty: "No multi-account suppliers",
   },
   multi_tax_code_supplier: {
     codeLabel: "Tax code used",
     groupLabel: "Tax codes used",
-    empty: "No multi-tax-code suppliers 🎉",
+    empty: "No multi-tax-code suppliers",
   },
 };
 
@@ -70,8 +70,7 @@ interface Group {
   rows: HealthCheckResult[];
 }
 
-// Multi-Account / Multi-Tax-Code Suppliers — a contact coded across several
-// accounts/tax codes. Grouped by contact; Mark-OK / restore per row & per group.
+// A contact coded across several accounts/tax codes, grouped by contact.
 export const MultiCodeSuppliersPage = ({
   companyId,
   kind,

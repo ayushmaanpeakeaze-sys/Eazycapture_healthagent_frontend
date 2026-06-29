@@ -70,8 +70,7 @@ const matchesRule = (r: HealthCheckResult): boolean =>
   (r.result?.rule_ids ?? []).includes(RULE) ||
   (r.result?.flagged ?? []).some((f) => f.issue_type === RULE);
 
-// Misallocated Items — lines on a vague/broad account (e.g. General Expenses)
-// above the materiality threshold. Re-code to a specific account, or dismiss.
+// Lines on a vague account (e.g. General Expenses) above the materiality threshold.
 export const MisallocatedItemsPage = ({
   companyId,
   refreshKey = 0,
@@ -302,7 +301,7 @@ export const MisallocatedItemsPage = ({
             ? "No dismissed items."
             : search
               ? "No matches for your search."
-              : "No misallocated items 🎉"}
+              : "No misallocated items"}
         </p>
       ) : (
         <div className="overflow-x-auto rounded-2xl border border-ink-100 bg-white shadow-card">

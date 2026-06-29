@@ -56,7 +56,6 @@ const DONE = new Set(["completed", "complete", "done", "success", "finished"]);
 const humanize = (k: string): string =>
   k.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 
-// Dedicated page for a single check — the focused list of items it flagged.
 export const CheckDetailPage = ({
   companyId,
   checkKey,
@@ -203,7 +202,6 @@ export const CheckDetailPage = ({
           {def?.blurb && <p className="mt-1 text-sm text-ink-500">{def.blurb}</p>}
         </div>
 
-        {/* Per-check controls: configure (any check with settings) + run. */}
         {(showControls || canConfigure) && (
           <div className="flex items-center gap-2">
             {canConfigure && (
@@ -256,7 +254,6 @@ export const CheckDetailPage = ({
         </p>
       )}
 
-      {/* Some checks get a dedicated editor; the rest show the focused list. */}
       {checkKey === "bank_balance_check" ? (
         <BankBalanceCheckPage companyId={companyId} refreshKey={refreshKey} />
       ) : checkKey === "unreconciled_bank" ? (

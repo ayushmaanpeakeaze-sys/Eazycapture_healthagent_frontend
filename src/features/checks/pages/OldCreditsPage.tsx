@@ -62,8 +62,7 @@ const detailText = (r: HealthCheckResult): string => {
   return "credit note";
 };
 
-// Old Sales / Purchase Credits — credit notes outstanding > N days.
-// View / Void (editable) / Dismiss / Ignore, + restore in the dismissed view.
+// Credit notes outstanding more than N days.
 export const OldCreditsPage = ({
   companyId,
   issueType,
@@ -297,7 +296,7 @@ export const OldCreditsPage = ({
             ? "No dismissed credit notes."
             : search
               ? "No matches for your search."
-              : "No old credit notes 🎉"}
+              : "No old credit notes"}
         </p>
       ) : (
         <div className="overflow-x-auto rounded-2xl border border-ink-100 bg-white shadow-card">

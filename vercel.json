@@ -3,12 +3,12 @@
   "framework": "vite",
   "rewrites": [
     {
-      "source": "/api/:path*",
-      "destination": "https://eazycapture-api-production.up.railway.app/api/:path*"
+      "source": "/api/(.*)",
+      "destination": "https://eazycapture-api-production.up.railway.app/api/$1"
     },
     {
-      "source": "/accounting/:path*",
-      "destination": "https://eazycapture-api-production.up.railway.app/accounting/:path*"
+      "source": "/accounting/(.*)",
+      "destination": "https://eazycapture-api-production.up.railway.app/accounting/$1"
     },
     { "source": "/(.*)", "destination": "/index.html" }
   ]

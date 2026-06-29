@@ -2,7 +2,10 @@ import { useRef, useState } from "react";
 import Nango, { ConnectUIEvent } from "@nangohq/frontend";
 
 import { fetchCompaniesPanorama } from "@/services/audit.service";
-import { createNangoConnectSession } from "@/services/integrations.service";
+import {
+  createNangoConnectSession,
+  syncNangoConnections,
+} from "@/services/integrations.service";
 
 type State = "idle" | "opening" | "importing" | "done" | "error" | "unavailable";
 
@@ -46,14 +49,17 @@ export const ConnectXeroButton = ({
     const ui = nango.openConnectUI({
       onEvent: (event: ConnectUIEvent) => {
         if (event.type === "connect") {
-          // OAuth done; close the modal so our "importing" state shows, then poll.
+          // OAuth done; close the modal, ask the backend to create + sync the
+          // org(s) from the new connection, then poll until they land.
           connectedRef.current = true;
           uiRef.current?.close();
           setState("importing");
-          pollForOrgs().then(() => {
+          (async () => {
+            await syncNangoConnections();
+            await pollForOrgs();
             setState("done");
             window.location.assign("/clients");
-          });
+          })();
         } else if (event.type === "close") {
           // User backed out before authorising → nothing was created.
           if (!connectedRef.current) setState("idle");

@@ -43,3 +43,17 @@ export const createNangoConnectSession = async (
     return { ok: false, status, error };
   }
 };
+
+/** After OAuth completes, tell the backend to create the org(s) from the new
+ *  connection and kick off the initial sync + audit. */
+export const syncNangoConnections = async (): Promise<{
+  ok: boolean;
+  error?: string;
+}> => {
+  try {
+    await integrationsClient.post("/nango/sync-connections/");
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : "Sync failed" };
+  }
+};

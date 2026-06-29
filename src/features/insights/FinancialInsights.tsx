@@ -1,5 +1,5 @@
 import { ApexOptions } from "apexcharts";
-import { ReactNode, useEffect, useRef, useState } from "react";
+import { Component, ReactNode, useEffect, useRef, useState } from "react";
 import Chart from "react-apexcharts";
 
 import {
@@ -206,22 +206,46 @@ const InsightsBody = ({
         </p>
       )}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-        <SalesTrackerCard data={payload.sales_tracker} />
-        <CashHealthCard data={payload.financial_position} />
-        <BookkeepingHealthCard data={payload.bookkeeping_health} />
-        <ProfitabilityCard data={payload.profitability} asOf={asOf} />
-        <CorporationTaxCard data={payload.corporation_tax} />
-        <DirectorsLoansCard data={payload.directors_loans} />
-        <BusinessValuationCard data={payload.financial_position} />
-        <WorkingCapitalCard data={payload.financial_position} />
-        <DividendCard data={payload.financial_position} />
+        <CardBoundary><SalesTrackerCard data={payload.sales_tracker} /></CardBoundary>
+        <CardBoundary><CashHealthCard data={payload.financial_position} /></CardBoundary>
+        <CardBoundary><BookkeepingHealthCard data={payload.bookkeeping_health} /></CardBoundary>
+        <CardBoundary><ProfitabilityCard data={payload.profitability} asOf={asOf} /></CardBoundary>
+        <CardBoundary><CorporationTaxCard data={payload.corporation_tax} /></CardBoundary>
+        <CardBoundary><DirectorsLoansCard data={payload.directors_loans} /></CardBoundary>
+        <CardBoundary><BusinessValuationCard data={payload.financial_position} /></CardBoundary>
+        <CardBoundary><WorkingCapitalCard data={payload.financial_position} /></CardBoundary>
+        <CardBoundary><DividendCard data={payload.financial_position} /></CardBoundary>
         {payload.bank_reconciliation && (
-          <BankReconciliationCard data={payload.bank_reconciliation} />
+          <CardBoundary>
+            <BankReconciliationCard data={payload.bank_reconciliation} />
+          </CardBoundary>
         )}
       </div>
     </>
   );
 };
+
+// Isolates a single insight card: if it throws (e.g. a sparse snapshot is
+// missing a section), show a small fallback instead of white-screening the page.
+class CardBoundary extends Component<
+  { children: ReactNode },
+  { failed: boolean }
+> {
+  state = { failed: false };
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+  render() {
+    if (this.state.failed) {
+      return (
+        <section className="flex items-center justify-center rounded-2xl border border-ink-100 bg-white p-5 text-center text-xs text-ink-400 shadow-card">
+          This insight isn’t available yet.
+        </section>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 const HelpDot = ({ text }: { text: string }) => (
   <span
@@ -585,10 +609,10 @@ const ProfitabilityCard = ({
         <span
           className={[
             "font-display text-lg font-semibold tabular-nums",
-            data.totals.net_profit < 0 ? "text-rose-600" : "text-emerald-600",
+            (data.totals?.net_profit ?? 0) < 0 ? "text-rose-600" : "text-emerald-600",
           ].join(" ")}
         >
-          {gbp(data.totals.net_profit)}
+          {gbp(data.totals?.net_profit)}
         </span>
       }
     >

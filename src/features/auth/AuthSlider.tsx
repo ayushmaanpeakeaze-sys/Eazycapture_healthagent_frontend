@@ -888,7 +888,7 @@ const SLIDER_CSS = `
 .ec-rope {
   display: block;
   width: 5px;
-  height: 26px;
+  height: 42px;
   border-radius: 3px;
   background: repeating-linear-gradient(
     -52deg,

@@ -1,20 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 
 import {
+  approveTrapped,
   bulkTrappedAction,
-  fetchAuditConfig,
-  fetchCodingOptions,
+  deleteTrapped,
   fetchTrappedInvoices,
-  saveAuditConfigFull,
-} from "../../services/audit.service";
-import {
-  CodingOptions,
-  FlaggedIssue,
-  HealthCheckResult,
-} from "../../types/audit.types";
+} from "@/services/audit.service";
+import { FlaggedIssue, HealthCheckResult } from "@/types/audit.types";
 import { TablePager, useClientPagination } from "@/features/checks/paginate";
-
-export type TaxMissingRuleId = "sales_tax_missing" | "purchase_tax_missing";
 
 const money = (amt: number | string | null | undefined, cur?: string | null) => {
   const n = typeof amt === "string" ? parseFloat(amt) : (amt ?? 0);
@@ -27,9 +20,9 @@ const money = (amt: number | string | null | undefined, cur?: string | null) => 
 };
 
 const shortDate = (iso: string | null | undefined) => {
-  if (!iso) return null;
+  if (!iso) return "—";
   const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return null;
+  if (Number.isNaN(d.getTime())) return "—";
   return d.toLocaleDateString("en-GB", {
     day: "numeric",
     month: "short",
@@ -37,40 +30,28 @@ const shortDate = (iso: string | null | undefined) => {
   });
 };
 
-const DOC_TYPE_LABEL: Record<string, string> = {
-  ACCREC: "Invoice",
-  ACCPAY: "Bill",
-  RECEIVE: "Money In",
-  SPEND: "Money Out",
-};
-const DOC_TYPE_CLS: Record<string, string> = {
-  ACCREC: "bg-emerald-600 text-white",
-  ACCPAY: "bg-amber-600 text-white",
-  RECEIVE: "bg-sky-600 text-white",
-  SPEND: "bg-rose-700 text-white",
-};
+export type UnapprovedRuleId = "unapproved_invoice" | "unapproved_bill";
 
-const flagFor = (r: HealthCheckResult, kind: string): FlaggedIssue | undefined =>
-  (r.result?.flagged ?? []).find((f) => f.issue_type === kind) ??
+const flagFor = (r: HealthCheckResult, ruleId: string): FlaggedIssue | undefined =>
+  (r.result?.flagged ?? []).find((f) => f.issue_type === ruleId) ??
   r.result?.flagged?.[0];
 
-const matchesRule = (r: HealthCheckResult, kind: string): boolean =>
-  (r.result?.rule_ids ?? []).includes(kind) ||
-  (r.result?.flagged ?? []).some((f) => f.issue_type === kind);
+const matchesRule = (r: HealthCheckResult, ruleId: string): boolean =>
+  (r.result?.rule_ids ?? []).includes(ruleId) ||
+  (r.result?.flagged ?? []).some((f) => f.issue_type === ruleId);
 
-// Sales / Purchase Tax Missing — lines with no VAT that probably need it.
-// Read-only review: View/Edit in Xero, Dismiss, "Ignore this contact".
-export const TaxMissingPage = ({
+// Unapproved Invoices / Bills — draft/submitted docs not yet in the accounts.
+// Approve / Delete / Ignore / Dismiss.
+export const UnapprovedDocsPage = ({
   companyId,
   ruleId,
   refreshKey = 0,
 }: {
   companyId: string;
-  ruleId: TaxMissingRuleId;
+  ruleId: UnapprovedRuleId;
   refreshKey?: number;
 }) => {
   const [rows, setRows] = useState<HealthCheckResult[]>([]);
-  const [options, setOptions] = useState<CodingOptions | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showDismissed, setShowDismissed] = useState(false);
@@ -79,14 +60,6 @@ export const TaxMissingPage = ({
   const [removed, setRemoved] = useState<Set<string>>(new Set());
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulkBusy, setBulkBusy] = useState(false);
-
-  useEffect(() => {
-    let active = true;
-    fetchCodingOptions(companyId).then((o) => active && setOptions(o));
-    return () => {
-      active = false;
-    };
-  }, [companyId]);
 
   useEffect(() => {
     let active = true;
@@ -137,11 +110,7 @@ export const TaxMissingPage = ({
     };
   }, [companyId, ruleId, showDismissed, refreshKey]);
 
-  const nameByCode = useMemo(() => {
-    const m: Record<string, string> = {};
-    for (const a of options?.accounts ?? []) m[a.code] = a.name;
-    return m;
-  }, [options]);
+  const noun = ruleId === "unapproved_bill" ? "bill" : "invoice";
 
   const visible = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -150,7 +119,7 @@ export const TaxMissingPage = ({
       .filter((r) => {
         if (!q) return true;
         const res = r.result;
-        return [res?.vendor_name, res?.reference, res?.details].some((v) =>
+        return [res?.vendor_name, res?.invoice_number, res?.details].some((v) =>
           (v || "").toString().toLowerCase().includes(q),
         );
       });
@@ -158,8 +127,10 @@ export const TaxMissingPage = ({
 
   const pg = useClientPagination(visible, `${search}|${showDismissed}`);
 
-  const totalValue = useMemo(
-    () => visible.reduce((s, r) => s + (Number(r.result?.amount) || 0), 0),
+  // "Total potential errors" — sum of the visible docs' values.
+  const total = useMemo(
+    () =>
+      visible.reduce((sum, r) => sum + (Number(r.result?.amount) || 0), 0),
     [visible],
   );
   const currency = visible[0]?.result?.currency_code ?? "GBP";
@@ -171,47 +142,16 @@ export const TaxMissingPage = ({
       return n;
     });
 
-  const onDismiss = async (r: HealthCheckResult) => {
+  const run = async (
+    r: HealthCheckResult,
+    fn: () => Promise<{ ok: boolean; error?: string }>,
+    label: string,
+  ) => {
     setBusyKey(r.id);
-    const res = await bulkTrappedAction(companyId, [r.id], "dismiss");
+    const res = await fn();
     setBusyKey(null);
     if (res.ok) drop([r.id]);
-    else setError(res.error ?? "Dismiss failed");
-  };
-
-  // Add the contact to tax_missing_ignore_contacts (audit config) + clear its
-  // rows. Prefer the stable contact_id; fall back to vendor_name. Stored
-  // uppercased to match the backend's case-insensitive compare.
-  const onIgnoreContact = async (r: HealthCheckResult) => {
-    const cid = r.result?.contact_id ?? null;
-    const name = r.result?.vendor_name ?? null;
-    const value = cid || name;
-    if (!value) return;
-    setBusyKey(r.id);
-    const cfg = await fetchAuditConfig(companyId);
-    const list =
-      (cfg?.settings?.tax_missing_ignore_contacts as string[] | undefined) ?? [];
-    const upper = value.toUpperCase();
-    if (!list.some((x) => x.toUpperCase() === upper)) {
-      const save = await saveAuditConfigFull(companyId, {
-        settings: { tax_missing_ignore_contacts: [...list, upper] },
-      });
-      if (!save.ok) {
-        setBusyKey(null);
-        setError(save.error);
-        return;
-      }
-    }
-    setBusyKey(null);
-    drop(
-      rows
-        .filter(
-          (x) =>
-            (cid && x.result?.contact_id === cid) ||
-            (name && x.result?.vendor_name === name),
-        )
-        .map((x) => x.id),
-    );
+    else setError(res.error ?? `${label} failed`);
   };
 
   const toggle = (id: string) =>
@@ -262,10 +202,9 @@ export const TaxMissingPage = ({
         <div className="flex items-center gap-3">
           {!loading && visible.length > 0 && (
             <span className="text-xs text-ink-500">
-              {visible.length} item{visible.length === 1 ? "" : "s"} · Total
-              potential errors:{" "}
+              Total potential errors:{" "}
               <span className="font-semibold text-ink-800">
-                {money(totalValue, currency)}
+                {money(total, currency)}
               </span>
             </span>
           )}
@@ -273,7 +212,7 @@ export const TaxMissingPage = ({
             type="search"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search…"
+            placeholder={`Search ${noun}s…`}
             className="w-56 rounded-lg border border-ink-200 px-3 py-1.5 text-sm focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-200"
           />
         </div>
@@ -316,7 +255,7 @@ export const TaxMissingPage = ({
             ? "No dismissed items."
             : search
               ? "No matches for your search."
-              : "No missing-tax items 🎉"}
+              : `No unapproved ${noun}s 🎉`}
         </p>
       ) : (
         <div className="overflow-x-auto rounded-2xl border border-ink-100 bg-white shadow-card">
@@ -332,10 +271,12 @@ export const TaxMissingPage = ({
                     aria-label="Select all"
                   />
                 </th>
-                <th className="px-2 py-2.5">Item</th>
+                <th className="px-2 py-2.5">Contact</th>
+                <th className="px-2 py-2.5">Date</th>
+                <th className="px-2 py-2.5">Status</th>
+                <th className="px-2 py-2.5">{noun === "bill" ? "Bill" : "Invoice"} ref</th>
                 <th className="px-2 py-2.5">Details</th>
-                <th className="px-2 py-2.5">Net</th>
-                <th className="px-2 py-2.5">Tax code used</th>
+                <th className="px-2 py-2.5">Total</th>
                 <th className="px-3 py-2.5 text-right">Actions</th>
               </tr>
             </thead>
@@ -343,12 +284,17 @@ export const TaxMissingPage = ({
               {pg.paged.map((r) => {
                 const res = r.result;
                 const f = flagFor(r, ruleId);
-                const acct = res?.current_account_code;
-                const acctName = res?.current_account_name || nameByCode[acct ?? ""];
-                const editable = res?.editable !== false;
+                const status = (res?.invoice_status || "").toUpperCase();
+                const canApprove = res?.editable !== false;
                 const busy = busyKey === r.id;
+                // Deep link: xero_url, else xero_reference when it's a URL.
+                const editUrl =
+                  r.xero_url ||
+                  (res?.xero_reference?.startsWith("http")
+                    ? res.xero_reference
+                    : null);
                 return (
-                  <tr key={r.id} className="align-top transition hover:bg-brand-50/20">
+                  <tr key={r.id} className="align-middle transition hover:bg-brand-50/20">
                     <td className="px-3 py-3">
                       <input
                         type="checkbox"
@@ -358,64 +304,74 @@ export const TaxMissingPage = ({
                         aria-label="Select row"
                       />
                     </td>
+                    <td className="px-2 py-3 font-medium text-ink-900">
+                      {res?.vendor_name || "—"}
+                    </td>
+                    <td className="px-2 py-3 text-ink-600">{shortDate(res?.invoice_date)}</td>
                     <td className="px-2 py-3">
                       <span
                         className={[
-                          "inline-flex items-center rounded px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider",
-                          DOC_TYPE_CLS[r.document_type] ?? "bg-ink-500 text-white",
+                          "rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider",
+                          status === "SUBMITTED"
+                            ? "bg-sky-50 text-sky-700"
+                            : "bg-amber-50 text-amber-700",
                         ].join(" ")}
                       >
-                        {DOC_TYPE_LABEL[r.document_type] ?? r.document_type}
+                        {status || "DRAFT"}
                       </span>
-                      <p className="mt-1 font-medium text-ink-900">
-                        {res?.vendor_name || "—"}
-                      </p>
-                      <p className="text-[11px] text-ink-400">
-                        {[shortDate(res?.invoice_date), res?.reference || res?.invoice_number]
-                          .filter(Boolean)
-                          .join(" · ")}
-                      </p>
-                      {acct && (
-                        <p className="text-[11px] text-ink-400">
-                          {acct}
-                          {acctName ? ` ${acctName}` : ""}
-                        </p>
-                      )}
-                      <button
-                        type="button"
-                        onClick={() => onIgnoreContact(r)}
-                        disabled={busy}
-                        className="mt-0.5 text-[11px] font-medium text-rose-500 hover:text-rose-700 hover:underline disabled:opacity-60"
-                      >
-                        Ignore this contact
-                      </button>
                     </td>
-                    <td className="max-w-[200px] px-2 py-3 text-[12px] text-ink-500">
-                      <span className="line-clamp-2">{res?.details || "—"}</span>
+                    <td className="px-2 py-3 text-ink-600">{res?.invoice_number || "—"}</td>
+                    <td className="max-w-[220px] px-2 py-3 text-[12px] text-ink-500">
+                      <span className="line-clamp-2">{res?.details || f?.message || "—"}</span>
                     </td>
                     <td className="px-2 py-3 font-semibold tabular-nums text-ink-900">
                       {money(res?.amount, res?.currency_code)}
                     </td>
-                    <td className="px-2 py-3 text-ink-700">
-                      {f?.current_code || f?.current_name || "No VAT"}
-                    </td>
                     <td className="px-3 py-3">
                       <div className="flex flex-wrap items-center justify-end gap-1.5">
-                        {r.xero_url && (
+                        {editUrl && (
                           <a
-                            href={r.xero_url}
+                            href={editUrl}
                             target="_blank"
                             rel="noreferrer"
-                            className="rounded-md border border-ink-200 px-2.5 py-1 text-xs font-semibold text-ink-600 transition hover:border-brand-300 hover:text-brand-700"
+                            className="rounded-md border border-ink-200 px-2 py-1 text-xs font-semibold text-ink-600 transition hover:border-brand-300 hover:text-brand-700"
                           >
-                            {editable ? "View / Edit" : "Edit in Xero"}
+                            View / Edit
                           </a>
+                        )}
+                        {canApprove && (
+                          <button
+                            type="button"
+                            onClick={() => run(r, () => approveTrapped(companyId, r.id), "Approve")}
+                            disabled={busy}
+                            className="rounded-md bg-brand-gradient px-2.5 py-1 text-xs font-semibold text-white shadow-brand transition hover:brightness-110 disabled:opacity-60"
+                          >
+                            {busy ? "…" : "Approve"}
+                          </button>
                         )}
                         <button
                           type="button"
-                          onClick={() => onDismiss(r)}
+                          onClick={() => run(r, () => deleteTrapped(companyId, r.id), "Delete")}
                           disabled={busy}
-                          className="rounded-md border border-ink-200 px-2.5 py-1 text-xs font-semibold text-ink-500 transition hover:border-rose-300 hover:text-rose-600 disabled:opacity-60"
+                          className="rounded-md border border-rose-300 bg-rose-50 px-2.5 py-1 text-xs font-semibold text-rose-700 transition hover:bg-rose-100 disabled:opacity-60"
+                        >
+                          Delete
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            run(r, () => bulkTrappedAction(companyId, [r.id], "snooze", { days: 30 }), "Snooze")
+                          }
+                          disabled={busy}
+                          className="rounded-md border border-ink-200 px-2 py-1 text-xs font-semibold text-ink-600 transition hover:border-brand-300 hover:text-brand-700 disabled:opacity-60"
+                        >
+                          Ignore 30d
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => run(r, () => bulkTrappedAction(companyId, [r.id], "dismiss"), "Dismiss")}
+                          disabled={busy}
+                          className="rounded-md border border-ink-200 px-2 py-1 text-xs font-semibold text-ink-500 transition hover:border-rose-300 hover:text-rose-600 disabled:opacity-60"
                         >
                           Dismiss
                         </button>
@@ -426,13 +382,7 @@ export const TaxMissingPage = ({
               })}
             </tbody>
           </table>
-          <TablePager
-            page={pg.page}
-            setPage={pg.setPage}
-            limit={pg.limit}
-            setLimit={pg.setLimit}
-            total={pg.total}
-          />
+          <TablePager page={pg.page} setPage={pg.setPage} limit={pg.limit} setLimit={pg.setLimit} total={pg.total} />
         </div>
       )}
     </div>

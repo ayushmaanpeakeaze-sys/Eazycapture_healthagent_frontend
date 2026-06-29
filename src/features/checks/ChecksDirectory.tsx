@@ -15,43 +15,43 @@ import {
   Importance,
   importanceOf,
 } from "@/features/checks/checksCatalog";
-import { BankBalanceCheckPage } from "@/features/checks/BankBalanceCheckPage";
-import { CapitalItemReviewPage } from "@/features/checks/CapitalItemReviewPage";
-import { ContactDefaultsPage } from "@/features/checks/ContactDefaultsPage";
-import { DuplicateContactsPage } from "@/features/checks/DuplicateContactsPage";
-import { InactiveContactsPage } from "@/features/checks/InactiveContactsPage";
-import { LowCostFixedAssetPage } from "@/features/checks/LowCostFixedAssetPage";
-import { MisallocatedItemsPage } from "@/features/checks/MisallocatedItemsPage";
+import { BankBalanceCheckPage } from "@/features/checks/pages/BankBalanceCheckPage";
+import { CapitalItemReviewPage } from "@/features/checks/pages/CapitalItemReviewPage";
+import { ContactDefaultsPage } from "@/features/checks/pages/ContactDefaultsPage";
+import { DuplicateContactsPage } from "@/features/checks/pages/DuplicateContactsPage";
+import { InactiveContactsPage } from "@/features/checks/pages/InactiveContactsPage";
+import { LowCostFixedAssetPage } from "@/features/checks/pages/LowCostFixedAssetPage";
+import { MisallocatedItemsPage } from "@/features/checks/pages/MisallocatedItemsPage";
 import {
   MultiCodeRuleId,
   MultiCodeSuppliersPage,
-} from "@/features/checks/MultiCodeSuppliersPage";
-import { OldCreditRuleId, OldCreditsPage } from "@/features/checks/OldCreditsPage";
-import { OpeningBalanceDiffsPage } from "@/features/checks/OpeningBalanceDiffsPage";
-import { TaxMissingPage, TaxMissingRuleId } from "@/features/checks/TaxMissingPage";
-import { UndocumentedBillsPage } from "@/features/checks/UndocumentedBillsPage";
-import { UnreconciledBankItemsPage } from "@/features/checks/UnreconciledBankItemsPage";
+} from "@/features/checks/pages/MultiCodeSuppliersPage";
+import { OldCreditRuleId, OldCreditsPage } from "@/features/checks/pages/OldCreditsPage";
+import { OpeningBalanceDiffsPage } from "@/features/checks/pages/OpeningBalanceDiffsPage";
+import { TaxMissingPage, TaxMissingRuleId } from "@/features/checks/pages/TaxMissingPage";
+import { UndocumentedBillsPage } from "@/features/checks/pages/UndocumentedBillsPage";
+import { UnreconciledBankItemsPage } from "@/features/checks/pages/UnreconciledBankItemsPage";
 import {
   WrongTaxDirectionPage,
   WrongTaxRuleId,
-} from "@/features/checks/WrongTaxDirectionPage";
-import { DuplicateInvoicesPage, DuplicateRuleId } from "@/features/checks/DuplicateInvoicesPage";
+} from "@/features/checks/pages/WrongTaxDirectionPage";
+import { DuplicateInvoicesPage, DuplicateRuleId } from "@/features/checks/pages/DuplicateInvoicesPage";
 import {
   OldUnpaidInvoicesPage,
   OldUnpaidRuleId,
-} from "@/features/checks/OldUnpaidInvoicesPage";
+} from "@/features/checks/pages/OldUnpaidInvoicesPage";
 import {
   PaymentMatchReviewPage,
   PaymentMatchRuleId,
-} from "@/features/checks/PaymentMatchReviewPage";
+} from "@/features/checks/pages/PaymentMatchReviewPage";
 import {
   UnapprovedDocsPage,
   UnapprovedRuleId,
-} from "@/features/checks/UnapprovedDocsPage";
+} from "@/features/checks/pages/UnapprovedDocsPage";
 import {
   UnexpectedCodingPage,
   UnexpectedRuleId,
-} from "@/features/checks/UnexpectedCodingPage";
+} from "@/features/checks/pages/UnexpectedCodingPage";
 import { TrappedInvoicesList } from "@/features/checks/TrappedInvoicesList";
 
 const IMP_STYLE: Record<Importance, { label: string; chip: string }> = {

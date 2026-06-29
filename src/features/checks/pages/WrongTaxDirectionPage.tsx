@@ -2,18 +2,19 @@ import { useEffect, useMemo, useState } from "react";
 
 import {
   bulkTrappedAction,
+  fetchAuditConfig,
   fetchCodingOptions,
   fetchTrappedInvoices,
-  recodeTrapped,
-} from "../../services/audit.service";
+  saveAuditConfigFull,
+} from "@/services/audit.service";
 import {
   CodingOptions,
   FlaggedIssue,
   HealthCheckResult,
-} from "../../types/audit.types";
+} from "@/types/audit.types";
 import { TablePager, useClientPagination } from "@/features/checks/paginate";
 
-const RULE = "misallocated_item";
+export type WrongTaxRuleId = "sales_tax_on_bills" | "purchase_tax_on_invoices";
 
 const money = (amt: number | string | null | undefined, cur?: string | null) => {
   const n = typeof amt === "string" ? parseFloat(amt) : (amt ?? 0);
@@ -43,40 +44,29 @@ const DOC_TYPE_LABEL: Record<string, string> = {
   SPEND: "Money Out",
 };
 const DOC_TYPE_CLS: Record<string, string> = {
-  ACCREC: "bg-emerald-50 text-emerald-700 ring-emerald-200",
-  ACCPAY: "bg-amber-50 text-amber-700 ring-amber-200",
-  RECEIVE: "bg-sky-50 text-sky-700 ring-sky-200",
-  SPEND: "bg-rose-50 text-rose-700 ring-rose-200",
+  ACCREC: "bg-emerald-600 text-white",
+  ACCPAY: "bg-amber-600 text-white",
+  RECEIVE: "bg-sky-600 text-white",
+  SPEND: "bg-rose-700 text-white",
 };
 
-const reasonText = (reason?: string | null): string => {
-  switch (reason) {
-    case "reconciled":
-      return "Bank item reconciled — edit in Xero";
-    case "payment_allocated":
-      return "Payment allocated — edit in Xero";
-    case "payment_or_credit_allocated":
-      return "Payment / credit note allocated — edit in Xero";
-    default:
-      return "Locked — edit in Xero";
-  }
-};
-
-const flagFor = (r: HealthCheckResult): FlaggedIssue | undefined =>
-  (r.result?.flagged ?? []).find((f) => f.issue_type === RULE) ??
+const flagFor = (r: HealthCheckResult, kind: string): FlaggedIssue | undefined =>
+  (r.result?.flagged ?? []).find((f) => f.issue_type === kind) ??
   r.result?.flagged?.[0];
 
-const matchesRule = (r: HealthCheckResult): boolean =>
-  (r.result?.rule_ids ?? []).includes(RULE) ||
-  (r.result?.flagged ?? []).some((f) => f.issue_type === RULE);
+const matchesRule = (r: HealthCheckResult, kind: string): boolean =>
+  (r.result?.rule_ids ?? []).includes(kind) ||
+  (r.result?.flagged ?? []).some((f) => f.issue_type === kind);
 
-// Misallocated Items — lines on a vague/broad account (e.g. General Expenses)
-// above the materiality threshold. Re-code to a specific account, or dismiss.
-export const MisallocatedItemsPage = ({
+// Sales Tax on Bills / Purchase Tax on Invoices — a wrong-direction VAT code.
+// Review: Edit-in-Xero / Dismiss / Ignore-contact, + "Show bank payments" toggle.
+export const WrongTaxDirectionPage = ({
   companyId,
+  ruleId,
   refreshKey = 0,
 }: {
   companyId: string;
+  ruleId: WrongTaxRuleId;
   refreshKey?: number;
 }) => {
   const [rows, setRows] = useState<HealthCheckResult[]>([]);
@@ -84,10 +74,10 @@ export const MisallocatedItemsPage = ({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showDismissed, setShowDismissed] = useState(false);
+  const [showBank, setShowBank] = useState(false); // OFF → exclude_bank_items
   const [search, setSearch] = useState("");
   const [busyKey, setBusyKey] = useState<string | null>(null);
   const [removed, setRemoved] = useState<Set<string>>(new Set());
-  const [choice, setChoice] = useState<Record<string, string>>({});
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulkBusy, setBulkBusy] = useState(false);
 
@@ -106,7 +96,9 @@ export const MisallocatedItemsPage = ({
     setRemoved(new Set());
     setSelected(new Set());
 
-    const byRule = (list: HealthCheckResult[]) => list.filter(matchesRule);
+    const excludeBank = !showBank;
+    const byRule = (list: HealthCheckResult[]) =>
+      list.filter((r) => matchesRule(r, ruleId));
 
     const load = async () => {
       if (showDismissed) {
@@ -115,8 +107,13 @@ export const MisallocatedItemsPage = ({
             company_id: companyId,
             limit: 200,
             include_dismissed: true,
+            exclude_bank_items: excludeBank,
           }),
-          fetchTrappedInvoices({ company_id: companyId, limit: 200 }),
+          fetchTrappedInvoices({
+            company_id: companyId,
+            limit: 200,
+            exclude_bank_items: excludeBank,
+          }),
         ]);
         if (!active) return;
         if ("error" in all) {
@@ -129,7 +126,11 @@ export const MisallocatedItemsPage = ({
           setRows(byRule((all.results ?? []).filter((r) => !activeIds.has(r.id))));
         }
       } else {
-        const d = await fetchTrappedInvoices({ company_id: companyId, limit: 200 });
+        const d = await fetchTrappedInvoices({
+          company_id: companyId,
+          limit: 200,
+          exclude_bank_items: excludeBank,
+        });
         if (!active) return;
         if ("error" in d) {
           setError(d.error);
@@ -145,14 +146,13 @@ export const MisallocatedItemsPage = ({
     return () => {
       active = false;
     };
-  }, [companyId, showDismissed, refreshKey]);
+  }, [companyId, ruleId, showDismissed, showBank, refreshKey]);
 
-  const accounts = useMemo(() => options?.accounts ?? [], [options]);
   const nameByCode = useMemo(() => {
     const m: Record<string, string> = {};
-    for (const a of accounts) m[a.code] = a.name;
+    for (const a of options?.accounts ?? []) m[a.code] = a.name;
     return m;
-  }, [accounts]);
+  }, [options]);
 
   const visible = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -161,17 +161,25 @@ export const MisallocatedItemsPage = ({
       .filter((r) => {
         if (!q) return true;
         const res = r.result;
-        return [res?.vendor_name, res?.details].some((v) =>
+        return [res?.vendor_name, res?.reference, res?.details].some((v) =>
           (v || "").toString().toLowerCase().includes(q),
         );
       });
   }, [rows, removed, search]);
 
-  const pg = useClientPagination(visible, `${search}|${showDismissed}`);
+  const pg = useClientPagination(visible, `${search}|${showDismissed}|${showBank}`);
 
   const totalValue = useMemo(
-    () => visible.reduce((s, r) => s + (Number(r.result?.amount) || 0), 0),
-    [visible],
+    () =>
+      visible.reduce(
+        (s, r) =>
+          s +
+          (Number(flagFor(r, ruleId)?.match_reasons?.net_amount) ||
+            Number(r.result?.amount) ||
+            0),
+        0,
+      ),
+    [visible, ruleId],
   );
   const currency = visible[0]?.result?.currency_code ?? "GBP";
 
@@ -182,22 +190,44 @@ export const MisallocatedItemsPage = ({
       return n;
     });
 
-  const onSave = async (r: HealthCheckResult, current: string) => {
-    const chosen = choice[r.id] ?? current;
-    if (!chosen || chosen === current) return;
-    setBusyKey(r.id);
-    const res = await recodeTrapped(companyId, r.id, chosen);
-    setBusyKey(null);
-    if (res.ok) drop([r.id]);
-    else setError(res.error ?? "Save failed");
-  };
-
   const onDismiss = async (r: HealthCheckResult) => {
     setBusyKey(r.id);
     const res = await bulkTrappedAction(companyId, [r.id], "dismiss");
     setBusyKey(null);
     if (res.ok) drop([r.id]);
     else setError(res.error ?? "Dismiss failed");
+  };
+
+  const onIgnoreContact = async (r: HealthCheckResult) => {
+    const cid = r.result?.contact_id ?? null;
+    const name = r.result?.vendor_name ?? null;
+    const value = cid || name;
+    if (!value) return;
+    setBusyKey(r.id);
+    const cfg = await fetchAuditConfig(companyId);
+    const list =
+      (cfg?.settings?.tax_missing_ignore_contacts as string[] | undefined) ?? [];
+    const upper = value.toUpperCase();
+    if (!list.some((x) => x.toUpperCase() === upper)) {
+      const save = await saveAuditConfigFull(companyId, {
+        settings: { tax_missing_ignore_contacts: [...list, upper] },
+      });
+      if (!save.ok) {
+        setBusyKey(null);
+        setError(save.error);
+        return;
+      }
+    }
+    setBusyKey(null);
+    drop(
+      rows
+        .filter(
+          (x) =>
+            (cid && x.result?.contact_id === cid) ||
+            (name && x.result?.vendor_name === name),
+        )
+        .map((x) => x.id),
+    );
   };
 
   const toggle = (id: string) =>
@@ -210,8 +240,7 @@ export const MisallocatedItemsPage = ({
   const toggleAll = () =>
     setSelected(allSelected ? new Set() : new Set(pg.paged.map((r) => r.id)));
 
-  const bulkDismiss = async () => {
-    const ids = [...selected];
+  const dismissMany = async (ids: string[]) => {
     if (!ids.length) return;
     setBulkBusy(true);
     const res = await bulkTrappedAction(companyId, ids, "dismiss");
@@ -225,42 +254,45 @@ export const MisallocatedItemsPage = ({
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <label className="inline-flex cursor-pointer items-center gap-2 text-xs font-medium text-ink-600">
-          <button
-            type="button"
-            role="switch"
-            aria-checked={showDismissed}
-            onClick={() => setShowDismissed((v) => !v)}
-            className={[
-              "relative h-5 w-9 rounded-full transition",
-              showDismissed ? "bg-brand-600" : "bg-ink-200",
-            ].join(" ")}
+        <div className="flex flex-wrap items-center gap-4">
+          <label className="inline-flex cursor-pointer items-center gap-2 text-xs font-medium text-ink-600">
+            <Switch on={showDismissed} onClick={() => setShowDismissed((v) => !v)} />
+            Show dismissed items
+          </label>
+          <label
+            className="inline-flex cursor-pointer items-center gap-2 text-xs font-medium text-ink-600"
+            title="Also include bank payments (Money Out / Money In), not just bills/invoices"
           >
-            <span
-              className={[
-                "absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition",
-                showDismissed ? "left-[18px]" : "left-0.5",
-              ].join(" ")}
-            />
-          </button>
-          Show dismissed items
-        </label>
+            <Switch on={showBank} onClick={() => setShowBank((v) => !v)} />
+            Show Bank payments too
+          </label>
+        </div>
         <div className="flex items-center gap-3">
           {!loading && visible.length > 0 && (
-            <span className="text-xs text-ink-500">
-              {visible.length} item{visible.length === 1 ? "" : "s"} · Total
-              potential errors:{" "}
-              <span className="font-semibold text-ink-800">
-                {money(totalValue, currency)}
+            <>
+              <span className="text-xs text-ink-500">
+                {visible.length} item{visible.length === 1 ? "" : "s"} · Total
+                potential errors:{" "}
+                <span className="font-semibold text-ink-800">
+                  {money(totalValue, currency)}
+                </span>
               </span>
-            </span>
+              <button
+                type="button"
+                disabled={bulkBusy}
+                onClick={() => dismissMany(visible.map((r) => r.id))}
+                className="rounded-md border border-ink-200 px-2.5 py-1 text-xs font-semibold text-ink-600 transition hover:border-rose-300 hover:text-rose-600 disabled:opacity-60"
+              >
+                Dismiss all {visible.length}
+              </button>
+            </>
           )}
           <input
             type="search"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search…"
-            className="w-56 rounded-lg border border-ink-200 px-3 py-1.5 text-sm focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-200"
+            className="w-52 rounded-lg border border-ink-200 px-3 py-1.5 text-sm focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-200"
           />
         </div>
       </div>
@@ -271,7 +303,7 @@ export const MisallocatedItemsPage = ({
           <button
             type="button"
             disabled={bulkBusy}
-            onClick={bulkDismiss}
+            onClick={() => dismissMany([...selected])}
             className="rounded-md border border-ink-200 bg-white px-2.5 py-1 font-semibold text-ink-600 transition hover:border-rose-300 hover:text-rose-600 disabled:opacity-60"
           >
             Dismiss
@@ -302,7 +334,7 @@ export const MisallocatedItemsPage = ({
             ? "No dismissed items."
             : search
               ? "No matches for your search."
-              : "No misallocated items 🎉"}
+              : "No wrong-direction tax items 🎉"}
         </p>
       ) : (
         <div className="overflow-x-auto rounded-2xl border border-ink-100 bg-white shadow-card">
@@ -318,26 +350,25 @@ export const MisallocatedItemsPage = ({
                     aria-label="Select all"
                   />
                 </th>
-                <th className="px-2 py-2.5">Type</th>
                 <th className="px-2 py-2.5">Item</th>
                 <th className="px-2 py-2.5">Details</th>
                 <th className="px-2 py-2.5">Net</th>
-                <th className="px-2 py-2.5">Account used</th>
-                <th className="px-2 py-2.5">Change to</th>
+                <th className="px-2 py-2.5">Tax</th>
+                <th className="px-2 py-2.5">Tax code used</th>
                 <th className="px-3 py-2.5 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-ink-50">
               {pg.paged.map((r) => {
                 const res = r.result;
-                const f = flagFor(r);
-                const current = f?.current_code ?? "";
-                const usedName = f?.current_name || nameByCode[current];
+                const f = flagFor(r, ruleId);
+                const mr = f?.match_reasons;
+                const acct = res?.current_account_code;
+                const acctName = res?.current_account_name || nameByCode[acct ?? ""];
                 const editable = res?.editable !== false;
-                const chosen = choice[r.id] ?? current;
                 const busy = busyKey === r.id;
                 return (
-                  <tr key={r.id} className="align-middle transition hover:bg-brand-50/20">
+                  <tr key={r.id} className="align-top transition hover:bg-brand-50/20">
                     <td className="px-3 py-3">
                       <input
                         type="checkbox"
@@ -350,70 +381,49 @@ export const MisallocatedItemsPage = ({
                     <td className="px-2 py-3">
                       <span
                         className={[
-                          "rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ring-1",
-                          DOC_TYPE_CLS[r.document_type] ??
-                            "bg-ink-100 text-ink-600 ring-ink-200",
+                          "inline-flex items-center rounded px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider",
+                          DOC_TYPE_CLS[r.document_type] ?? "bg-ink-500 text-white",
                         ].join(" ")}
                       >
                         {DOC_TYPE_LABEL[r.document_type] ?? r.document_type}
                       </span>
-                    </td>
-                    <td className="px-2 py-3">
-                      <p className="font-medium text-ink-900">{res?.vendor_name || "—"}</p>
-                      {shortDate(res?.invoice_date) && (
+                      <p className="mt-1 font-medium text-ink-900">
+                        {res?.vendor_name || "—"}
+                      </p>
+                      <p className="text-[11px] text-ink-400">
+                        {[shortDate(res?.invoice_date), res?.reference || res?.invoice_number]
+                          .filter(Boolean)
+                          .join(" · ")}
+                      </p>
+                      {acct && (
                         <p className="text-[11px] text-ink-400">
-                          {shortDate(res?.invoice_date)}
+                          {acct}
+                          {acctName ? ` ${acctName}` : ""}
                         </p>
                       )}
+                      <button
+                        type="button"
+                        onClick={() => onIgnoreContact(r)}
+                        disabled={busy}
+                        className="mt-0.5 text-[11px] font-medium text-rose-500 hover:text-rose-700 hover:underline disabled:opacity-60"
+                      >
+                        Ignore this contact
+                      </button>
                     </td>
-                    <td className="max-w-[180px] px-2 py-3 text-[12px] text-ink-500">
+                    <td className="max-w-[220px] px-2 py-3 text-[12px] text-ink-500">
                       <span className="line-clamp-2">{res?.details || "—"}</span>
                     </td>
                     <td className="px-2 py-3 font-semibold tabular-nums text-ink-900">
-                      {money(res?.amount, res?.currency_code)}
+                      {money(mr?.net_amount ?? res?.amount, res?.currency_code)}
+                    </td>
+                    <td className="px-2 py-3 tabular-nums text-ink-700">
+                      {money(mr?.tax_amount, res?.currency_code)}
                     </td>
                     <td className="px-2 py-3 text-ink-700">
-                      {current || "—"}
-                      {usedName && (
-                        <span className="block text-[11px] text-ink-400">{usedName}</span>
-                      )}
-                    </td>
-                    <td className="px-2 py-3">
-                      {editable ? (
-                        <select
-                          value={chosen}
-                          onChange={(e) =>
-                            setChoice((p) => ({ ...p, [r.id]: e.target.value }))
-                          }
-                          className="w-44 rounded-md border border-ink-200 bg-white px-2 py-1 text-xs focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-200"
-                        >
-                          {accounts.map((a) => (
-                            <option key={a.code} value={a.code}>
-                              {a.code} — {a.name}
-                            </option>
-                          ))}
-                        </select>
-                      ) : (
-                        <span
-                          title={reasonText(res?.editable_reason)}
-                          className="flex h-4 w-4 cursor-help items-center justify-center rounded-full bg-ink-100 text-[10px] font-bold text-ink-500"
-                        >
-                          ?
-                        </span>
-                      )}
+                      {f?.current_code || mr?.tax_code || f?.current_name || "—"}
                     </td>
                     <td className="px-3 py-3">
                       <div className="flex flex-wrap items-center justify-end gap-1.5">
-                        {editable && (
-                          <button
-                            type="button"
-                            onClick={() => onSave(r, current)}
-                            disabled={busy || chosen === current}
-                            className="rounded-md bg-brand-gradient px-2.5 py-1 text-xs font-semibold text-white shadow-brand transition hover:brightness-110 disabled:opacity-50"
-                          >
-                            {busy ? "…" : "Save changes"}
-                          </button>
-                        )}
                         {r.xero_url && (
                           <a
                             href={r.xero_url}
@@ -421,7 +431,7 @@ export const MisallocatedItemsPage = ({
                             rel="noreferrer"
                             className="rounded-md border border-ink-200 px-2.5 py-1 text-xs font-semibold text-ink-600 transition hover:border-brand-300 hover:text-brand-700"
                           >
-                            {editable ? "View" : "Edit in Xero"}
+                            {editable ? "View / Edit" : "Edit in Xero"}
                           </a>
                         )}
                         <button
@@ -451,3 +461,23 @@ export const MisallocatedItemsPage = ({
     </div>
   );
 };
+
+const Switch = ({ on, onClick }: { on: boolean; onClick: () => void }) => (
+  <button
+    type="button"
+    role="switch"
+    aria-checked={on}
+    onClick={onClick}
+    className={[
+      "relative h-5 w-9 rounded-full transition",
+      on ? "bg-brand-600" : "bg-ink-200",
+    ].join(" ")}
+  >
+    <span
+      className={[
+        "absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition",
+        on ? "left-[18px]" : "left-0.5",
+      ].join(" ")}
+    />
+  </button>
+);

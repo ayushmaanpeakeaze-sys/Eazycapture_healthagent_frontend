@@ -3,8 +3,8 @@ import { useEffect, useMemo, useState } from "react";
 import {
   bulkTrappedAction,
   fetchTrappedInvoices,
-} from "../../services/audit.service";
-import { FlaggedIssue, HealthCheckResult } from "../../types/audit.types";
+} from "@/services/audit.service";
+import { FlaggedIssue, HealthCheckResult } from "@/types/audit.types";
 import { TablePager, useClientPagination } from "@/features/checks/paginate";
 
 const RULE = "inactive_contact";

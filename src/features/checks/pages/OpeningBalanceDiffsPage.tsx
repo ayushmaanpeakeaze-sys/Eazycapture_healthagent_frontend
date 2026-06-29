@@ -7,12 +7,12 @@ import {
   restoreOpeningBalance,
   setFiledNetAssets,
   setRegistrationNumber,
-} from "../../services/audit.service";
+} from "@/services/audit.service";
 import {
   LateTransaction,
   OpeningBalanceItem,
   OpeningBalanceResponse,
-} from "../../types/audit.types";
+} from "@/types/audit.types";
 import { TablePager, useClientPagination } from "@/features/checks/paginate";
 
 const money = (amt: number | string | null | undefined, cur?: string | null) => {

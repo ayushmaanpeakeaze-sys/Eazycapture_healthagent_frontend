@@ -3,12 +3,12 @@ import { useEffect, useMemo, useState } from "react";
 import {
   bulkTrappedAction,
   fetchTrappedInvoices,
-} from "../../services/audit.service";
+} from "@/services/audit.service";
 import {
   ContactHelper,
   FlaggedIssue,
   HealthCheckResult,
-} from "../../types/audit.types";
+} from "@/types/audit.types";
 
 const RULE = "duplicate_contact";
 

@@ -1,13 +1,19 @@
 import { useEffect, useMemo, useState } from "react";
 
 import {
-  approveTrapped,
   bulkTrappedAction,
-  deleteTrapped,
+  fetchCodingOptions,
   fetchTrappedInvoices,
-} from "../../services/audit.service";
-import { FlaggedIssue, HealthCheckResult } from "../../types/audit.types";
+  recodeTrapped,
+} from "@/services/audit.service";
+import {
+  CodingOptions,
+  FlaggedIssue,
+  HealthCheckResult,
+} from "@/types/audit.types";
 import { TablePager, useClientPagination } from "@/features/checks/paginate";
+
+const RULE = "capital_item_review";
 
 const money = (amt: number | string | null | undefined, cur?: string | null) => {
   const n = typeof amt === "string" ? parseFloat(amt) : (amt ?? 0);
@@ -20,9 +26,9 @@ const money = (amt: number | string | null | undefined, cur?: string | null) => 
 };
 
 const shortDate = (iso: string | null | undefined) => {
-  if (!iso) return "—";
+  if (!iso) return null;
   const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return "—";
+  if (Number.isNaN(d.getTime())) return null;
   return d.toLocaleDateString("en-GB", {
     day: "numeric",
     month: "short",
@@ -30,36 +36,72 @@ const shortDate = (iso: string | null | undefined) => {
   });
 };
 
-export type UnapprovedRuleId = "unapproved_invoice" | "unapproved_bill";
+const DOC_TYPE_LABEL: Record<string, string> = {
+  ACCREC: "Invoice",
+  ACCPAY: "Bill",
+  RECEIVE: "Money In",
+  SPEND: "Money Out",
+};
+const DOC_TYPE_CLS: Record<string, string> = {
+  ACCREC: "bg-emerald-50 text-emerald-700 ring-emerald-200",
+  ACCPAY: "bg-amber-50 text-amber-700 ring-amber-200",
+  RECEIVE: "bg-sky-50 text-sky-700 ring-sky-200",
+  SPEND: "bg-rose-50 text-rose-700 ring-rose-200",
+};
 
-const flagFor = (r: HealthCheckResult, ruleId: string): FlaggedIssue | undefined =>
-  (r.result?.flagged ?? []).find((f) => f.issue_type === ruleId) ??
+const reasonText = (reason?: string | null): string => {
+  switch (reason) {
+    case "reconciled":
+      return "Bank item reconciled — edit in Xero";
+    case "payment_allocated":
+      return "Payment allocated — edit in Xero";
+    case "payment_or_credit_allocated":
+      return "Payment / credit note allocated — edit in Xero";
+    default:
+      return "Locked — edit in Xero";
+  }
+};
+
+const flagFor = (r: HealthCheckResult): FlaggedIssue | undefined =>
+  (r.result?.flagged ?? []).find((f) => f.issue_type === RULE) ??
   r.result?.flagged?.[0];
 
-const matchesRule = (r: HealthCheckResult, ruleId: string): boolean =>
-  (r.result?.rule_ids ?? []).includes(ruleId) ||
-  (r.result?.flagged ?? []).some((f) => f.issue_type === ruleId);
+const matchesRule = (r: HealthCheckResult): boolean =>
+  (r.result?.rule_ids ?? []).includes(RULE) ||
+  (r.result?.flagged ?? []).some((f) => f.issue_type === RULE);
 
-// Unapproved Invoices / Bills — draft/submitted docs not yet in the accounts.
-// Approve / Delete / Ignore / Dismiss.
-export const UnapprovedDocsPage = ({
+// Capital Item Review — an expense line above the threshold may really be a
+// capital item (fixed asset) mis-coded to an expense. Re-code it to a FIXED
+// asset account (so it's capitalised + depreciated), or dismiss if the expense
+// treatment is correct. This is a *review* suggestion: there's no single
+// "correct" target, so we offer the fixed-asset accounts and surface the
+// reasoning rather than auto-picking one.
+export const CapitalItemReviewPage = ({
   companyId,
-  ruleId,
   refreshKey = 0,
 }: {
   companyId: string;
-  ruleId: UnapprovedRuleId;
   refreshKey?: number;
 }) => {
   const [rows, setRows] = useState<HealthCheckResult[]>([]);
+  const [options, setOptions] = useState<CodingOptions | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showDismissed, setShowDismissed] = useState(false);
   const [search, setSearch] = useState("");
   const [busyKey, setBusyKey] = useState<string | null>(null);
   const [removed, setRemoved] = useState<Set<string>>(new Set());
+  const [choice, setChoice] = useState<Record<string, string>>({});
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulkBusy, setBulkBusy] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    fetchCodingOptions(companyId).then((o) => active && setOptions(o));
+    return () => {
+      active = false;
+    };
+  }, [companyId]);
 
   useEffect(() => {
     let active = true;
@@ -68,8 +110,7 @@ export const UnapprovedDocsPage = ({
     setRemoved(new Set());
     setSelected(new Set());
 
-    const byRule = (list: HealthCheckResult[]) =>
-      list.filter((r) => matchesRule(r, ruleId));
+    const byRule = (list: HealthCheckResult[]) => list.filter(matchesRule);
 
     const load = async () => {
       if (showDismissed) {
@@ -108,9 +149,19 @@ export const UnapprovedDocsPage = ({
     return () => {
       active = false;
     };
-  }, [companyId, ruleId, showDismissed, refreshKey]);
+  }, [companyId, showDismissed, refreshKey]);
 
-  const noun = ruleId === "unapproved_bill" ? "bill" : "invoice";
+  const accounts = useMemo(() => options?.accounts ?? [], [options]);
+  const nameByCode = useMemo(() => {
+    const m: Record<string, string> = {};
+    for (const a of accounts) m[a.code] = a.name;
+    return m;
+  }, [accounts]);
+  const typeByCode = useMemo(() => {
+    const m: Record<string, string> = {};
+    for (const a of accounts) m[a.code] = a.type;
+    return m;
+  }, [accounts]);
 
   const visible = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -119,7 +170,7 @@ export const UnapprovedDocsPage = ({
       .filter((r) => {
         if (!q) return true;
         const res = r.result;
-        return [res?.vendor_name, res?.invoice_number, res?.details].some((v) =>
+        return [res?.vendor_name, res?.details].some((v) =>
           (v || "").toString().toLowerCase().includes(q),
         );
       });
@@ -127,10 +178,8 @@ export const UnapprovedDocsPage = ({
 
   const pg = useClientPagination(visible, `${search}|${showDismissed}`);
 
-  // "Total potential errors" — sum of the visible docs' values.
-  const total = useMemo(
-    () =>
-      visible.reduce((sum, r) => sum + (Number(r.result?.amount) || 0), 0),
+  const totalValue = useMemo(
+    () => visible.reduce((s, r) => s + (Number(r.result?.amount) || 0), 0),
     [visible],
   );
   const currency = visible[0]?.result?.currency_code ?? "GBP";
@@ -142,16 +191,22 @@ export const UnapprovedDocsPage = ({
       return n;
     });
 
-  const run = async (
-    r: HealthCheckResult,
-    fn: () => Promise<{ ok: boolean; error?: string }>,
-    label: string,
-  ) => {
+  const onSave = async (r: HealthCheckResult, current: string) => {
+    const chosen = choice[r.id];
+    if (!chosen || chosen === current) return;
     setBusyKey(r.id);
-    const res = await fn();
+    const res = await recodeTrapped(companyId, r.id, chosen);
     setBusyKey(null);
     if (res.ok) drop([r.id]);
-    else setError(res.error ?? `${label} failed`);
+    else setError(res.error ?? "Save failed");
+  };
+
+  const onDismiss = async (r: HealthCheckResult) => {
+    setBusyKey(r.id);
+    const res = await bulkTrappedAction(companyId, [r.id], "dismiss");
+    setBusyKey(null);
+    if (res.ok) drop([r.id]);
+    else setError(res.error ?? "Dismiss failed");
   };
 
   const toggle = (id: string) =>
@@ -202,9 +257,10 @@ export const UnapprovedDocsPage = ({
         <div className="flex items-center gap-3">
           {!loading && visible.length > 0 && (
             <span className="text-xs text-ink-500">
-              Total potential errors:{" "}
+              {visible.length} item{visible.length === 1 ? "" : "s"} · Total
+              flagged:{" "}
               <span className="font-semibold text-ink-800">
-                {money(total, currency)}
+                {money(totalValue, currency)}
               </span>
             </span>
           )}
@@ -212,7 +268,7 @@ export const UnapprovedDocsPage = ({
             type="search"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder={`Search ${noun}s…`}
+            placeholder="Search…"
             className="w-56 rounded-lg border border-ink-200 px-3 py-1.5 text-sm focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-200"
           />
         </div>
@@ -255,11 +311,11 @@ export const UnapprovedDocsPage = ({
             ? "No dismissed items."
             : search
               ? "No matches for your search."
-              : `No unapproved ${noun}s 🎉`}
+              : "No capital items to review 🎉"}
         </p>
       ) : (
         <div className="overflow-x-auto rounded-2xl border border-ink-100 bg-white shadow-card">
-          <table className="w-full min-w-[860px] text-sm">
+          <table className="w-full min-w-[940px] text-sm">
             <thead>
               <tr className="border-b border-ink-100 bg-ink-50/50 text-left text-[10px] font-semibold uppercase tracking-wider text-ink-400">
                 <th className="px-3 py-2.5">
@@ -271,28 +327,32 @@ export const UnapprovedDocsPage = ({
                     aria-label="Select all"
                   />
                 </th>
-                <th className="px-2 py-2.5">Contact</th>
-                <th className="px-2 py-2.5">Date</th>
-                <th className="px-2 py-2.5">Status</th>
-                <th className="px-2 py-2.5">{noun === "bill" ? "Bill" : "Invoice"} ref</th>
+                <th className="px-2 py-2.5">Type</th>
+                <th className="px-2 py-2.5">Item</th>
                 <th className="px-2 py-2.5">Details</th>
-                <th className="px-2 py-2.5">Total</th>
+                <th className="px-2 py-2.5">Net</th>
+                <th className="px-2 py-2.5">Account used</th>
+                <th className="px-2 py-2.5">Change to (fixed asset)</th>
                 <th className="px-3 py-2.5 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-ink-50">
               {pg.paged.map((r) => {
                 const res = r.result;
-                const f = flagFor(r, ruleId);
-                const status = (res?.invoice_status || "").toUpperCase();
-                const canApprove = res?.editable !== false;
+                const f = flagFor(r);
+                const mr = f?.match_reasons;
+                const current = f?.current_code ?? mr?.account_code ?? "";
+                const usedName = f?.current_name || mr?.account_name || nameByCode[current];
+                const usedType = typeByCode[current];
+                const targetType = (mr?.recode_to_account_type || "FIXED").toUpperCase();
+                const fixedAccounts = accounts.filter(
+                  (a) => (a.type || "").toUpperCase() === targetType,
+                );
+                const targetAccounts = fixedAccounts.length ? fixedAccounts : accounts;
+                const reason = f?.reasoning || f?.message || "";
+                const editable = res?.editable !== false;
+                const chosen = choice[r.id] ?? "";
                 const busy = busyKey === r.id;
-                // Deep link: xero_url, else xero_reference when it's a URL.
-                const editUrl =
-                  r.xero_url ||
-                  (res?.xero_reference?.startsWith("http")
-                    ? res.xero_reference
-                    : null);
                 return (
                   <tr key={r.id} className="align-middle transition hover:bg-brand-50/20">
                     <td className="px-3 py-3">
@@ -304,74 +364,104 @@ export const UnapprovedDocsPage = ({
                         aria-label="Select row"
                       />
                     </td>
-                    <td className="px-2 py-3 font-medium text-ink-900">
-                      {res?.vendor_name || "—"}
-                    </td>
-                    <td className="px-2 py-3 text-ink-600">{shortDate(res?.invoice_date)}</td>
                     <td className="px-2 py-3">
                       <span
                         className={[
-                          "rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider",
-                          status === "SUBMITTED"
-                            ? "bg-sky-50 text-sky-700"
-                            : "bg-amber-50 text-amber-700",
+                          "rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ring-1",
+                          DOC_TYPE_CLS[r.document_type] ??
+                            "bg-ink-100 text-ink-600 ring-ink-200",
                         ].join(" ")}
                       >
-                        {status || "DRAFT"}
+                        {DOC_TYPE_LABEL[r.document_type] ?? r.document_type}
                       </span>
                     </td>
-                    <td className="px-2 py-3 text-ink-600">{res?.invoice_number || "—"}</td>
-                    <td className="max-w-[220px] px-2 py-3 text-[12px] text-ink-500">
-                      <span className="line-clamp-2">{res?.details || f?.message || "—"}</span>
+                    <td className="px-2 py-3">
+                      <p className="font-medium text-ink-900">{res?.vendor_name || "—"}</p>
+                      {shortDate(res?.invoice_date) && (
+                        <p className="text-[11px] text-ink-400">
+                          {shortDate(res?.invoice_date)}
+                        </p>
+                      )}
+                    </td>
+                    <td className="max-w-[180px] px-2 py-3 text-[12px] text-ink-500">
+                      <span className="line-clamp-2">{res?.details || "—"}</span>
                     </td>
                     <td className="px-2 py-3 font-semibold tabular-nums text-ink-900">
                       {money(res?.amount, res?.currency_code)}
                     </td>
+                    <td className="px-2 py-3 text-ink-700">
+                      <span className="inline-flex items-center gap-1">
+                        {current || "—"}
+                        {usedType && (
+                          <span className="rounded bg-rose-50 px-1 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-rose-600 ring-1 ring-rose-100">
+                            {usedType}
+                          </span>
+                        )}
+                        {reason && (
+                          <span
+                            title={reason}
+                            className="flex h-4 w-4 cursor-help items-center justify-center rounded-full bg-ink-100 text-[10px] font-bold text-ink-500"
+                          >
+                            ?
+                          </span>
+                        )}
+                      </span>
+                      {usedName && (
+                        <span className="block text-[11px] text-ink-400">{usedName}</span>
+                      )}
+                    </td>
+                    <td className="px-2 py-3">
+                      {editable ? (
+                        <select
+                          value={chosen}
+                          onChange={(e) =>
+                            setChoice((p) => ({ ...p, [r.id]: e.target.value }))
+                          }
+                          className="w-52 rounded-md border border-ink-200 bg-white px-2 py-1 text-xs focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-200"
+                        >
+                          <option value="">Select fixed-asset account…</option>
+                          {targetAccounts.map((a) => (
+                            <option key={a.code} value={a.code}>
+                              {a.code} — {a.name}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <span
+                          title={reasonText(res?.editable_reason)}
+                          className="flex h-4 w-4 cursor-help items-center justify-center rounded-full bg-ink-100 text-[10px] font-bold text-ink-500"
+                        >
+                          ?
+                        </span>
+                      )}
+                    </td>
                     <td className="px-3 py-3">
                       <div className="flex flex-wrap items-center justify-end gap-1.5">
-                        {editUrl && (
-                          <a
-                            href={editUrl}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="rounded-md border border-ink-200 px-2 py-1 text-xs font-semibold text-ink-600 transition hover:border-brand-300 hover:text-brand-700"
-                          >
-                            View / Edit
-                          </a>
-                        )}
-                        {canApprove && (
+                        {editable && (
                           <button
                             type="button"
-                            onClick={() => run(r, () => approveTrapped(companyId, r.id), "Approve")}
-                            disabled={busy}
-                            className="rounded-md bg-brand-gradient px-2.5 py-1 text-xs font-semibold text-white shadow-brand transition hover:brightness-110 disabled:opacity-60"
+                            onClick={() => onSave(r, current)}
+                            disabled={busy || !chosen || chosen === current}
+                            className="rounded-md bg-brand-gradient px-2.5 py-1 text-xs font-semibold text-white shadow-brand transition hover:brightness-110 disabled:opacity-50"
                           >
-                            {busy ? "…" : "Approve"}
+                            {busy ? "…" : "Save changes"}
                           </button>
+                        )}
+                        {r.xero_url && (
+                          <a
+                            href={r.xero_url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="rounded-md border border-ink-200 px-2.5 py-1 text-xs font-semibold text-ink-600 transition hover:border-brand-300 hover:text-brand-700"
+                          >
+                            {editable ? "View" : "Edit in Xero"}
+                          </a>
                         )}
                         <button
                           type="button"
-                          onClick={() => run(r, () => deleteTrapped(companyId, r.id), "Delete")}
+                          onClick={() => onDismiss(r)}
                           disabled={busy}
-                          className="rounded-md border border-rose-300 bg-rose-50 px-2.5 py-1 text-xs font-semibold text-rose-700 transition hover:bg-rose-100 disabled:opacity-60"
-                        >
-                          Delete
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            run(r, () => bulkTrappedAction(companyId, [r.id], "snooze", { days: 30 }), "Snooze")
-                          }
-                          disabled={busy}
-                          className="rounded-md border border-ink-200 px-2 py-1 text-xs font-semibold text-ink-600 transition hover:border-brand-300 hover:text-brand-700 disabled:opacity-60"
-                        >
-                          Ignore 30d
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => run(r, () => bulkTrappedAction(companyId, [r.id], "dismiss"), "Dismiss")}
-                          disabled={busy}
-                          className="rounded-md border border-ink-200 px-2 py-1 text-xs font-semibold text-ink-500 transition hover:border-rose-300 hover:text-rose-600 disabled:opacity-60"
+                          className="rounded-md border border-ink-200 px-2.5 py-1 text-xs font-semibold text-ink-500 transition hover:border-rose-300 hover:text-rose-600 disabled:opacity-60"
                         >
                           Dismiss
                         </button>
@@ -382,7 +472,13 @@ export const UnapprovedDocsPage = ({
               })}
             </tbody>
           </table>
-          <TablePager page={pg.page} setPage={pg.setPage} limit={pg.limit} setLimit={pg.setLimit} total={pg.total} />
+          <TablePager
+            page={pg.page}
+            setPage={pg.setPage}
+            limit={pg.limit}
+            setLimit={pg.setLimit}
+            total={pg.total}
+          />
         </div>
       )}
     </div>

@@ -5,8 +5,8 @@ import {
   fetchBankBalanceCheck,
   markBankBalanceOk,
   setStatementBalance,
-} from "../../services/audit.service";
-import { BankBalanceCheckResponse, BankBalanceItem } from "../../types/audit.types";
+} from "@/services/audit.service";
+import { BankBalanceCheckResponse, BankBalanceItem } from "@/types/audit.types";
 
 const money = (amt: number | string | null | undefined, cur?: string | null) => {
   const n = typeof amt === "string" ? parseFloat(amt) : (amt ?? 0);

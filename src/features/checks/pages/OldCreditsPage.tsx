@@ -5,8 +5,8 @@ import {
   fetchTrappedInvoices,
   restoreTrapped,
   voidTrapped,
-} from "../../services/audit.service";
-import { FlaggedIssue, HealthCheckResult } from "../../types/audit.types";
+} from "@/services/audit.service";
+import { FlaggedIssue, HealthCheckResult } from "@/types/audit.types";
 import { TablePager, useClientPagination } from "@/features/checks/paginate";
 
 export type OldCreditRuleId =

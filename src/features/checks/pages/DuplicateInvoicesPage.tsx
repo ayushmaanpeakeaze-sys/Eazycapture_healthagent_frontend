@@ -6,13 +6,13 @@ import {
   fetchSuggestFix,
   fetchTrappedInvoices,
   voidTrapped,
-} from "../../services/audit.service";
+} from "@/services/audit.service";
 import {
   FlaggedIssue,
   HealthCheckResult,
   MatchReasons,
   SuggestFixResponse,
-} from "../../types/audit.types";
+} from "@/types/audit.types";
 
 const money = (amt: number | string | null | undefined, cur?: string | null) => {
   const n = typeof amt === "string" ? parseFloat(amt) : (amt ?? 0);

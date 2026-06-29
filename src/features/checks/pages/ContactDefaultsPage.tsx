@@ -7,7 +7,7 @@ import {
   dismissContactDefault,
   fetchContactDefaults,
   reinstateContactDefault,
-} from "../../services/contactDefaults.service";
+} from "@/services/contactDefaults.service";
 
 const PAGE_SIZE = 12;
 const EMPTY: CdDefaults = {

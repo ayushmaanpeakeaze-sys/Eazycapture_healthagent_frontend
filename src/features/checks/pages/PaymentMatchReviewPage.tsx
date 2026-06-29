@@ -3,12 +3,12 @@ import { useEffect, useMemo, useState } from "react";
 import {
   bulkTrappedAction,
   fetchTrappedInvoices,
-} from "../../services/audit.service";
+} from "@/services/audit.service";
 import {
   FlaggedIssue,
   HealthCheckResult,
   MatchReasons,
-} from "../../types/audit.types";
+} from "@/types/audit.types";
 
 export type PaymentMatchRuleId = "bill_direct_payment" | "invoice_direct_deposit";
 

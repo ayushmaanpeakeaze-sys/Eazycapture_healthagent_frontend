@@ -5,8 +5,8 @@ import {
   fetchTrappedInvoices,
   markOkTrapped,
   restoreTrapped,
-} from "../../services/audit.service";
-import { FlaggedIssue, HealthCheckResult } from "../../types/audit.types";
+} from "@/services/audit.service";
+import { FlaggedIssue, HealthCheckResult } from "@/types/audit.types";
 
 export type MultiCodeRuleId = "multi_account_supplier" | "multi_tax_code_supplier";
 

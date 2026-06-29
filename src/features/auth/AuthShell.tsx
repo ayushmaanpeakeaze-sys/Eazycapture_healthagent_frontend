@@ -76,8 +76,9 @@ export const AuthShell = ({
         </div>
       </div>
 
-      {/* Right form panel */}
-      <div className="relative flex w-full items-center justify-center overflow-y-auto px-6 py-10 lg:w-1/2">
+      {/* Right form panel. Top padding clears the hanging sticker (absolute,
+          top:0) so the form never collides with it. */}
+      <div className="relative flex w-full items-start justify-center overflow-y-auto px-6 pb-10 pt-[200px] lg:w-1/2">
         {sticker}
         <div className="w-full max-w-sm">
           {/* Mobile-only logo */}

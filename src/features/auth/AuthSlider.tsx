@@ -653,9 +653,12 @@ const SLIDER_CSS = `
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   height: 100%;
-  padding: 24px;
+  /* top padding clears the hanging sticker so taller forms (Create account)
+     don't collide with it; flex-start keeps the gap identical across forms */
+  padding: 200px 24px 32px;
+  overflow-y: auto;
 }
 .ec-form::before {
   content: "";

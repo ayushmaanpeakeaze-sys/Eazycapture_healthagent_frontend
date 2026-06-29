@@ -22,6 +22,7 @@ import { BookkeepingChecksView } from "@/features/checks/BookkeepingChecksView";
 import { CheckDetailPage } from "@/features/checks/CheckDetailPage";
 import { ClientInsightsView } from "@/features/insights/ClientInsightsView";
 import { ConnectXeroButton } from "@/features/integrations/ConnectXeroButton";
+import { SyncButton } from "@/features/integrations/SyncButton";
 import { FirmOverview } from "@/features/firm/FirmOverview";
 import { LedgerHealthDashboard } from "@/features/insights/LedgerHealthDashboard";
 import { NotificationsView } from "@/features/practice/NotificationsView";
@@ -439,6 +440,7 @@ const ClientBreadcrumb = ({
           {derivedProvider}
         </span>
       )}
+      <SyncButton companyId={client?.company_id ?? companyId} />
       <span className="ml-auto font-mono text-[10px] text-ink-400">
         {(client?.company_id ?? companyId).slice(0, 8)}…
       </span>

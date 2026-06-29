@@ -284,6 +284,57 @@ export const fetchSyncStatus = async (
   }
 };
 
+export interface DataSyncStatusResponse {
+  /** Per-entity sync state keyed by name (contacts, invoices, bills, …). */
+  entities: Record<
+    string,
+    { last_sync_at: string | null; [k: string]: unknown }
+  >;
+  [k: string]: unknown;
+}
+
+/** Latest Xero→DB sync timestamps per entity. Drives the "Last synced" label. */
+export const fetchDataSyncStatus = async (
+  companyId: string,
+): Promise<DataSyncStatusResponse | null> => {
+  if (!companyId) return null;
+  try {
+    const { data } = await healthClient.get<DataSyncStatusResponse>(
+      `/sync-status/${encodeURIComponent(companyId)}/`,
+    );
+    return data;
+  } catch {
+    return null;
+  }
+};
+
+/** The most recent last_sync_at across all entities, as epoch ms (or null). */
+export const maxSyncTime = (s: DataSyncStatusResponse | null): number | null => {
+  if (!s?.entities) return null;
+  const times = Object.values(s.entities)
+    .map((e) => (e?.last_sync_at ? Date.parse(e.last_sync_at) : NaN))
+    .filter((n) => !Number.isNaN(n));
+  return times.length ? Math.max(...times) : null;
+};
+
+/** Trigger a Xero→DB data sync (no audit). Returns once the job is queued. */
+export const triggerDataSync = async (
+  companyId: string,
+): Promise<{ ok: boolean; error?: string }> => {
+  try {
+    await healthClient.post(
+      `/refresh-data/${encodeURIComponent(companyId)}/`,
+      {},
+    );
+    return { ok: true };
+  } catch (err) {
+    return {
+      ok: false,
+      error: err instanceof Error ? err.message : "Sync failed",
+    };
+  }
+};
+
 /** Void a trapped invoice/bill. 400 HAS_PAYMENT_OR_CREDIT if paid/allocated. */
 export const voidTrapped = async (
   companyId: string,

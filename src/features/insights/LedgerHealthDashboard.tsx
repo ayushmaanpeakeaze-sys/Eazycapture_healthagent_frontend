@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 
 import {
+  dispatchHistoricalAudit,
   fetchHealthStats,
+  fetchHistoricalAuditStatus,
   fetchLedgerHealthSummary,
   fetchTrappedInvoices,
 } from "../../services/audit.service";
@@ -383,6 +385,8 @@ export const LedgerHealthDashboard = ({
   const [summary, setSummary] = useState<LedgerHealthSummary | null>(null);
   const [stats, setStats] = useState<HealthStatsResponse | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
+  const [reauditing, setReauditing] = useState<boolean>(false);
+  const [auditStage, setAuditStage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [severityCounts, setSeverityCounts] =
     useState<SeverityCounts>(ZERO_SEV);
@@ -444,26 +448,62 @@ export const LedgerHealthDashboard = ({
   };
 
   // Trapped invoices feed the severity breakdown ring (critical / high / medium).
-  useEffect(() => {
-    let active = true;
-    fetchTrappedInvoices({ company_id: companyId, limit: 200 })
-      .then((data) => {
-        if (!active || "error" in data) return;
-        const next: SeverityCounts = { critical: 0, high: 0, medium: 0 };
-        for (const r of data.results ?? []) {
-          for (const f of r.result?.flagged ?? []) {
-            if (f.severity in next) next[f.severity] += 1;
-          }
-        }
-        setSeverityCounts(next);
-      })
-      .catch(() => {
-        if (active) setSeverityCounts(ZERO_SEV);
+  const loadSeverity = async () => {
+    try {
+      const data = await fetchTrappedInvoices({
+        company_id: companyId,
+        limit: 200,
       });
-    return () => {
-      active = false;
-    };
+      if ("error" in data) return;
+      const next: SeverityCounts = { critical: 0, high: 0, medium: 0 };
+      for (const r of data.results ?? []) {
+        for (const f of r.result?.flagged ?? []) {
+          if (f.severity in next) next[f.severity] += 1;
+        }
+      }
+      setSeverityCounts(next);
+    } catch {
+      setSeverityCounts(ZERO_SEV);
+    }
+  };
+
+  useEffect(() => {
+    loadSeverity();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [companyId]);
+
+  // Overview "Refresh" = re-audit already-synced data, then refetch every KPI.
+  // (Pulling fresh data from Xero is the separate Sync button in the breadcrumb.)
+  const refreshOverview = async () => {
+    setReauditing(true);
+    setAuditStage("Starting re-audit…");
+    setError(null);
+    try {
+      const res = await dispatchHistoricalAudit(companyId, { scope: "full" });
+      if ("error" in res) {
+        setError(res.error);
+        return;
+      }
+      // Poll every 2s until the batch completes (cap ~5 min).
+      for (let i = 0; i < 150; i++) {
+        await new Promise((r) => setTimeout(r, 2000));
+        const st = await fetchHistoricalAuditStatus(res.batch_id);
+        if ("error" in st) continue;
+        if (st.stage_label) setAuditStage(st.stage_label);
+        if (st.status === "completed") break;
+        if (st.status === "failed") {
+          setError(st.error ?? "Re-audit failed");
+          break;
+        }
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Re-audit failed");
+    } finally {
+      setAuditStage(null);
+      setReauditing(false);
+      await Promise.all([load(), loadSeverity()]);
+    }
+  };
 
   const severityTotal = useMemo(
     () =>
@@ -512,11 +552,12 @@ export const LedgerHealthDashboard = ({
         </div>
         <button
           type="button"
-          onClick={load}
-          disabled={loading}
+          onClick={refreshOverview}
+          disabled={loading || reauditing}
+          title="Re-audit already-synced data and refresh every KPI"
           className="inline-flex items-center gap-2 rounded-lg bg-brand-gradient px-4 py-2.5 text-sm font-semibold text-white shadow-brand transition hover:brightness-110 hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {loading && (
+          {(loading || reauditing) && (
             <svg
               className="h-4 w-4 animate-spin"
               viewBox="0 0 24 24"
@@ -528,7 +569,11 @@ export const LedgerHealthDashboard = ({
               <path d="M21 12a9 9 0 0 0-9-9" strokeLinecap="round" />
             </svg>
           )}
-          {loading ? "Loading…" : "Refresh"}
+          {reauditing
+            ? (auditStage ?? "Re-auditing…")
+            : loading
+              ? "Loading…"
+              : "Refresh"}
         </button>
       </header>
 

@@ -98,20 +98,20 @@ src/
   config.ts                     API base URLs (env-overridable)
 
   features/                     Code grouped by domain (a new dev finds things here)
-    checks/                     Every audit check + the check infrastructure
-                                  · per-check pages: DuplicateInvoicesPage,
-                                    UnreconciledBankItemsPage, CapitalItemReviewPage,
-                                    OldUnpaidInvoicesPage, TaxMissingPage, …
-                                  · infra: ChecksDirectory, CheckDetailPage,
-                                    CheckSettingsPanel, checksCatalog, TrappedInvoicesList,
-                                    paginate, drawers, SuggestFixModal
-    insights/                   Dashboards & charts (LedgerHealthDashboard, charts, …)
+    auth/                       Login, invite/accept, AuthProvider (session context)
+    checks/                     Check infrastructure (the dispatcher + shared parts):
+                                  ChecksDirectory, CheckDetailPage, CheckSettingsPanel,
+                                  checksCatalog, TrappedInvoicesList, paginate, drawers,
+                                  SuggestFixModal, BookkeepingChecksView
+      pages/                    One component per check: DuplicateInvoicesPage,
+                                  UnreconciledBankItemsPage, CapitalItemReviewPage,
+                                  OldUnpaidInvoicesPage, TaxMissingPage, … (19)
+    insights/                   Dashboards (LedgerHealthDashboard, FinancialInsights, …)
     firm/                       Firm-level views (FirmOverview, AllClientsView)
     practice/                   Team, activity, notifications, settings
     batch/                      Batch audit inspector + summary
     integrations/               Xero: ConnectXeroButton, DisconnectedOrgs, XeroOnboarding
 
-  components/Auth/              Login, invite/accept, AuthProvider (session context)
   services/                     One file per API domain (*.service.ts) + api.client.ts
   types/                        Shared TypeScript types (*.types.ts)
   hooks/                        Reusable hooks (e.g. useSelectedCompany)

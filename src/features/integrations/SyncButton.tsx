@@ -60,16 +60,18 @@ export const SyncButton = ({ companyId }: { companyId: string }) => {
         setSyncing(false);
         return;
       }
-      // Poll every 3s until the newest timestamp advances (cap ~3 min).
-      for (let i = 0; i < 60; i++) {
+      // The sync runs async on the backend with no "in progress" signal — the
+      // only proof is last_sync_at advancing. Poll for it, but cap at ~36s and
+      // always stop: a slow/idle worker (or a no-op incremental) must not leave
+      // the button spinning forever. Whatever timestamp we end with, we show.
+      let latest = before;
+      for (let i = 0; i < 12; i++) {
         await sleep(3000);
         if (!mounted.current) return;
-        const latest = maxSyncTime(await fetchDataSyncStatus(companyId));
-        if (latest && latest > before) {
-          setLastSynced(latest);
-          break;
-        }
+        latest = maxSyncTime(await fetchDataSyncStatus(companyId)) ?? latest;
+        if (latest > before) break;
       }
+      setLastSynced(latest > 0 ? latest : before);
     } catch (err) {
       if (mounted.current)
         setError(err instanceof Error ? err.message : "Sync failed");

@@ -36,6 +36,7 @@ export const AuthSlider = ({ onLoggedIn }: AuthSliderProps) => {
             {/* Over the sign-up form: invites back to Sign In. */}
             <div className="ec-overlay-panel ec-overlay-left">
               <Ambient />
+              <PanelChips />
               <div className="relative z-10 flex flex-col items-center text-center">
                 <Wordmark />
                 <h2 className="mt-6 text-4xl font-semibold leading-tight tracking-tight text-white">
@@ -62,6 +63,7 @@ export const AuthSlider = ({ onLoggedIn }: AuthSliderProps) => {
             {/* Over the sign-in form: invites to Create account. */}
             <div className="ec-overlay-panel ec-overlay-right">
               <Ambient />
+              <PanelChips />
               <div className="relative z-10 flex flex-col items-center text-center">
                 <Wordmark />
                 <h2 className="mt-6 text-4xl font-semibold leading-tight tracking-tight text-white">
@@ -515,6 +517,53 @@ const Docs = () => (
   </div>
 );
 
+// Floating glassmorphic stat cards. Purely decorative.
+const PanelChips = () => (
+  <>
+    <div className="ec-chip ec-chip-tl" aria-hidden>
+      <HealthRing />
+      <div className="text-left leading-tight">
+        <div className="text-[15px] font-semibold text-white">92%</div>
+        <div className="text-[10px] uppercase tracking-wide text-white/70">
+          Ledger health
+        </div>
+      </div>
+    </div>
+
+    <div className="ec-chip ec-chip-tr" aria-hidden>
+      <span className="ec-chip-badge">
+        <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round">
+          <path d="M20 6 9 17l-5-5" />
+        </svg>
+      </span>
+      <div className="text-left leading-tight">
+        <div className="text-[15px] font-semibold text-white">1,284</div>
+        <div className="text-[10px] uppercase tracking-wide text-white/70">
+          Issues auto-flagged
+        </div>
+      </div>
+    </div>
+  </>
+);
+
+const HealthRing = () => (
+  <svg width="34" height="34" viewBox="0 0 36 36" aria-hidden>
+    <circle cx="18" cy="18" r="15" fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="4" />
+    <circle
+      cx="18"
+      cy="18"
+      r="15"
+      fill="none"
+      stroke="#ffffff"
+      strokeWidth="4"
+      strokeLinecap="round"
+      strokeDasharray="94.25"
+      strokeDashoffset="7.5"
+      transform="rotate(-90 18 18)"
+    />
+  </svg>
+);
+
 const BrandMark = ({
   size = 24,
   color = "currentColor",
@@ -774,6 +823,39 @@ const SLIDER_CSS = `
 .ec-ghost-btn:hover {
   background: rgba(255,255,255,0.14);
   transform: translateY(-1px);
+}
+.ec-chip {
+  position: absolute;
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 16px;
+  background: rgba(255,255,255,0.12);
+  border: 1px solid rgba(255,255,255,0.22);
+  box-shadow: 0 16px 36px -14px rgba(20,8,60,0.55);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+.ec-chip-tl { top: 9%; left: 7%; animation: ec-float 3.4s ease-in-out infinite; }
+.ec-chip-tr { top: 16%; right: 6%; animation: ec-float 4s ease-in-out infinite 0.5s; }
+.ec-chip-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 34px;
+  width: 34px;
+  border-radius: 11px;
+  background: rgba(16,185,129,0.92);
+  color: #ffffff;
+}
+@keyframes ec-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-11px); }
+}
+@media (max-width: 900px) {
+  .ec-chip { display: none; }
 }
 /* Hangs from a rope pinned to the top edge, then swings like a pendulum. */
 .ec-sticker-hang {

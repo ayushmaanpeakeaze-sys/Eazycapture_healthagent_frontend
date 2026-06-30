@@ -166,7 +166,14 @@ const InsightsBody = ({
             onRefresh={onRefresh}
           />
         </CardBoundary>
-        <CardBoundary><CashHealthCard data={payload.financial_position} /></CardBoundary>
+        <CardBoundary>
+          <CashHealthCard
+            data={payload.cash_health_check}
+            fallback={payload.financial_position}
+            companyId={companyId}
+            onRefresh={onRefresh}
+          />
+        </CardBoundary>
         <CardBoundary><BookkeepingHealthCard data={payload.bookkeeping_health} /></CardBoundary>
         <CardBoundary><ProfitabilityCard data={payload.profitability} asOf={asOf} /></CardBoundary>
         <CardBoundary><CorporationTaxCard data={payload.corporation_tax} /></CardBoundary>

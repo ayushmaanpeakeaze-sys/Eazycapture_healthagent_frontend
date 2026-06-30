@@ -1,6 +1,7 @@
 import { AxiosError } from "axios";
 
 import {
+  CashHealthSettings,
   ClientInsightsSnapshot,
   FirmSummaryResponse,
   SalesTargetSettings,
@@ -73,6 +74,28 @@ export const updateSalesTarget = async (
   try {
     const { data } = await insightsClient.put<SalesTargetSettings>(
       `/${encodeURIComponent(companyId)}/sales-target/`,
+      body,
+    );
+    return { ok: true, data };
+  } catch (err) {
+    return toError(err);
+  }
+};
+
+/** Read Cash Health settings (includes, overrides, disregarded banks). */
+export const fetchCashHealthSettings = (companyId: string) =>
+  get<CashHealthSettings>(
+    `/${encodeURIComponent(companyId)}/cash-health-settings/`,
+  );
+
+/** Write Cash Health settings. Does NOT recompute — caller must refresh after. */
+export const updateCashHealthSettings = async (
+  companyId: string,
+  body: Partial<CashHealthSettings>,
+): Promise<InsightsResult<CashHealthSettings>> => {
+  try {
+    const { data } = await insightsClient.put<CashHealthSettings>(
+      `/${encodeURIComponent(companyId)}/cash-health-settings/`,
       body,
     );
     return { ok: true, data };

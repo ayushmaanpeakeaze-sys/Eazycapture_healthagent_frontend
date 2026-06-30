@@ -184,10 +184,81 @@ export interface BankReconciliation {
   most_recent_transaction: string | null;
 }
 
+/** The 8 fixed outgoing categories, short-term (highest priority) first. */
+export type CashCategory =
+  | "suppliers"
+  | "net_wages"
+  | "paye_nic"
+  | "pension"
+  | "credit_cards"
+  | "vat"
+  | "corporation_tax"
+  | "loans_other";
+
+export interface CashOutgoingCategory {
+  category: CashCategory | string;
+  label: string;
+  /** Value used (override if set, else auto). */
+  amount: number;
+  /** The auto Xero figure before any override. */
+  auto_amount: number;
+  included: boolean;
+  overridden: boolean;
+  /** Cumulative: true only if cash covers this + everything above. null = excluded. */
+  can_pay: boolean | null;
+}
+
+export interface CashBankAccount {
+  code: string;
+  name: string;
+  balance: number;
+  disregarded: boolean;
+}
+
+export interface CashMovement {
+  period: string;
+  change: number;
+  direction: "up" | "down" | "flat" | string;
+}
+
+export interface CashHealthCheckResponse {
+  current_cash: number;
+  /** 0–100 gauge %. */
+  health_score: number;
+  rating: "strong" | "moderate" | "weak" | "critical" | string;
+  bank_accounts: CashBankAccount[];
+  outgoings: {
+    categories: CashOutgoingCategory[];
+    total_expected_outgoings: number;
+    all_covered: boolean;
+  };
+  recent_movements: CashMovement[];
+  movement_points?: { period: string; balance: number }[];
+  indicator?: {
+    score: number;
+    rating: string;
+    weighted_outgoings: number;
+    note: string;
+  };
+}
+
+/** Cash Health settings (GET/PUT /insights/{cid}/cash-health-settings/). */
+export interface CashHealthSettings {
+  /** category → include? (missing = included). */
+  included: Record<string, boolean>;
+  /** category → manual £ value (replaces the auto figure). */
+  overrides: Record<string, number>;
+  /** account code → category (re-assign a nominal account). */
+  account_overrides: Record<string, string>;
+  /** bank account codes left OUT of current cash. */
+  disregarded_banks: string[];
+}
+
 export interface InsightsPayload {
   profitability: ProfitabilityResponse;
   sales_tracker: SalesTrackerResponse;
   financial_position: FinancialPositionResponse;
+  cash_health_check?: CashHealthCheckResponse | null;
   corporation_tax: CorporationTaxResponse;
   directors_loans: DirectorsLoansResponse;
   bookkeeping_health: BookkeepingHealthSnapshot;

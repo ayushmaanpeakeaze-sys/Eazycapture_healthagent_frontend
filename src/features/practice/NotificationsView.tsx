@@ -53,6 +53,14 @@ const fmtRelative = (iso: string | null): string => {
   return `${d}d ago`;
 };
 
+// The backend sends `detail` as either a machine key (e.g. "contact_defaults")
+// or a real sentence (e.g. "dropped from 60% to 2%"). Prettify only the
+// machine-key form (snake_case, no spaces); leave real sentences untouched.
+const prettyDetail = (d: string): string =>
+  /^[a-z][a-z0-9_]*$/.test(d)
+    ? d.replace(/_/g, " ").replace(/^\w/, (c) => c.toUpperCase())
+    : d;
+
 const AlertIcon = (
   <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
     <path d="M10.3 3.7a2 2 0 0 1 3.4 0l8 14A2 2 0 0 1 20 21H4a2 2 0 0 1-1.7-3.3l8-14Z" />
@@ -225,7 +233,7 @@ export const NotificationsView = ({ onOpenCompany }: NotificationsViewProps) => 
                     </div>
                     {(it.detail || it.actor_email) && (
                       <p className="mt-1 text-xs text-ink-600">
-                        {it.detail}
+                        {it.detail && prettyDetail(it.detail)}
                         {it.actor_email && (
                           <span className="text-ink-400">
                             {it.detail ? " · " : ""}by {it.actor_email}

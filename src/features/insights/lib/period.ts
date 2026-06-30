@@ -1,0 +1,71 @@
+export const MONTHS = [
+  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+];
+
+// Parse a period label into {year, month}. Handles "30 Jun 26", "Jun 26",
+// "Jun-26", "June 2026" and "2026-06". Returns null if unrecognised.
+export const parsePeriodMonth = (
+  period: string,
+): { year: number; month: number } | null => {
+  const iso = period.match(/(\d{4})-(\d{2})/);
+  if (iso) return { year: +iso[1], month: +iso[2] - 1 };
+  const m = period.match(/([A-Za-z]{3,})\.?\s*-?\s*(\d{2,4})/);
+  if (!m) return null;
+  const idx = MONTHS.findIndex(
+    (x) => x.toLowerCase() === m[1].slice(0, 3).toLowerCase(),
+  );
+  if (idx < 0) return null;
+  let y = +m[2];
+  if (y < 100) y += 2000;
+  return { year: y, month: idx };
+};
+
+export const formatMonthLabel = (period: string): string => {
+  const pm = parsePeriodMonth(period);
+  if (!pm) return period;
+  return new Date(pm.year, pm.month, 1).toLocaleString("en-GB", {
+    month: "long",
+    year: "numeric",
+  });
+};
+
+// How far through the month we are — honest about real time. For the current
+// calendar month it's today's progress; past months are complete (100% / 0 days
+// left), future months not started. `known` is false when the label won't parse.
+export const monthProgress = (
+  period: string,
+): {
+  elapsedPct: number;
+  daysRemaining: number;
+  isCurrent: boolean;
+  known: boolean;
+} => {
+  const pm = parsePeriodMonth(period);
+  if (!pm)
+    return { elapsedPct: 0, daysRemaining: 0, isCurrent: false, known: false };
+  const now = new Date();
+  const daysInMonth = new Date(pm.year, pm.month + 1, 0).getDate();
+  const isCurrent =
+    pm.year === now.getFullYear() && pm.month === now.getMonth();
+  if (isCurrent) {
+    const day = Math.min(now.getDate(), daysInMonth);
+    return {
+      elapsedPct: (day / daysInMonth) * 100,
+      daysRemaining: daysInMonth - day,
+      isCurrent: true,
+      known: true,
+    };
+  }
+  const isPast =
+    pm.year < now.getFullYear() ||
+    (pm.year === now.getFullYear() && pm.month < now.getMonth());
+  return isPast
+    ? { elapsedPct: 100, daysRemaining: 0, isCurrent: false, known: true }
+    : {
+        elapsedPct: 0,
+        daysRemaining: daysInMonth,
+        isCurrent: false,
+        known: true,
+      };
+};

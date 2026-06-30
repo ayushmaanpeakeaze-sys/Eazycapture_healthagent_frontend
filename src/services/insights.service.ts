@@ -3,6 +3,7 @@ import { AxiosError } from "axios";
 import {
   ClientInsightsSnapshot,
   FirmSummaryResponse,
+  SalesTargetSettings,
 } from "../types/insights.types";
 import { insightsClient } from "./api.client";
 
@@ -54,6 +55,26 @@ export const refreshClientInsights = async (
       company_id: string;
       status: string;
     }>(`/${encodeURIComponent(companyId)}/refresh/`);
+    return { ok: true, data };
+  } catch (err) {
+    return toError(err);
+  }
+};
+
+/** Read a client's sales-target settings. */
+export const fetchSalesTarget = (companyId: string) =>
+  get<SalesTargetSettings>(`/${encodeURIComponent(companyId)}/sales-target/`);
+
+/** Write sales-target settings. Does NOT recompute — caller must refresh after. */
+export const updateSalesTarget = async (
+  companyId: string,
+  body: Partial<SalesTargetSettings>,
+): Promise<InsightsResult<SalesTargetSettings>> => {
+  try {
+    const { data } = await insightsClient.put<SalesTargetSettings>(
+      `/${encodeURIComponent(companyId)}/sales-target/`,
+      body,
+    );
     return { ok: true, data };
   } catch (err) {
     return toError(err);

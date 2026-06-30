@@ -21,25 +21,79 @@ export interface ProfitabilityResponse {
   };
 }
 
+/** The strategy a sales target is derived from. */
+export type SalesTargetBasis =
+  | "none"
+  | "previous_month"
+  | "average_3"
+  | "average_6"
+  | "average_12"
+  | "same_month_last_year"
+  | "xero_budget"
+  | "manual";
+
 export interface SalesTrackerRow {
   period: string;
   actual: number;
-  target: number;
-  variance: number;
-  variance_pct: number;
+  /** null when there's insufficient history / basis=none / no budget. */
+  target: number | null;
+  variance: number | null;
+  variance_pct: number | null;
+  met_target: boolean | null;
+}
+
+/** Trailing-5-months chart: blue actual bars + green target line. */
+export interface SalesTrackerChart {
+  periods: string[];
+  actual: number[];
+  /** Per-month target; elements may be null → draw a gap, don't plot 0. */
+  target: (number | null)[];
+}
+
+/** Current-month progress panel (all day maths computed at snapshot time). */
+export interface SalesTrackerCurrentMonth {
+  period: string | null;
+  actual: number;
+  target: number | null;
+  /** % of target — can exceed 100. null when no target. */
+  pct_of_target: number | null;
+  /** Currency still needed to hit target; never negative. null when no target. */
+  remaining_value: number | null;
+  days_in_month: number;
+  days_elapsed: number;
+  days_remaining: number;
+  /** Sales-bar fill, capped 0–100. null when no target. */
+  sales_bar_pct: number | null;
+  /** Time-bar fill (how far through the month), 0–100. */
+  time_bar_pct: number;
   met_target: boolean;
+  /** One of the five status narratives — render verbatim. */
+  status: string;
 }
 
 export interface SalesTrackerResponse {
   company_id?: string;
   kpi?: "sales_tracker";
-  periods: string[];
-  actual: number[];
-  target: number;
-  /** e.g. "auto (avg of active months)" or "manual". */
+  /** Active strategy, e.g. "average_3" | "manual". */
   target_basis: string;
-  total_sales: number;
-  rows: SalesTrackerRow[];
+  adjustment_pct?: number;
+  /** Newer snapshots carry these; guard for absence on older ones. */
+  chart?: SalesTrackerChart;
+  current_month?: SalesTrackerCurrentMonth;
+  total_sales?: number;
+  // --- legacy flat fields (older snapshots) ---
+  periods?: string[];
+  actual?: number[];
+  /** Scalar (current month's target) on legacy snapshots — NOT an array. */
+  target?: number | null;
+  rows?: SalesTrackerRow[];
+}
+
+/** Sales-target settings (GET/PUT /insights/{cid}/sales-target/). */
+export interface SalesTargetSettings {
+  basis: SalesTargetBasis | string;
+  adjustment_pct: number;
+  manual_value: number | null;
 }
 
 export interface FinancialPositionResponse {

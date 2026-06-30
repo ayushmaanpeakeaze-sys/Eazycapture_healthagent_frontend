@@ -7,6 +7,7 @@ import {
   fetchLedgerHealthSummary,
   fetchTrappedInvoices,
 } from "../../services/audit.service";
+import { useDataSynced } from "../../hooks/useDataSynced";
 import { fetchHealthCheckResults } from "../../services/document.service";
 import {
   HealthStatsResponse,
@@ -471,6 +472,12 @@ export const LedgerHealthDashboard = ({
     loadSeverity();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [companyId]);
+
+  // After a Xero→DB sync finishes, pull the fresh data into every card.
+  useDataSynced(companyId, () => {
+    load();
+    loadSeverity();
+  });
 
   // Overview "Refresh" = re-audit already-synced data, then refetch every KPI.
   // (Pulling fresh data from Xero is the separate Sync button in the breadcrumb.)

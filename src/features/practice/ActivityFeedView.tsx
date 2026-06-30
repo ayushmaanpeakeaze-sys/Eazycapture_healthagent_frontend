@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 
+import { useDataSynced } from "../../hooks/useDataSynced";
 import {
   fetchCompaniesPanorama,
   fetchTrappedInvoices,
@@ -302,6 +303,9 @@ export const ActivityFeedView = ({ companyId }: ActivityFeedViewProps) => {
     return () => clearInterval(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoRefresh, targetCompanyId]);
+
+  // Re-fetch the trapped feed once a Xero→DB sync completes.
+  useDataSynced(targetCompanyId, () => load());
 
   // Filter by the severity + kind tabs before grouping.
   const filtered = useMemo(

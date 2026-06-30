@@ -6,6 +6,7 @@ import {
   fetchAuditConfig,
   fetchSyncStatus,
 } from "../../services/audit.service";
+import { useDataSynced } from "../../hooks/useDataSynced";
 import { IssueType } from "../../types/audit.types";
 import { BankBalanceCheckPage } from "@/features/checks/pages/BankBalanceCheckPage";
 import { CapitalItemReviewPage } from "@/features/checks/pages/CapitalItemReviewPage";
@@ -113,6 +114,8 @@ export const CheckDetailPage = ({
   const showControls = isDuplicate || fullRun;
 
   const [refreshKey, setRefreshKey] = useState(0);
+  // Re-run the open check once a Xero→DB sync completes.
+  useDataSynced(companyId, () => setRefreshKey((k) => k + 1));
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [running, setRunning] = useState(false);
   const [runMsg, setRunMsg] = useState<string | null>(null);

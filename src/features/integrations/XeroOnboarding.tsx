@@ -1,5 +1,6 @@
 import { ConnectXeroButton } from "./ConnectXeroButton";
 import { DisconnectedOrgs } from "./DisconnectedOrgs";
+import { RemovedOrgs } from "./RemovedOrgs";
 
 // Empty state shown when the firm has no active orgs: a Connect-to-Xero CTA, plus a Disconnected section for returning users.
 export const XeroOnboarding = ({
@@ -34,5 +35,7 @@ export const XeroOnboarding = ({
     </div>
 
     <DisconnectedOrgs reloadKey={reloadKey} onChanged={onChanged} defaultOpen />
+
+    <RemovedOrgs reloadKey={reloadKey} onChanged={onChanged} defaultOpen />
   </div>
 );

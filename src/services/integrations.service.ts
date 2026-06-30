@@ -6,6 +6,9 @@ import { integrationsClient } from "./api.client";
 export interface NangoConnectSession {
   token: string;
   expires_at?: string;
+  /** Hosted Nango Connect URL — fallback to open directly when the in-app
+   *  modal is blocked (e.g. Safari pop-up blocking). */
+  connect_link?: string;
 }
 
 export type ConnectSessionResult =

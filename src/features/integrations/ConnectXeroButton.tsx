@@ -19,12 +19,12 @@ export const ConnectXeroButton = ({
 }) => {
   const [state, setState] = useState<State>("idle");
   const [error, setError] = useState<string | null>(null);
+  const [connectLink, setConnectLink] = useState<string | null>(null);
   const connectedRef = useRef(false);
   const uiRef = useRef<ReturnType<Nango["openConnectUI"]> | null>(null);
 
-  const pollForOrgs = async (): Promise<boolean> => {
-    for (let i = 0; i < 20; i++) {
-      // ~60s max
+  const pollForOrgs = async (attempts = 20): Promise<boolean> => {
+    for (let i = 0; i < attempts; i++) {
       const data = await fetchCompaniesPanorama(30);
       if (data.results?.length) return true;
       await new Promise((r) => setTimeout(r, 3000));
@@ -32,34 +32,33 @@ export const ConnectXeroButton = ({
     return false;
   };
 
-  const handleConnect = async () => {
+  // OAuth done → ask the backend to create + sync the org(s), then poll until
+  // they land (the org is actually created by the backend webhook).
+  const runImport = async (sync: boolean) => {
+    connectedRef.current = true;
+    uiRef.current?.close();
+    setState("importing");
+    if (sync) await syncNangoConnections();
+    await pollForOrgs(sync ? 20 : 40); // give the hosted-link flow longer
+    setState("done");
+    window.location.assign("/clients");
+  };
+
+  // IMPORTANT: open the Nango UI synchronously inside the click handler. If we
+  // await the session fetch first and open afterwards, the browser loses the
+  // user-gesture and blocks the pop-up (Safari especially). So: open now, fetch
+  // the token in the background, then setSessionToken once it's ready.
+  const handleConnect = () => {
     setError(null);
+    setConnectLink(null);
     setState("opening");
     connectedRef.current = false;
-
-    const res = await createNangoConnectSession("xero");
-    if (!res.ok) {
-      // 401 already triggers a reload-to-login via the axios interceptor.
-      setState(res.status === 503 ? "unavailable" : "error");
-      setError(res.error);
-      return;
-    }
 
     const nango = new Nango();
     const ui = nango.openConnectUI({
       onEvent: (event: ConnectUIEvent) => {
         if (event.type === "connect") {
-          // OAuth done; close the modal, ask the backend to create + sync the
-          // org(s) from the new connection, then poll until they land.
-          connectedRef.current = true;
-          uiRef.current?.close();
-          setState("importing");
-          (async () => {
-            await syncNangoConnections();
-            await pollForOrgs();
-            setState("done");
-            window.location.assign("/clients");
-          })();
+          runImport(true);
         } else if (event.type === "close") {
           // User backed out before authorising → nothing was created.
           if (!connectedRef.current) setState("idle");
@@ -70,7 +69,25 @@ export const ConnectXeroButton = ({
       },
     });
     uiRef.current = ui;
-    ui.setSessionToken(res.session.token);
+
+    createNangoConnectSession("xero")
+      .then((res) => {
+        if (!res.ok) {
+          // 401 already triggers a reload-to-login via the axios interceptor.
+          uiRef.current?.close();
+          setState(res.status === 503 ? "unavailable" : "error");
+          setError(res.error);
+          return;
+        }
+        // Keep the hosted link as a fallback in case the modal was blocked.
+        setConnectLink(res.session.connect_link ?? null);
+        ui.setSessionToken(res.session.token);
+      })
+      .catch(() => {
+        uiRef.current?.close();
+        setState("error");
+        setError("Couldn’t start the Xero connection.");
+      });
   };
 
   if (state === "unavailable") {
@@ -101,29 +118,45 @@ export const ConnectXeroButton = ({
   const iconCls = lg ? "h-5 w-5" : "h-3.5 w-3.5";
 
   return (
-    <button
-      type="button"
-      onClick={handleConnect}
-      disabled={busy}
-      title={state === "error" ? (error ?? undefined) : "Connect a Xero organisation"}
-      className={[
-        "inline-flex items-center justify-center gap-1.5 rounded-full font-semibold text-white shadow-sm transition disabled:opacity-70",
-        lg ? "px-6 py-3 text-base shadow-brand" : "px-3 py-1.5 text-[11px]",
-        state === "error"
-          ? "bg-rose-600 hover:bg-rose-700"
-          : "bg-[#13B5EA] hover:brightness-110",
-      ].join(" ")}
-    >
-      {busy ? (
-        <svg className={`${iconCls} animate-spin`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4}>
-          <circle cx="12" cy="12" r="9" opacity="0.25" />
-          <path d="M21 12a9 9 0 0 0-9-9" strokeLinecap="round" />
-        </svg>
-      ) : (
-        <XeroGlyph className={iconCls} />
+    <span className="relative inline-flex flex-col items-center">
+      <button
+        type="button"
+        onClick={handleConnect}
+        disabled={busy}
+        title={state === "error" ? (error ?? undefined) : "Connect a Xero organisation"}
+        className={[
+          "inline-flex items-center justify-center gap-1.5 rounded-full font-semibold text-white shadow-sm transition disabled:opacity-70",
+          lg ? "px-6 py-3 text-base shadow-brand" : "px-3 py-1.5 text-[11px]",
+          state === "error"
+            ? "bg-rose-600 hover:bg-rose-700"
+            : "bg-[#13B5EA] hover:brightness-110",
+        ].join(" ")}
+      >
+        {busy ? (
+          <svg className={`${iconCls} animate-spin`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4}>
+            <circle cx="12" cy="12" r="9" opacity="0.25" />
+            <path d="M21 12a9 9 0 0 0-9-9" strokeLinecap="round" />
+          </svg>
+        ) : (
+          <XeroGlyph className={iconCls} />
+        )}
+        {label}
+      </button>
+      {/* Fallback for blocked pop-ups: the hosted Nango link opens from a direct
+          user click, so it's never blocked. Opens in a new tab; this tab polls
+          for the org the backend webhook creates. */}
+      {connectLink && (state === "opening" || state === "error") && (
+        <a
+          href={connectLink}
+          target="_blank"
+          rel="noreferrer"
+          onClick={() => runImport(false)}
+          className="absolute top-full z-20 mt-1 whitespace-nowrap rounded-md bg-white px-2 py-1 text-[10px] font-semibold text-brand-700 shadow-card ring-1 ring-ink-200 transition hover:bg-brand-50"
+        >
+          Pop-up blocked? Connect here →
+        </a>
       )}
-      {label}
-    </button>
+    </span>
   );
 };
 

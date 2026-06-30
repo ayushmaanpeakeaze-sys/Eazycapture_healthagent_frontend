@@ -1076,6 +1076,43 @@ export const reconnectCompany = async (
   }
 };
 
+/** An org that was hard-deleted — excluded so the webhook won't re-create it. */
+export interface ExcludedOrg {
+  xero_tenant_id: string;
+  name: string;
+}
+
+/** List orgs that were permanently deleted (excluded from re-creation). */
+export const fetchExcludedOrgs = async (): Promise<ExcludedOrg[]> => {
+  try {
+    const { data } = await healthClient.get<{ excluded: ExcludedOrg[] }>(
+      `/excluded-orgs/`,
+    );
+    return data.excluded ?? [];
+  } catch {
+    return [];
+  }
+};
+
+/** Clear one org's exclusion so it can be re-created on the next Connect/sync.
+ *  Per-org: only this tenant is re-allowed; others stay excluded. */
+export const reAllowExcludedOrg = async (
+  xeroTenantId: string,
+): Promise<{ ok: boolean; error?: string }> => {
+  try {
+    await healthClient.delete(
+      `/excluded-org/${encodeURIComponent(xeroTenantId)}/`,
+    );
+    return { ok: true };
+  } catch (err) {
+    const error =
+      err instanceof AxiosError
+        ? (err.response?.data?.detail ?? err.message)
+        : "Re-allow failed.";
+    return { ok: false, error };
+  }
+};
+
 export const fetchConnectedCompanies = async (): Promise<ConnectedCompany[]> => {
   try {
     const { data } = await apiClient.get<{

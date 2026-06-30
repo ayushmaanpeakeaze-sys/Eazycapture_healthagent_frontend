@@ -8,6 +8,7 @@ import {
 } from "../../services/audit.service";
 import { fetchFirmSummary } from "../../services/insights.service";
 import { DisconnectedOrgs } from "@/features/integrations/DisconnectedOrgs";
+import { RemovedOrgs } from "@/features/integrations/RemovedOrgs";
 import { XeroOnboarding } from "@/features/integrations/XeroOnboarding";
 
 // Bank-reconciliation fields live on firm-summary, not companies-panorama, so we fetch and merge by company_id.
@@ -1003,6 +1004,8 @@ export const AllClientsView = ({ onPick, restrictToIds }: AllClientsViewProps) =
         reloadKey={nonce}
         onChanged={() => setNonce((n) => n + 1)}
       />
+
+      <RemovedOrgs reloadKey={nonce} onChanged={() => setNonce((n) => n + 1)} />
     </div>
   );
 };

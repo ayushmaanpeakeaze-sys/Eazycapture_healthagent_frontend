@@ -1013,6 +1013,31 @@ export const disconnectCompany = async (
   }
 };
 
+/** PERMANENTLY delete an org and ALL its data (irreversible). Unlike disconnect,
+ *  nothing is kept. The backend does NOT revoke the Nango grant, so other orgs
+ *  under the same Xero authorisation stay intact. */
+export const deleteCompanyPermanently = async (
+  companyId: string,
+): Promise<{ ok: boolean; error?: string }> => {
+  try {
+    await healthClient.delete(`/company/${encodeURIComponent(companyId)}/`);
+    return { ok: true };
+  } catch (err) {
+    const status = err instanceof AxiosError ? err.response?.status : undefined;
+    const detail =
+      err instanceof AxiosError
+        ? (err.response?.data?.detail as string | undefined)
+        : undefined;
+    const error =
+      status === 403
+        ? detail || "You are not assigned to this company."
+        : status === 404
+          ? detail || "Company not found."
+          : detail || "Delete failed.";
+    return { ok: false, error };
+  }
+};
+
 /** A deactivated org — kept in our DB, hidden from the dashboard until reconnect. */
 export interface DisconnectedCompany {
   company_id: string;

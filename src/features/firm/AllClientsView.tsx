@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 
 import {
+  deleteCompanyPermanently,
   disconnectCompany,
   fetchCompaniesPanorama,
   PanoramaClient,
@@ -154,6 +155,22 @@ const LinkIcon = ({ className }: { className?: string }) => (
   >
     <path d="M9 13a3 3 0 0 0 4.2 0l3-3a3 3 0 0 0-4.2-4.2l-1 1" />
     <path d="M15 11a3 3 0 0 0-4.2 0l-3 3a3 3 0 0 0 4.2 4.2l1-1" />
+  </svg>
+);
+
+const TrashIcon = ({ className }: { className?: string }) => (
+  <svg
+    viewBox="0 0 24 24"
+    className={className}
+    fill="none"
+    stroke="currentColor"
+    strokeWidth={2.2}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden
+  >
+    <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+    <path d="M10 11v6M14 11v6" />
   </svg>
 );
 
@@ -351,6 +368,11 @@ export const AllClientsView = ({ onPick, restrictToIds }: AllClientsViewProps) =
   const [confirmTarget, setConfirmTarget] = useState<PanoramaClient | null>(null);
   const [disconnecting, setDisconnecting] = useState<string | null>(null);
   const [disconnectError, setDisconnectError] = useState<string | null>(null);
+  // Permanent delete: a separate, type-to-confirm flow (irreversible).
+  const [deleteTarget, setDeleteTarget] = useState<PanoramaClient | null>(null);
+  const [deleting, setDeleting] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState("");
 
   useEffect(() => {
     let active = true;
@@ -385,6 +407,22 @@ export const AllClientsView = ({ onPick, restrictToIds }: AllClientsViewProps) =
       setNonce((n) => n + 1); // refetch — the org drops off the list
     } else {
       setDisconnectError(res.error ?? "Disconnect failed.");
+    }
+  };
+
+  const onConfirmDelete = async () => {
+    const target = deleteTarget;
+    if (!target || deleteConfirm.trim() !== target.name) return;
+    setDeleting(target.company_id);
+    setDeleteError(null);
+    const res = await deleteCompanyPermanently(target.company_id);
+    setDeleting(null);
+    if (res.ok) {
+      setDeleteTarget(null);
+      setDeleteConfirm("");
+      setNonce((n) => n + 1); // refetch — the org is gone for good
+    } else {
+      setDeleteError(res.error ?? "Delete failed.");
     }
   };
 
@@ -519,6 +557,84 @@ export const AllClientsView = ({ onPick, restrictToIds }: AllClientsViewProps) =
                 className="inline-flex items-center gap-1.5 rounded-lg bg-rose-600 px-3.5 py-1.5 text-sm font-semibold text-white transition hover:bg-rose-700 disabled:opacity-60"
               >
                 {disconnecting ? "Disconnecting…" : "Disconnect"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {deleteTarget && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-ink-900/40 p-4"
+          onClick={() => {
+            if (!deleting) {
+              setDeleteTarget(null);
+              setDeleteConfirm("");
+            }
+          }}
+        >
+          <div
+            className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start gap-3">
+              <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-rose-50 text-rose-600 ring-1 ring-rose-200">
+                <TrashIcon className="h-4 w-4" />
+              </span>
+              <div>
+                <h3 className="text-base font-semibold text-ink-900">
+                  Delete {deleteTarget.name} permanently?
+                </h3>
+                <p className="mt-1.5 text-sm text-ink-500">
+                  This removes the organisation and{" "}
+                  <strong className="font-semibold text-ink-700">all</strong> its
+                  synced data, audits and history.{" "}
+                  <strong className="font-semibold text-rose-700">
+                    This cannot be undone.
+                  </strong>
+                </p>
+              </div>
+            </div>
+            <label className="mt-4 block text-xs font-medium text-ink-600">
+              Type{" "}
+              <span className="font-semibold text-ink-900">
+                {deleteTarget.name}
+              </span>{" "}
+              to confirm
+            </label>
+            <input
+              value={deleteConfirm}
+              onChange={(e) => setDeleteConfirm(e.target.value)}
+              disabled={!!deleting}
+              autoFocus
+              placeholder={deleteTarget.name}
+              className="mt-1 w-full rounded-lg border border-ink-200 px-3 py-1.5 text-sm text-ink-900 shadow-sm focus:border-rose-400 focus:outline-none focus:ring-2 focus:ring-rose-200 disabled:opacity-50"
+            />
+            {deleteError && (
+              <p className="mt-3 rounded-lg bg-rose-50 px-3 py-2 text-xs text-rose-700 ring-1 ring-rose-100">
+                {deleteError}
+              </p>
+            )}
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                type="button"
+                disabled={!!deleting}
+                onClick={() => {
+                  setDeleteTarget(null);
+                  setDeleteConfirm("");
+                }}
+                className="rounded-lg px-3 py-1.5 text-sm font-medium text-ink-600 transition hover:text-ink-900 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={
+                  !!deleting || deleteConfirm.trim() !== deleteTarget.name
+                }
+                onClick={onConfirmDelete}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-rose-600 px-3.5 py-1.5 text-sm font-semibold text-white transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {deleting ? "Deleting…" : "Delete permanently"}
               </button>
             </div>
           </div>
@@ -848,7 +964,7 @@ export const AllClientsView = ({ onPick, restrictToIds }: AllClientsViewProps) =
                           {(r.nango_connection_id || r.xero_tenant_id) && (
                             <button
                               type="button"
-                              title="Disconnect this Xero organisation"
+                              title="Disconnect this Xero organisation (data kept, reconnect anytime)"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setDisconnectError(null);
@@ -859,6 +975,19 @@ export const AllClientsView = ({ onPick, restrictToIds }: AllClientsViewProps) =
                               Disconnect
                             </button>
                           )}
+                          <button
+                            type="button"
+                            title="Delete permanently — removes the org and all its data (cannot be undone)"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setDeleteError(null);
+                              setDeleteConfirm("");
+                              setDeleteTarget(r);
+                            }}
+                            className="inline-flex items-center rounded-md border border-ink-200 px-2 py-1 text-ink-400 transition hover:border-rose-400 hover:bg-rose-50 hover:text-rose-600"
+                          >
+                            <TrashIcon className="h-3.5 w-3.5" />
+                          </button>
                         </div>
                       </td>
                     </tr>

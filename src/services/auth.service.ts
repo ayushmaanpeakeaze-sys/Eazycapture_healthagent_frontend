@@ -216,13 +216,17 @@ export const listUsers = async (): Promise<TeamUser[]> => {
   }
 };
 
+/** Replace an existing member's client access (no re-invite). Sends the FULL
+ *  list — pass all orgs they should keep, not just the new one. */
 export const setUserCompanies = async (
   userId: string,
   companyIds: string[],
+  accessMode: "all" | "selected" = "selected",
 ): Promise<{ ok: boolean; error?: string }> => {
   try {
     await apiClient.put(`/api/v1/auth/users/${encodeURIComponent(userId)}/companies`, {
-      company_ids: companyIds,
+      access_mode: accessMode,
+      company_ids: accessMode === "all" ? [] : companyIds,
     });
     return { ok: true };
   } catch (err) {

@@ -7,6 +7,7 @@ import {
   listUsers,
   removeUser,
   resendInvite,
+  setUserCompanies,
 } from "../../services/auth.service";
 import { fetchCompaniesPanorama } from "../../services/audit.service";
 import { PanoramaClient } from "../../services/audit.service";
@@ -17,6 +18,7 @@ export const TeamView = () => {
   const [companies, setCompanies] = useState<PanoramaClient[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(true);
   const [showInvite, setShowInvite] = useState(false);
+  const [editTarget, setEditTarget] = useState<TeamUser | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -162,6 +164,18 @@ export const TeamView = () => {
         />
       )}
 
+      {editTarget && (
+        <EditAccessForm
+          user={editTarget}
+          companies={companies}
+          onClose={() => setEditTarget(null)}
+          onSaved={() => {
+            setEditTarget(null);
+            listUsers().then(setUsers);
+          }}
+        />
+      )}
+
       {actionError && (
         <div className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-2.5 text-xs text-rose-800">
           {actionError}
@@ -271,6 +285,19 @@ export const TeamView = () => {
                       <span className="text-[11px] text-ink-300">Owner</span>
                     ) : (
                       <div className="flex items-center justify-end gap-3">
+                        {/* Edit access — change which clients this member sees,
+                            without re-inviting (PUT replaces the full list). */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setActionError(null);
+                            setEditTarget(u);
+                          }}
+                          disabled={busyId === u.id}
+                          className="text-[11px] font-medium text-brand-600 hover:underline disabled:opacity-40"
+                        >
+                          Edit access
+                        </button>
                         {/* Must disable a member before they can be removed. */}
                         {u.status === "active" && (
                           <button
@@ -331,6 +358,172 @@ export const TeamView = () => {
           </tbody>
         </table>
       </section>
+    </div>
+  );
+};
+
+// Edit an existing member's client access — no re-invite. The PUT replaces the
+// whole list, so we pre-check their current orgs and send the full updated set.
+const EditAccessForm = ({
+  user,
+  companies,
+  onClose,
+  onSaved,
+}: {
+  user: TeamUser;
+  companies: PanoramaClient[];
+  onClose: () => void;
+  onSaved: () => void;
+}) => {
+  const [mode, setMode] = useState<"all" | "selected">(
+    user.access_mode === "selected" && user.assigned_company_ids.length > 0
+      ? "selected"
+      : "all",
+  );
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(
+    new Set(user.assigned_company_ids),
+  );
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const toggleCompany = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const handleSave = async () => {
+    if (mode === "selected" && selectedIds.size === 0) {
+      setError("Select at least one client, or choose All companies.");
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    const res = await setUserCompanies(
+      user.id,
+      mode === "selected" ? Array.from(selectedIds) : [],
+      mode,
+    );
+    setLoading(false);
+    if (!res.ok) {
+      setError(res.error ?? "Couldn’t update access.");
+      return;
+    }
+    onSaved();
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-ink-900/40 p-4"
+      onClick={() => {
+        if (!loading) onClose();
+      }}
+    >
+      <div
+        className="w-full max-w-lg rounded-2xl bg-white p-5 shadow-xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="mb-4 flex items-start justify-between gap-3">
+          <div>
+            <h2 className="text-base font-semibold text-ink-900">Edit access</h2>
+            <p className="mt-0.5 text-xs text-ink-500">{user.email}</p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-md p-1 text-ink-400 hover:bg-ink-100 hover:text-ink-700"
+          >
+            <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+              <path d="M18 6 6 18M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        <div className="flex gap-4">
+          <label className="flex cursor-pointer items-center gap-2 text-sm text-ink-800">
+            <input
+              type="radio"
+              name="edit_access_mode"
+              checked={mode === "all"}
+              onChange={() => setMode("all")}
+              className="h-4 w-4 border-ink-300 text-brand-600 focus:ring-brand-200"
+            />
+            All companies
+          </label>
+          <label className="flex cursor-pointer items-center gap-2 text-sm text-ink-800">
+            <input
+              type="radio"
+              name="edit_access_mode"
+              checked={mode === "selected"}
+              onChange={() => setMode("selected")}
+              className="h-4 w-4 border-ink-300 text-brand-600 focus:ring-brand-200"
+            />
+            Selected companies
+          </label>
+        </div>
+
+        {mode === "selected" && (
+          <div className="mt-3 grid max-h-64 grid-cols-1 gap-1.5 overflow-y-auto sm:grid-cols-2">
+            {companies.length === 0 ? (
+              <p className="text-xs italic text-ink-400">No companies loaded.</p>
+            ) : (
+              companies.map((c) => (
+                <label
+                  key={c.company_id}
+                  className={[
+                    "flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-xs font-medium transition",
+                    selectedIds.has(c.company_id)
+                      ? "border-brand-300 bg-brand-50 text-brand-800"
+                      : "border-ink-200 bg-white text-ink-700 hover:border-brand-200",
+                  ].join(" ")}
+                >
+                  <input
+                    type="checkbox"
+                    checked={selectedIds.has(c.company_id)}
+                    onChange={() => toggleCompany(c.company_id)}
+                    className="h-3.5 w-3.5 rounded border-ink-300 text-brand-600 focus:ring-brand-200"
+                  />
+                  {c.name}
+                </label>
+              ))
+            )}
+          </div>
+        )}
+
+        {error && (
+          <div className="mt-3 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-800">
+            {error}
+          </div>
+        )}
+
+        <div className="mt-5 flex justify-end gap-2">
+          <button
+            type="button"
+            disabled={loading}
+            onClick={onClose}
+            className="rounded-lg px-3 py-1.5 text-sm font-medium text-ink-600 transition hover:text-ink-900 disabled:opacity-50"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            disabled={loading}
+            onClick={handleSave}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-brand-gradient px-4 py-1.5 text-sm font-semibold text-white shadow-brand transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {loading && (
+              <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4}>
+                <circle cx="12" cy="12" r="9" opacity="0.25" />
+                <path d="M21 12a9 9 0 0 0-9-9" strokeLinecap="round" />
+              </svg>
+            )}
+            {loading ? "Saving…" : "Save access"}
+          </button>
+        </div>
+      </div>
     </div>
   );
 };

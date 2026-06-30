@@ -1,46 +1,44 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 
 import {
-  fetchCompaniesPanorama,
-  PanoramaClient,
+  fetchNotifications,
+  NotificationItem,
 } from "../../services/audit.service";
 
-type AlertTone = "critical" | "warn" | "info";
+type Sev = "critical" | "watch" | "info";
 
-interface Alert {
-  id: string;
-  tone: AlertTone;
-  client: PanoramaClient;
-  title: string;
-  detail: string;
-  when: string;
-}
+const sevOf = (s: string): Sev =>
+  s === "critical" || s === "watch" || s === "info" ? s : "info";
 
-const TONE_STYLES: Record<
-  AlertTone,
-  { ring: string; iconBg: string; iconText: string; label: string }
+const SEV_STYLES: Record<
+  Sev,
+  { ring: string; iconBg: string; iconText: string; label: string; dot: string; text: string }
 > = {
   critical: {
     ring: "ring-rose-200",
     iconBg: "bg-rose-100",
     iconText: "text-rose-700",
     label: "Critical",
+    dot: "bg-rose-500",
+    text: "text-rose-700",
   },
-  warn: {
+  watch: {
     ring: "ring-amber-200",
     iconBg: "bg-amber-100",
     iconText: "text-amber-700",
     label: "Watch",
+    dot: "bg-amber-500",
+    text: "text-amber-700",
   },
   info: {
     ring: "ring-brand-200",
     iconBg: "bg-brand-100",
     iconText: "text-brand-700",
     label: "Info",
+    dot: "bg-brand-500",
+    text: "text-brand-700",
   },
 };
-
-const TONE_RANK: Record<AlertTone, number> = { critical: 3, warn: 2, info: 1 };
 
 const fmtRelative = (iso: string | null): string => {
   if (!iso) return "—";
@@ -55,67 +53,49 @@ const fmtRelative = (iso: string | null): string => {
   return `${d}d ago`;
 };
 
-const BellIcon = (
-  <svg
-    viewBox="0 0 24 24"
-    className="h-4 w-4"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth={2.2}
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
-    <path d="M10 21a2 2 0 0 0 4 0" />
-  </svg>
-);
-
-const WarnIcon = (
-  <svg
-    viewBox="0 0 24 24"
-    className="h-4 w-4"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth={2.2}
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
+const AlertIcon = (
+  <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
     <path d="M10.3 3.7a2 2 0 0 1 3.4 0l8 14A2 2 0 0 1 20 21H4a2 2 0 0 1-1.7-3.3l8-14Z" />
     <path d="M12 9v5M12 17.5v.1" />
   </svg>
 );
 
-const ClockIcon = (
-  <svg
-    viewBox="0 0 24 24"
-    className="h-4 w-4"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth={2.2}
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <circle cx="12" cy="12" r="9" />
-    <path d="M12 8v5l3 2" />
+const EventIcon = (
+  <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+    <circle cx="9" cy="7" r="4" />
+    <path d="M19 8v6M22 11h-6" />
   </svg>
 );
 
 interface NotificationsViewProps {
-  onPickClient?: (client: PanoramaClient) => void;
+  /** Open a client's overview when an alert/event row references one. */
+  onOpenCompany?: (companyId: string) => void;
 }
 
-export const NotificationsView = ({ onPickClient }: NotificationsViewProps) => {
-  const [panorama, setPanorama] = useState<PanoramaClient[]>([]);
+export const NotificationsView = ({ onOpenCompany }: NotificationsViewProps) => {
+  const [items, setItems] = useState<NotificationItem[]>([]);
+  const [counts, setCounts] = useState({ critical: 0, watch: 0, info: 0 });
   const [loading, setLoading] = useState(true);
+
+  const load = () => {
+    setLoading(true);
+    fetchNotifications()
+      .then((res) => {
+        setItems(res.items);
+        setCounts(res.counts);
+      })
+      .finally(() => setLoading(false));
+  };
 
   useEffect(() => {
     let active = true;
     setLoading(true);
-    // Alerts are derived from the panorama; the global /results/ call can't run
-    // on a per-tenant backend (company_id required).
-    fetchCompaniesPanorama(30)
-      .then((p) => {
-        if (active) setPanorama(p.results ?? []);
+    fetchNotifications()
+      .then((res) => {
+        if (!active) return;
+        setItems(res.items);
+        setCounts(res.counts);
       })
       .finally(() => {
         if (active) setLoading(false);
@@ -125,78 +105,6 @@ export const NotificationsView = ({ onPickClient }: NotificationsViewProps) => {
     };
   }, []);
 
-  const alerts = useMemo<Alert[]>(() => {
-    const out: Alert[] = [];
-
-    for (const c of panorama) {
-      if (c.health_score !== null && c.health_score < 60) {
-        out.push({
-          id: `score-${c.company_id}`,
-          tone: "critical",
-          client: c,
-          title: `${c.name} score dropped to ${c.health_score}%`,
-          detail:
-            c.top_issue || "Multiple findings — open the panorama for detail.",
-          when: c.last_audit_at ?? new Date().toISOString(),
-        });
-      } else if (
-        c.health_score !== null &&
-        c.health_score < 80 &&
-        c.trapped_count > 0
-      ) {
-        out.push({
-          id: `watch-${c.company_id}`,
-          tone: "warn",
-          client: c,
-          title: `${c.name} has ${c.trapped_count} trapped invoice${
-            c.trapped_count === 1 ? "" : "s"
-          }`,
-          detail: c.top_issue || "Findings pending review.",
-          when: c.last_audit_at ?? new Date().toISOString(),
-        });
-      }
-    }
-
-    // Flag clients not audited in over 14 days.
-    const STALE_MS = 14 * 24 * 3600 * 1000;
-    for (const c of panorama) {
-      if (!c.last_audit_at) continue;
-      const age = Date.now() - new Date(c.last_audit_at).getTime();
-      if (age > STALE_MS) {
-        out.push({
-          id: `stale-${c.company_id}`,
-          tone: "warn",
-          client: c,
-          title: `${c.name} hasn't been audited in ${Math.floor(
-            age / (24 * 3600 * 1000),
-          )} days`,
-          detail: "Run an audit from the Checks tab to refresh findings.",
-          when: c.last_audit_at,
-        });
-      }
-    }
-
-    out.sort((a, b) => {
-      const ra = TONE_RANK[a.tone];
-      const rb = TONE_RANK[b.tone];
-      if (rb !== ra) return rb - ra;
-      return new Date(b.when).getTime() - new Date(a.when).getTime();
-    });
-    return out;
-  }, [panorama]);
-
-  const counts = useMemo(() => {
-    let critical = 0;
-    let warn = 0;
-    let info = 0;
-    for (const a of alerts) {
-      if (a.tone === "critical") critical += 1;
-      else if (a.tone === "warn") warn += 1;
-      else info += 1;
-    }
-    return { critical, warn, info };
-  }, [alerts]);
-
   return (
     <div className="space-y-5">
       <header className="flex flex-wrap items-end justify-between gap-3">
@@ -205,8 +113,7 @@ export const NotificationsView = ({ onPickClient }: NotificationsViewProps) => {
             Notifications
           </h1>
           <p className="mt-1 text-sm text-ink-500">
-            Things needing attention across all clients — derived from health
-            scores, trapped counts, and audit recency.
+            Health alerts and team activity across all clients.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -216,32 +123,44 @@ export const NotificationsView = ({ onPickClient }: NotificationsViewProps) => {
           </span>
           <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-amber-700 ring-1 ring-amber-200">
             <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
-            {counts.warn} watch
+            {counts.watch} watch
           </span>
           <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-brand-700 ring-1 ring-brand-200">
             <span className="h-1.5 w-1.5 rounded-full bg-brand-500" />
             {counts.info} info
           </span>
+          <button
+            type="button"
+            onClick={load}
+            disabled={loading}
+            title="Refresh notifications"
+            className="inline-flex items-center justify-center rounded-full bg-white p-1.5 text-ink-500 ring-1 ring-ink-200 transition hover:text-ink-800 disabled:opacity-50"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              className={["h-3.5 w-3.5", loading ? "animate-spin" : ""].join(" ")}
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2.2}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M21 12a9 9 0 1 1-2.64-6.36" />
+              <path d="M21 3v6h-6" />
+            </svg>
+          </button>
         </div>
       </header>
 
       <section className="overflow-hidden rounded-xl border border-ink-200 bg-white shadow-card">
         {loading ? (
           <div className="px-5 py-10 text-center text-sm text-ink-500">
-            Building alerts…
+            Loading notifications…
           </div>
-        ) : alerts.length === 0 ? (
+        ) : items.length === 0 ? (
           <div className="px-5 py-16 text-center">
             <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200">
-              <svg
-                viewBox="0 0 24 24"
-                className="h-6 w-6"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth={2}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
+              <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
                 <path d="M9 12l2 2 4-4" />
                 <circle cx="12" cy="12" r="9" />
               </svg>
@@ -250,22 +169,19 @@ export const NotificationsView = ({ onPickClient }: NotificationsViewProps) => {
               Nothing needs attention
             </p>
             <p className="mt-1 text-xs text-ink-500">
-              Every connected client looks healthy in the last 30 days.
+              No health alerts, and no recent team activity.
             </p>
           </div>
         ) : (
           <ul className="divide-y divide-ink-100">
-            {alerts.map((a) => {
-              const s = TONE_STYLES[a.tone];
-              const icon =
-                a.tone === "critical"
-                  ? WarnIcon
-                  : a.id.startsWith("stale")
-                    ? ClockIcon
-                    : BellIcon;
+            {items.map((it, idx) => {
+              const sev = sevOf(it.severity);
+              const s = SEV_STYLES[sev];
+              const icon = it.kind === "event" ? EventIcon : AlertIcon;
+              const clickable = !!it.company_id && !!onOpenCompany;
               return (
                 <li
-                  key={a.id}
+                  key={`${it.type}-${it.company_id ?? ""}-${it.at}-${idx}`}
                   className="flex items-start gap-4 px-5 py-4 transition hover:bg-ink-50/40"
                 >
                   <span
@@ -290,24 +206,33 @@ export const NotificationsView = ({ onPickClient }: NotificationsViewProps) => {
                       >
                         {s.label}
                       </span>
-                      {onPickClient ? (
+                      {clickable ? (
                         <button
                           type="button"
-                          onClick={() => onPickClient(a.client)}
+                          onClick={() => onOpenCompany!(it.company_id!)}
                           className="text-sm font-semibold text-ink-900 hover:text-brand-700 hover:underline"
                         >
-                          {a.title}
+                          {it.title}
                         </button>
                       ) : (
                         <span className="text-sm font-semibold text-ink-900">
-                          {a.title}
+                          {it.title}
                         </span>
                       )}
                       <span className="ml-auto text-[10px] uppercase tracking-wider text-ink-400">
-                        {fmtRelative(a.when)}
+                        {fmtRelative(it.at)}
                       </span>
                     </div>
-                    <p className="mt-1 text-xs text-ink-600">{a.detail}</p>
+                    {(it.detail || it.actor_email) && (
+                      <p className="mt-1 text-xs text-ink-600">
+                        {it.detail}
+                        {it.actor_email && (
+                          <span className="text-ink-400">
+                            {it.detail ? " · " : ""}by {it.actor_email}
+                          </span>
+                        )}
+                      </p>
+                    )}
                   </div>
                 </li>
               );

@@ -623,7 +623,7 @@ const AlertsPage = () => {
   const navigate = useNavigate();
   return (
     <NotificationsView
-      onPickClient={(c) => navigate(`/clients/${c.company_id}/overview`)}
+      onOpenCompany={(id) => navigate(`/clients/${id}/overview`)}
     />
   );
 };

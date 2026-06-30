@@ -1113,6 +1113,45 @@ export const reAllowExcludedOrg = async (
   }
 };
 
+export type NotificationKind = "alert" | "event";
+export type NotificationSeverity = "critical" | "watch" | "info";
+
+/** One feed row — a health-score alert, or a team/connect activity event. */
+export interface NotificationItem {
+  kind: NotificationKind;
+  /** Machine type, e.g. "score_drop" | "invite_sent" | "org_connected". */
+  type: string;
+  severity: NotificationSeverity | string;
+  title: string;
+  detail?: string | null;
+  /** Who did it — present on events (invites, access changes, connects). */
+  actor_email?: string | null;
+  company_id?: string | null;
+  /** ISO timestamp. */
+  at: string;
+}
+
+export interface NotificationsResponse {
+  counts: { critical: number; watch: number; info: number };
+  items: NotificationItem[];
+}
+
+/** Unified notifications feed: health alerts (with real score drops) + team /
+ *  connect events. Replaces the old client-side derivation. */
+export const fetchNotifications = async (): Promise<NotificationsResponse> => {
+  try {
+    const { data } = await healthClient.get<NotificationsResponse>(
+      `/notifications/`,
+    );
+    return {
+      counts: data.counts ?? { critical: 0, watch: 0, info: 0 },
+      items: data.items ?? [],
+    };
+  } catch {
+    return { counts: { critical: 0, watch: 0, info: 0 }, items: [] };
+  }
+};
+
 export const fetchConnectedCompanies = async (): Promise<ConnectedCompany[]> => {
   try {
     const { data } = await apiClient.get<{

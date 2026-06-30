@@ -147,6 +147,8 @@ export interface ClientInsightsSnapshot {
   /** "ok" = fresh payload present · "none" = never computed. */
   status: "ok" | "none" | string;
   stale: boolean;
+  /** True while a recompute is in flight. Absent on older backends. */
+  refreshing?: boolean;
   payload: InsightsPayload | null;
 }
 

@@ -707,7 +707,7 @@ const SuggestFixModal = ({
               <a
                 href={fix.xero_url}
                 target="_blank"
-                rel="noreferrer"
+                rel="noopener noreferrer"
                 className="rounded-lg border border-ink-200 px-3 py-1.5 text-xs font-semibold text-ink-600 transition hover:border-brand-300 hover:text-brand-700"
               >
                 Open in Xero
@@ -780,7 +780,7 @@ const InvoiceCell = ({
             <a
               href={r.xero_url}
               target="_blank"
-              rel="noreferrer"
+              rel="noopener noreferrer"
               className="rounded-md border border-ink-200 px-2.5 py-1 text-xs font-semibold text-ink-600 transition hover:border-brand-300 hover:text-brand-700"
             >
               View

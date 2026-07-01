@@ -149,7 +149,7 @@ export const ConnectXeroButton = ({
         <a
           href={connectLink}
           target="_blank"
-          rel="noreferrer"
+          rel="noopener noreferrer"
           onClick={() => runImport(false)}
           className="absolute top-full z-20 mt-1 whitespace-nowrap rounded-md bg-white px-2 py-1 text-[10px] font-semibold text-brand-700 shadow-card ring-1 ring-ink-200 transition hover:bg-brand-50"
         >

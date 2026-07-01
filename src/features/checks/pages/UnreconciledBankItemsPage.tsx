@@ -157,7 +157,7 @@ export const UnreconciledBankItemsPage = ({
                     <a
                       href={it.process_url}
                       target="_blank"
-                      rel="noreferrer"
+                      rel="noopener noreferrer"
                       className="inline-block rounded-lg bg-emerald-600 px-4 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-emerald-700"
                     >
                       Process

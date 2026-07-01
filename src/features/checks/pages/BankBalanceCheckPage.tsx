@@ -280,7 +280,7 @@ export const BankBalanceCheckPage = ({
                     <a
                       href={it.process_url}
                       target="_blank"
-                      rel="noreferrer"
+                      rel="noopener noreferrer"
                       className="rounded-lg bg-brand-gradient px-3 py-1.5 text-xs font-semibold text-white shadow-brand transition hover:brightness-110"
                     >
                       Process

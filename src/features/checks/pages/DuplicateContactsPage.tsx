@@ -327,7 +327,7 @@ const ContactRow = ({
         <a
           href={line.xeroUrl}
           target="_blank"
-          rel="noreferrer"
+          rel="noopener noreferrer"
           className={[
             "rounded-md border px-2.5 py-1 text-xs font-semibold transition",
             split

@@ -269,7 +269,7 @@ export const InactiveContactsPage = ({
                             <a
                               href={r.xero_url}
                               target="_blank"
-                              rel="noreferrer"
+                              rel="noopener noreferrer"
                               className="rounded-md border border-ink-200 px-2.5 py-1 text-xs font-semibold text-ink-600 transition hover:border-brand-300 hover:text-brand-700"
                             >
                               View
@@ -277,7 +277,7 @@ export const InactiveContactsPage = ({
                             <a
                               href={r.xero_url}
                               target="_blank"
-                              rel="noreferrer"
+                              rel="noopener noreferrer"
                               title="Archive this contact in Xero"
                               className="rounded-md border border-ink-200 px-2.5 py-1 text-xs font-semibold text-ink-600 transition hover:border-brand-300 hover:text-brand-700"
                             >

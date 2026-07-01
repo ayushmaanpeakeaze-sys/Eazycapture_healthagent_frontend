@@ -261,7 +261,7 @@ export const SuggestFixModal = ({
             <a
               href={xeroUrl}
               target="_blank"
-              rel="noreferrer"
+              rel="noopener noreferrer"
               className="inline-flex items-center gap-1.5 rounded-lg border border-brand-200 bg-brand-50 px-3 py-2 text-sm font-semibold text-brand-700 transition hover:bg-brand-100"
             >
               Open in Xero
@@ -365,7 +365,7 @@ const ApplyResultBanner = ({ result }: { result: ApplyAiFixResult }) => {
           <a
             href={result.xero_url}
             target="_blank"
-            rel="noreferrer"
+            rel="noopener noreferrer"
             className="mt-2 inline-flex items-center gap-1.5 rounded-md bg-white px-2.5 py-1 text-xs font-semibold text-amber-800 ring-1 ring-amber-300 transition hover:bg-amber-100"
           >
             Open this document in Xero

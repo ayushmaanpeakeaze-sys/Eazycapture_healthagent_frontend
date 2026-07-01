@@ -862,7 +862,7 @@ const AiRowPanel = ({
             <a
               href={ai.regulatory_ref}
               target="_blank"
-              rel="noreferrer"
+              rel="noopener noreferrer"
               className="text-rose-700 underline-offset-2 hover:underline"
             >
               {ai.regulatory_ref}
@@ -1267,7 +1267,7 @@ export const TrappedInvoicesList = ({
                           <a
                             href={row.xero_url}
                             target="_blank"
-                            rel="noreferrer"
+                            rel="noopener noreferrer"
                             onClick={(e) => e.stopPropagation()}
                             className="inline-flex items-center gap-1.5 rounded-md border border-brand-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-brand-700 transition hover:bg-brand-50"
                             title="Deep-link to this document in Xero"

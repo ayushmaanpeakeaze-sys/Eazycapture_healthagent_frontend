@@ -276,7 +276,7 @@ export const OpeningBalanceDiffsPage = ({
                             <a
                               href={it.filed_document_url}
                               target="_blank"
-                              rel="noreferrer"
+                              rel="noopener noreferrer"
                               title="Download filed accounts"
                               className="text-ink-400 hover:text-brand-600"
                             >
@@ -455,7 +455,7 @@ const LateTxnModal = ({
                         <a
                           href={t.xero_url}
                           target="_blank"
-                          rel="noreferrer"
+                          rel="noopener noreferrer"
                           className="rounded-md border border-ink-200 px-2 py-0.5 text-xs font-semibold text-ink-600 transition hover:border-brand-300 hover:text-brand-700"
                         >
                           View

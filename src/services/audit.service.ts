@@ -7,6 +7,8 @@ import {
   BatchProgressEvent,
   BatchTransaction,
   BankBalanceCheckResponse,
+  BankDocument,
+  BankNote,
   BankReconciliationSummaryResponse,
   CodingOptions,
   HealthCheckResult,
@@ -582,6 +584,143 @@ export const markBankBalanceOk = async (
     return { ok: true };
   } catch (err) {
     return { ok: false, error: err instanceof Error ? err.message : "Mark OK failed" };
+  }
+};
+
+/** Add a note to a bank account for a period end. Optionally @mentions users. */
+export const addBankNote = async (
+  companyId: string,
+  accountCode: string,
+  payload: { period_end: string; body: string; tagged_user_ids: string[] },
+): Promise<{ ok: true; note: BankNote } | { ok: false; error: string }> => {
+  try {
+    const { data } = await healthClient.post<BankNote>(
+      `/bank-balance-check/${encodeURIComponent(accountCode)}/notes/?company_id=${encodeURIComponent(companyId)}`,
+      payload,
+    );
+    return { ok: true, note: data };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : "Add note failed" };
+  }
+};
+
+/** List notes for one bank account at a period end. */
+export const fetchBankNotes = async (
+  companyId: string,
+  accountCode: string,
+  periodEnd: string,
+): Promise<BankNote[]> => {
+  try {
+    const params = new URLSearchParams({ company_id: companyId, period_end: periodEnd });
+    const { data } = await healthClient.get<{ results: BankNote[]; total: number }>(
+      `/bank-balance-check/${encodeURIComponent(accountCode)}/notes/?${params.toString()}`,
+    );
+    return data.results ?? [];
+  } catch {
+    return [];
+  }
+};
+
+/** Delete a single bank note by id. */
+export const deleteBankNote = async (
+  companyId: string,
+  noteId: string,
+): Promise<{ ok: boolean; error?: string }> => {
+  try {
+    await healthClient.delete(
+      `/bank-balance-check/notes/${encodeURIComponent(noteId)}/?company_id=${encodeURIComponent(companyId)}`,
+    );
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : "Delete failed" };
+  }
+};
+
+/** Upload a document (≤10MB) against a bank account / period end (multipart). */
+export const uploadBankDocument = async (
+  companyId: string,
+  accountCode: string,
+  periodEnd: string,
+  file: File,
+): Promise<{ ok: true; document: BankDocument } | { ok: false; error: string }> => {
+  try {
+    const form = new FormData();
+    form.append("period_end", periodEnd);
+    form.append("file", file);
+    // axios sets the multipart boundary header automatically for FormData bodies.
+    const { data } = await healthClient.post<BankDocument>(
+      `/bank-balance-check/${encodeURIComponent(accountCode)}/documents/?company_id=${encodeURIComponent(companyId)}`,
+      form,
+    );
+    return { ok: true, document: data };
+  } catch (err) {
+    const status = err instanceof AxiosError ? err.response?.status : undefined;
+    if (status === 413) {
+      return { ok: false, error: "File is too large — the limit is 10MB." };
+    }
+    const detail =
+      err instanceof AxiosError
+        ? (err.response?.data?.detail as string | undefined)
+        : undefined;
+    return { ok: false, error: detail ?? (err instanceof Error ? err.message : "Upload failed") };
+  }
+};
+
+/** List document metadata for one bank account at a period end. */
+export const fetchBankDocuments = async (
+  companyId: string,
+  accountCode: string,
+  periodEnd: string,
+): Promise<BankDocument[]> => {
+  try {
+    const params = new URLSearchParams({ company_id: companyId, period_end: periodEnd });
+    const { data } = await healthClient.get<{ results: BankDocument[]; total: number }>(
+      `/bank-balance-check/${encodeURIComponent(accountCode)}/documents/?${params.toString()}`,
+    );
+    return data.results ?? [];
+  } catch {
+    return [];
+  }
+};
+
+/** Delete a single uploaded document by id. */
+export const deleteBankDocument = async (
+  companyId: string,
+  docId: string,
+): Promise<{ ok: boolean; error?: string }> => {
+  try {
+    await healthClient.delete(
+      `/bank-balance-check/documents/${encodeURIComponent(docId)}/?company_id=${encodeURIComponent(companyId)}`,
+    );
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : "Delete failed" };
+  }
+};
+
+/** Download a document. Auth is Bearer (header-only), so a bare <a href> can't
+ *  authenticate — fetch the blob via healthClient, then trigger a browser save. */
+export const downloadBankDocument = async (
+  companyId: string,
+  docId: string,
+  filename: string,
+): Promise<{ ok: boolean; error?: string }> => {
+  try {
+    const { data } = await healthClient.get<Blob>(
+      `/bank-balance-check/documents/${encodeURIComponent(docId)}/download/?company_id=${encodeURIComponent(companyId)}`,
+      { responseType: "blob" },
+    );
+    const url = URL.createObjectURL(data);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename || "document";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : "Download failed" };
   }
 };
 

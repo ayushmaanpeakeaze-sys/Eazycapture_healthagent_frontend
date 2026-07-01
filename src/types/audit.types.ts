@@ -235,6 +235,31 @@ export interface BankBalanceItem {
   marked_ok: boolean;
   process_url: string | null;
   currency_code?: string | null;
+  /** Count of notes attached to this (account_code, period_end). */
+  notes_count?: number;
+  /** Count of documents attached to this (account_code, period_end). */
+  documents_count?: number;
+}
+
+/** A note on a bank account for one period end (with @mentions). */
+export interface BankNote {
+  id: string;
+  account_code: string;
+  period_end: string;
+  author_user_id: string;
+  body: string;
+  tagged_user_ids: string[];
+  created_at: string;
+}
+
+/** Uploaded-document metadata for a bank account / period end. */
+export interface BankDocument {
+  id: string;
+  filename: string;
+  content_type: string;
+  size_bytes: number;
+  uploaded_by: string;
+  created_at: string;
 }
 
 export interface BankBalanceCheckResponse {

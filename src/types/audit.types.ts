@@ -237,10 +237,16 @@ export interface BankBalanceItem {
   marked_ok: boolean;
   process_url: string | null;
   currency_code?: string | null;
-  /** Count of notes attached to this (account_code, period_end). */
   notes_count?: number;
-  /** Count of documents attached to this (account_code, period_end). */
   documents_count?: number;
+  // Auto reconciliation (merged in — no manual entry needed).
+  statement_balance_calculated?: number | string | null;
+  unreconciled_received?: number | null;
+  unreconciled_spent?: number | null;
+  unreconciled_lines_total?: number | null;
+  unreconciled_count?: number;
+  needs_reconciliation?: boolean;
+  lines?: BankReconLine[];
 }
 
 /** A note on a bank account for one period end (with @mentions). */
@@ -302,35 +308,6 @@ export interface BankReconLine {
   type: string;
   /** Signed: + for received, − for spent. */
   amount: number;
-}
-
-/** One bank account in the Bank Reconciliation Summary. */
-export interface BankReconAccount {
-  account_id: string;
-  account_code: string | null;
-  account_name: string;
-  /** Trial-balance GL balance (the books). */
-  balance_in_xero: number;
-  /** = balance_in_xero + unreconciled net (matches Xero's report). */
-  statement_balance_calculated: number;
-  /** Always null → render "Not available" (needs Xero Finance API). */
-  imported_statement_balance: number | null;
-  unreconciled_received: number;
-  unreconciled_spent: number;
-  /** NET difference (received − spent) — the amount still to reconcile. */
-  unreconciled_lines_total: number;
-  unreconciled_count: number;
-  needs_reconciliation: boolean;
-  /** Deep-link to Xero's reconciliation page. */
-  process_url: string | null;
-  lines: BankReconLine[];
-}
-
-export interface BankReconciliationSummaryResponse {
-  total_unreconciled_count: number;
-  /** false → the imported (feed) balance needs Xero's gated Finance API. */
-  imported_statement_available: boolean;
-  accounts: BankReconAccount[];
 }
 
 /** One period row in the Opening Balance Differences check. */

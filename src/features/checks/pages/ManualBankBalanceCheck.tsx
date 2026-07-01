@@ -44,6 +44,13 @@ const fmtDateTime = (iso: string): string => {
   });
 };
 
+const fmtDate = (iso: string): string => {
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime())
+    ? iso
+    : d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+};
+
 const fmtBytes = (n: number): string => {
   if (!Number.isFinite(n) || n <= 0) return "0 B";
   const units = ["B", "KB", "MB", "GB"];
@@ -406,7 +413,9 @@ const AccountCard = ({
 }) => {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [panel, setPanel] = useState<"none" | "notes" | "docs">("none");
+  const [panel, setPanel] = useState<"none" | "notes" | "docs" | "recon">(
+    "none",
+  );
   const [editingBalance, setEditingBalance] = useState(false);
   const [balanceInput, setBalanceInput] = useState("");
 
@@ -477,6 +486,11 @@ const AccountCard = ({
         {item.marked_ok && (
           <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-emerald-700 ring-1 ring-emerald-200">
             Marked OK
+          </span>
+        )}
+        {item.needs_reconciliation && !item.marked_ok && (
+          <span className="inline-flex items-center rounded-full bg-rose-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-rose-700 ring-1 ring-rose-200">
+            Needs reconciliation
           </span>
         )}
       </div>
@@ -566,6 +580,33 @@ const AccountCard = ({
         </div>
       </div>
 
+      {(item.statement_balance_calculated != null ||
+        (item.unreconciled_count ?? 0) > 0) && (
+        <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-ink-100 pt-2 text-[11px] text-ink-500">
+          <span>
+            Statement balance (calculated):{" "}
+            <span className="font-semibold tabular-nums text-ink-800">
+              {money(item.statement_balance_calculated)}
+            </span>
+          </span>
+          {(item.unreconciled_count ?? 0) > 0 && (
+            <span className="tabular-nums">
+              {item.unreconciled_count} unreconciled item
+              {item.unreconciled_count === 1 ? "" : "s"}
+            </span>
+          )}
+          {(item.lines?.length ?? 0) > 0 && (
+            <button
+              type="button"
+              onClick={() => setPanel((p) => (p === "recon" ? "none" : "recon"))}
+              className="font-semibold text-brand-700 hover:underline"
+            >
+              {panel === "recon" ? "Hide details" : "View details"}
+            </button>
+          )}
+        </div>
+      )}
+
       <div className="mt-3 flex flex-wrap items-center gap-2">
         {(item.notes_count ?? 0) > 0 && (
           <span className="rounded-full bg-ink-100 px-2 py-0.5 text-[10px] font-medium text-ink-600">
@@ -633,6 +674,51 @@ const AccountCard = ({
         )}
       </div>
 
+      {panel === "recon" && item.lines && item.lines.length > 0 && (
+        <div className="mt-3 border-t border-ink-100 pt-3">
+          <table className="w-full text-left text-xs">
+            <thead className="text-[10px] uppercase tracking-wider text-ink-400">
+              <tr>
+                <th className="py-1 pr-3 font-semibold">Date</th>
+                <th className="py-1 pr-3 font-semibold">Contact</th>
+                <th className="py-1 pr-3 font-semibold">Type</th>
+                <th className="py-1 text-right font-semibold">Amount</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-ink-100">
+              {item.lines.map((l, i) => (
+                <tr key={`${l.date}-${i}`}>
+                  <td className="py-1.5 pr-3 tabular-nums text-ink-600">
+                    {fmtDate(l.date)}
+                  </td>
+                  <td className="py-1.5 pr-3 text-ink-800">{l.contact}</td>
+                  <td className="py-1.5 pr-3">
+                    <span
+                      className={[
+                        "rounded-full px-1.5 py-0.5 text-[10px] font-semibold",
+                        l.type === "Received"
+                          ? "bg-emerald-50 text-emerald-700"
+                          : "bg-rose-50 text-rose-700",
+                      ].join(" ")}
+                    >
+                      {l.type}
+                    </span>
+                  </td>
+                  <td
+                    className={[
+                      "py-1.5 text-right font-semibold tabular-nums",
+                      l.amount >= 0 ? "text-emerald-700" : "text-rose-700",
+                    ].join(" ")}
+                  >
+                    {l.amount >= 0 ? "+" : ""}
+                    {money(l.amount)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
       {panel === "notes" && (
         <NotesPanel
           companyId={companyId}

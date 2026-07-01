@@ -7,6 +7,7 @@ import {
   fetchOpeningBalanceDiffs,
   fetchUnreconciledBankItems,
 } from "../../services/audit.service";
+import { fetchContactDefaults } from "../../services/contactDefaults.service";
 import { HealthStatsResponse, IssueType } from "../../types/audit.types";
 import { CheckSettingsPanel, SETTINGS_ALIAS } from "@/features/checks/CheckSettingsPanel";
 import {
@@ -115,12 +116,17 @@ export const ChecksDirectory = ({
     Promise.all([
       fetchUnreconciledBankItems(companyId),
       fetchOpeningBalanceDiffs(companyId, false),
-    ]).then(([unrec, obal]) => {
+      fetchContactDefaults(companyId, true, false),
+    ]).then(([unrec, obal, cd]) => {
       if (!active) return;
-      setExtraCounts({
+      const next: Record<string, number> = {
         unreconciled_bank: unrec?.total_to_reconcile ?? 0,
         opening_balance_difference: obal?.items?.length ?? 0,
-      });
+      };
+      // Live count when connected; else fall back to the stored audit count.
+      if (cd.ok && cd.data.connected)
+        next.contact_defaults = cd.data.missing_count;
+      setExtraCounts(next);
     });
     return () => {
       active = false;

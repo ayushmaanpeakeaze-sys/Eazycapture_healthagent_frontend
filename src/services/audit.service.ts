@@ -7,6 +7,7 @@ import {
   BatchProgressEvent,
   BatchTransaction,
   BankBalanceCheckResponse,
+  BankReconciliationSummaryResponse,
   CodingOptions,
   HealthCheckResult,
   LateTransactionsResponse,
@@ -505,6 +506,25 @@ export const fetchBankBalanceCheck = async (
     if (showAll) params.set("show_all", "true");
     const { data } = await healthClient.get<BankBalanceCheckResponse>(
       `/bank-balance-check/?${params.toString()}`,
+    );
+    return data;
+  } catch {
+    return null;
+  }
+};
+
+/** Bank Reconciliation Summary — per account: Balance in Xero vs Statement
+ *  Balance (calculated); the difference is the unreconciled amount. Reproduces
+ *  Xero's own report (no manual entry, no Finance API). */
+export const fetchBankReconciliationSummary = async (
+  companyId: string,
+  showAll = false,
+): Promise<BankReconciliationSummaryResponse | null> => {
+  try {
+    const params = new URLSearchParams({ company_id: companyId });
+    if (showAll) params.set("show_all", "true");
+    const { data } = await healthClient.get<BankReconciliationSummaryResponse>(
+      `/bank-reconciliation-summary/?${params.toString()}`,
     );
     return data;
   } catch {

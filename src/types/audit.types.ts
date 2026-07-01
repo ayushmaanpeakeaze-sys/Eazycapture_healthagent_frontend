@@ -267,6 +267,45 @@ export interface UnreconciledBankResponse {
   items: UnreconciledBankItem[];
 }
 
+/** One unreconciled transaction under a bank account (View Details). */
+export interface BankReconLine {
+  date: string;
+  contact: string;
+  /** "Received" | "Spent". */
+  type: string;
+  /** Signed: + for received, − for spent. */
+  amount: number;
+}
+
+/** One bank account in the Bank Reconciliation Summary. */
+export interface BankReconAccount {
+  account_id: string;
+  account_code: string | null;
+  account_name: string;
+  /** Trial-balance GL balance (the books). */
+  balance_in_xero: number;
+  /** = balance_in_xero + unreconciled net (matches Xero's report). */
+  statement_balance_calculated: number;
+  /** Always null → render "Not available" (needs Xero Finance API). */
+  imported_statement_balance: number | null;
+  unreconciled_received: number;
+  unreconciled_spent: number;
+  /** NET difference (received − spent) — the amount still to reconcile. */
+  unreconciled_lines_total: number;
+  unreconciled_count: number;
+  needs_reconciliation: boolean;
+  /** Deep-link to Xero's reconciliation page. */
+  process_url: string | null;
+  lines: BankReconLine[];
+}
+
+export interface BankReconciliationSummaryResponse {
+  total_unreconciled_count: number;
+  /** false → the imported (feed) balance needs Xero's gated Finance API. */
+  imported_statement_available: boolean;
+  accounts: BankReconAccount[];
+}
+
 /** One period row in the Opening Balance Differences check. */
 export interface OpeningBalanceItem {
   id: string;

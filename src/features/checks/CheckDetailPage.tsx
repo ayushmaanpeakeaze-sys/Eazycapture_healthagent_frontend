@@ -8,7 +8,7 @@ import {
 } from "../../services/audit.service";
 import { useDataSynced } from "../../hooks/useDataSynced";
 import { IssueType } from "../../types/audit.types";
-import { BankBalanceCheckPage } from "@/features/checks/pages/BankBalanceCheckPage";
+import { BankReconciliationSummaryPage } from "@/features/checks/pages/BankReconciliationSummaryPage";
 import { CapitalItemReviewPage } from "@/features/checks/pages/CapitalItemReviewPage";
 import { CheckSettingsPanel, SETTINGS_ALIAS } from "@/features/checks/CheckSettingsPanel";
 import { CHECK_BY_KEY } from "@/features/checks/checksCatalog";
@@ -258,7 +258,10 @@ export const CheckDetailPage = ({
       )}
 
       {checkKey === "bank_balance_check" ? (
-        <BankBalanceCheckPage companyId={companyId} refreshKey={refreshKey} />
+        <BankReconciliationSummaryPage
+          companyId={companyId}
+          refreshKey={refreshKey}
+        />
       ) : checkKey === "unreconciled_bank" ? (
         <UnreconciledBankItemsPage companyId={companyId} refreshKey={refreshKey} />
       ) : checkKey === "opening_balance_difference" ? (

@@ -15,7 +15,7 @@ import {
   Importance,
   importanceOf,
 } from "@/features/checks/checksCatalog";
-import { BankBalanceCheckPage } from "@/features/checks/pages/BankBalanceCheckPage";
+import { BankReconciliationSummaryPage } from "@/features/checks/pages/BankReconciliationSummaryPage";
 import { CapitalItemReviewPage } from "@/features/checks/pages/CapitalItemReviewPage";
 import { ContactDefaultsPage } from "@/features/checks/pages/ContactDefaultsPage";
 import { DuplicateContactsPage } from "@/features/checks/pages/DuplicateContactsPage";
@@ -478,7 +478,7 @@ const CheckRow = ({
             </button>
           </div>
           {checkKey === "bank_balance_check" ? (
-            <BankBalanceCheckPage companyId={companyId} />
+            <BankReconciliationSummaryPage companyId={companyId} />
           ) : checkKey === "unreconciled_bank" ? (
             <UnreconciledBankItemsPage companyId={companyId} />
           ) : checkKey === "opening_balance_difference" ? (

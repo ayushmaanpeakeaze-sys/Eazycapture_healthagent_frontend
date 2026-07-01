@@ -104,7 +104,7 @@ export const CHECK_GROUPS: CheckGroup[] = [
       {
         key: "bank_balance_check",
         label: "Bank Balance Check",
-        blurb: "Ledger bank balance vs the actual feed balance.",
+        blurb: "Balance in Xero vs the calculated statement balance — the unreconciled difference per account.",
       },
       {
         key: "opening_balance_difference",

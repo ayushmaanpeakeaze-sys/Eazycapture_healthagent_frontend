@@ -224,16 +224,20 @@ export const MultiCodeSuppliersPage = ({
         <div className="space-y-3">
           {groups.map((g) => {
             const ids = g.rows.map((r) => r.id);
-            const codes = [
-              ...new Set(
-                g.rows
-                  .map((r) => {
-                    const f = flagFor(r, kind);
-                    return f?.current_name || f?.current_code;
-                  })
-                  .filter(Boolean) as string[],
-              ),
-            ];
+            // Prefer accounts_used (every code); fall back to per-row codes.
+            const codes = (() => {
+              const set = new Set<string>();
+              for (const r of g.rows) {
+                const f = flagFor(r, kind);
+                const used =
+                  f?.accounts_used ??
+                  ([f?.suggested_code, f?.current_code].filter(
+                    Boolean,
+                  ) as string[]);
+                used.forEach((c) => c && set.add(c));
+              }
+              return [...set];
+            })();
             const groupKey = `g:${g.name}`;
             const groupBusy = busy === groupKey;
             return (
@@ -288,28 +292,24 @@ export const MultiCodeSuppliersPage = ({
                               {shortDate(res?.invoice_date)}
                             </td>
                             <td className="px-2 py-3 text-[11px] text-ink-500">
-                              {res?.reference || res?.invoice_number || "—"}
+                              {res?.invoice_number || res?.reference || "—"}
                             </td>
                             <td className="px-2 py-3 font-semibold tabular-nums text-ink-900">
                               {money(res?.amount, res?.currency_code)}
                             </td>
-                            <td className="px-2 py-3">
+                            <td className="px-2 py-3" title={f?.message ?? undefined}>
                               <p className="font-medium text-ink-800">
                                 {f?.current_code || "—"}
                                 {codeName ? ` – ${codeName}` : ""}
                               </p>
+                              {f?.suggested_code &&
+                                f.suggested_code !== f.current_code && (
+                                  <p className="text-[11px] font-medium text-emerald-600">
+                                    usually {f.suggested_code}
+                                  </p>
+                                )}
                               {res?.details && (
                                 <p className="text-[11px] text-ink-400">{res.details}</p>
-                              )}
-                            </td>
-                            <td className="px-2 py-3">
-                              {f?.message && (
-                                <span
-                                  title={f.message}
-                                  className="flex h-4 w-4 cursor-help items-center justify-center rounded-full bg-amber-100 text-[10px] font-bold text-amber-600"
-                                >
-                                  ?
-                                </span>
                               )}
                             </td>
                             <td className="px-4 py-3">

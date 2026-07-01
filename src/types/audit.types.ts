@@ -187,6 +187,8 @@ export interface FlaggedIssue {
   suggested_name?: string | null;
   current_code?: string | null;
   current_name?: string | null;
+  /** Multi-account/tax supplier: every code the contact was coded across. */
+  accounts_used?: string[] | null;
   confidence?: number | null;
   reasoning?: string | null;
   // Duplicate-invoice/bill specifics

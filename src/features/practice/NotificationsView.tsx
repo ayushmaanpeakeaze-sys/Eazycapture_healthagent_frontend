@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 
 import {
+  clearNotifications,
+  deleteNotification,
   fetchNotifications,
   NotificationItem,
 } from "../../services/audit.service";
@@ -61,20 +63,60 @@ const prettyDetail = (d: string): string =>
     ? d.replace(/_/g, " ").replace(/^\w/, (c) => c.toUpperCase())
     : d;
 
-const AlertIcon = (
+const Glyph = ({ children }: { children: React.ReactNode }) => (
   <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
-    <path d="M10.3 3.7a2 2 0 0 1 3.4 0l8 14A2 2 0 0 1 20 21H4a2 2 0 0 1-1.7-3.3l8-14Z" />
-    <path d="M12 9v5M12 17.5v.1" />
+    {children}
   </svg>
 );
 
+const AlertIcon = (
+  <Glyph>
+    <path d="M10.3 3.7a2 2 0 0 1 3.4 0l8 14A2 2 0 0 1 20 21H4a2 2 0 0 1-1.7-3.3l8-14Z" />
+    <path d="M12 9v5M12 17.5v.1" />
+  </Glyph>
+);
+
 const EventIcon = (
-  <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+  <Glyph>
     <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
     <circle cx="9" cy="7" r="4" />
     <path d="M19 8v6M22 11h-6" />
-  </svg>
+  </Glyph>
 );
+
+// Distinct glyph per org-lifecycle event; team/other events fall back to EventIcon.
+const TYPE_ICON: Record<string, React.ReactNode> = {
+  org_connected: (
+    <Glyph>
+      <path d="M9 7V4a3 3 0 0 1 6 0v3M6 7h12v4a6 6 0 0 1-12 0V7ZM12 17v4" />
+    </Glyph>
+  ),
+  org_disconnected: (
+    <Glyph>
+      <path d="M9 6v12M15 6v12" />
+    </Glyph>
+  ),
+  org_removed: (
+    <Glyph>
+      <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+      <path d="M10 11v6M14 11v6" />
+    </Glyph>
+  ),
+  org_forgotten: (
+    <Glyph>
+      <circle cx="12" cy="12" r="9" />
+      <path d="m5.6 5.6 12.8 12.8" />
+    </Glyph>
+  ),
+  org_reallowed: (
+    <Glyph>
+      <path d="M3 12a9 9 0 1 0 3-6.7L3 8M3 3v5h5" />
+    </Glyph>
+  ),
+};
+
+const iconFor = (it: NotificationItem): React.ReactNode =>
+  it.kind === "alert" ? AlertIcon : (TYPE_ICON[it.type] ?? EventIcon);
 
 interface NotificationsViewProps {
   /** Open a client's overview when an alert/event row references one. */
@@ -85,6 +127,9 @@ export const NotificationsView = ({ onOpenCompany }: NotificationsViewProps) => 
   const [items, setItems] = useState<NotificationItem[]>([]);
   const [counts, setCounts] = useState({ critical: 0, watch: 0, info: 0 });
   const [loading, setLoading] = useState(true);
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [clearing, setClearing] = useState(false);
+  const [confirmClear, setConfirmClear] = useState(false);
 
   const load = () => {
     setLoading(true);
@@ -94,6 +139,33 @@ export const NotificationsView = ({ onOpenCompany }: NotificationsViewProps) => 
         setCounts(res.counts);
       })
       .finally(() => setLoading(false));
+  };
+
+  // Only stored events carry an id and can be deleted; live alerts cannot.
+  const deletable = (it: NotificationItem): it is NotificationItem & { id: string } =>
+    it.kind === "event" && !!it.id;
+  const eventCount = items.filter(deletable).length;
+
+  const onDelete = async (it: NotificationItem) => {
+    if (!it.id) return;
+    setBusyId(it.id);
+    const res = await deleteNotification(it.id);
+    setBusyId(null);
+    if (res.ok) {
+      setItems((prev) => prev.filter((x) => x.id !== it.id));
+      const sev = sevOf(it.severity);
+      setCounts((prev) => ({ ...prev, [sev]: Math.max(0, prev[sev] - 1) }));
+    } else {
+      load(); // revert to server truth
+    }
+  };
+
+  const onClearAll = async () => {
+    setClearing(true);
+    const res = await clearNotifications();
+    setClearing(false);
+    setConfirmClear(false);
+    if (res.ok) load(); // re-derive live alerts, drop stored events
   };
 
   useEffect(() => {
@@ -137,6 +209,38 @@ export const NotificationsView = ({ onOpenCompany }: NotificationsViewProps) => 
             <span className="h-1.5 w-1.5 rounded-full bg-brand-500" />
             {counts.info} info
           </span>
+          {eventCount > 0 &&
+            (confirmClear ? (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-2.5 py-1 text-[11px] font-semibold ring-1 ring-rose-200">
+                <span className="text-ink-600">Clear {eventCount}?</span>
+                <button
+                  type="button"
+                  onClick={onClearAll}
+                  disabled={clearing}
+                  className="text-rose-700 hover:text-rose-900 disabled:opacity-50"
+                >
+                  {clearing ? "Clearing…" : "Yes"}
+                </button>
+                <span className="text-ink-300">·</span>
+                <button
+                  type="button"
+                  onClick={() => setConfirmClear(false)}
+                  disabled={clearing}
+                  className="text-ink-500 hover:text-ink-800 disabled:opacity-50"
+                >
+                  No
+                </button>
+              </span>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setConfirmClear(true)}
+                title="Clear all stored events (live alerts stay)"
+                className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1 text-[11px] font-semibold text-ink-600 ring-1 ring-ink-200 transition hover:text-rose-700 hover:ring-rose-200"
+              >
+                Clear all
+              </button>
+            ))}
           <button
             type="button"
             onClick={load}
@@ -185,7 +289,8 @@ export const NotificationsView = ({ onOpenCompany }: NotificationsViewProps) => 
             {items.map((it, idx) => {
               const sev = sevOf(it.severity);
               const s = SEV_STYLES[sev];
-              const icon = it.kind === "event" ? EventIcon : AlertIcon;
+              const icon = iconFor(it);
+              const canDelete = deletable(it);
               const clickable = !!it.company_id && !!onOpenCompany;
               return (
                 <li
@@ -242,6 +347,20 @@ export const NotificationsView = ({ onOpenCompany }: NotificationsViewProps) => 
                       </p>
                     )}
                   </div>
+                  {canDelete && (
+                    <button
+                      type="button"
+                      onClick={() => onDelete(it)}
+                      disabled={busyId === it.id}
+                      title="Delete this notification"
+                      className="mt-0.5 shrink-0 rounded-md p-1.5 text-ink-300 transition hover:bg-rose-50 hover:text-rose-600 disabled:opacity-40"
+                    >
+                      <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+                        <path d="M10 11v6M14 11v6" />
+                      </svg>
+                    </button>
+                  )}
                 </li>
               );
             })}

@@ -1286,7 +1286,10 @@ export type NotificationSeverity = "critical" | "watch" | "info";
 /** One feed row — a health-score alert, or a team/connect activity event. */
 export interface NotificationItem {
   kind: NotificationKind;
-  /** Machine type, e.g. "score_drop" | "invite_sent" | "org_connected". */
+  /** Notification id — only on events (kind:"event"); used to delete. Alerts
+   *  are live-computed and have no id. */
+  id?: string | null;
+  /** Machine type, e.g. "health_drop" | "invite_sent" | "org_connected". */
   type: string;
   severity: NotificationSeverity | string;
   title: string;
@@ -1305,10 +1308,12 @@ export interface NotificationsResponse {
 
 /** Unified notifications feed: health alerts (with real score drops) + team /
  *  connect events. Replaces the old client-side derivation. */
-export const fetchNotifications = async (): Promise<NotificationsResponse> => {
+export const fetchNotifications = async (
+  limit = 50,
+): Promise<NotificationsResponse> => {
   try {
     const { data } = await healthClient.get<NotificationsResponse>(
-      `/notifications/`,
+      `/notifications/?limit=${limit}`,
     );
     return {
       counts: data.counts ?? { critical: 0, watch: 0, info: 0 },
@@ -1316,6 +1321,43 @@ export const fetchNotifications = async (): Promise<NotificationsResponse> => {
     };
   } catch {
     return { counts: { critical: 0, watch: 0, info: 0 }, items: [] };
+  }
+};
+
+/** Delete one stored event notification. Alerts (kind:"alert") have no id and
+ *  can't be deleted — they re-derive on the next fetch. */
+export const deleteNotification = async (
+  id: string,
+): Promise<{ ok: boolean; error?: string }> => {
+  try {
+    await healthClient.delete(`/notifications/${encodeURIComponent(id)}/`);
+    return { ok: true };
+  } catch (err) {
+    const error =
+      err instanceof AxiosError
+        ? (err.response?.data?.detail ?? err.message)
+        : "Delete failed.";
+    return { ok: false, error };
+  }
+};
+
+/** Clear all stored events. Live alerts are unaffected — re-derived next fetch. */
+export const clearNotifications = async (): Promise<{
+  ok: boolean;
+  deleted?: number;
+  error?: string;
+}> => {
+  try {
+    const { data } = await healthClient.delete<{ deleted: number }>(
+      `/notifications/`,
+    );
+    return { ok: true, deleted: data?.deleted };
+  } catch (err) {
+    const error =
+      err instanceof AxiosError
+        ? (err.response?.data?.detail ?? err.message)
+        : "Clear failed.";
+    return { ok: false, error };
   }
 };
 

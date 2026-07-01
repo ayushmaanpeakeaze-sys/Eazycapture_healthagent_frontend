@@ -4,6 +4,7 @@ import {
   deleteCompanyPermanently,
   disconnectCompany,
   fetchCompaniesPanorama,
+  forgetCompany,
   PanoramaClient,
 } from "../../services/audit.service";
 import { fetchFirmSummary } from "../../services/insights.service";
@@ -172,6 +173,23 @@ const TrashIcon = ({ className }: { className?: string }) => (
   >
     <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
     <path d="M10 11v6M14 11v6" />
+  </svg>
+);
+
+// Circle-slash — "revoke access", used for Permanently forget.
+const BanIcon = ({ className }: { className?: string }) => (
+  <svg
+    viewBox="0 0 24 24"
+    className={className}
+    fill="none"
+    stroke="currentColor"
+    strokeWidth={2.2}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden
+  >
+    <circle cx="12" cy="12" r="9" />
+    <path d="m5.6 5.6 12.8 12.8" />
   </svg>
 );
 
@@ -369,11 +387,17 @@ export const AllClientsView = ({ onPick, restrictToIds }: AllClientsViewProps) =
   const [confirmTarget, setConfirmTarget] = useState<PanoramaClient | null>(null);
   const [disconnecting, setDisconnecting] = useState<string | null>(null);
   const [disconnectError, setDisconnectError] = useState<string | null>(null);
-  // Permanent delete: a separate, type-to-confirm flow (irreversible).
+  // Remove: hard-delete but keep the Xero grant (type-to-confirm, irreversible).
   const [deleteTarget, setDeleteTarget] = useState<PanoramaClient | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState("");
+  // Permanently forget: hard-delete AND revoke the Xero grant (gone everywhere).
+  const [forgetTarget, setForgetTarget] = useState<PanoramaClient | null>(null);
+  const [forgetting, setForgetting] = useState<string | null>(null);
+  const [forgetError, setForgetError] = useState<string | null>(null);
+  const [forgetConfirm, setForgetConfirm] = useState("");
+  const [forgetHint, setForgetHint] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -421,9 +445,30 @@ export const AllClientsView = ({ onPick, restrictToIds }: AllClientsViewProps) =
     if (res.ok) {
       setDeleteTarget(null);
       setDeleteConfirm("");
-      setNonce((n) => n + 1); // refetch — the org is gone for good
+      setNonce((n) => n + 1); // refetch — the org drops off, parked in Removed
     } else {
       setDeleteError(res.error ?? "Delete failed.");
+    }
+  };
+
+  const onConfirmForget = async () => {
+    const target = forgetTarget;
+    if (!target || forgetConfirm.trim() !== target.name) return;
+    setForgetting(target.company_id);
+    setForgetError(null);
+    const res = await forgetCompany(target.company_id);
+    setForgetting(null);
+    if (res.ok) {
+      setForgetTarget(null);
+      setForgetConfirm("");
+      setForgetHint(
+        res.revoked === false
+          ? `“${target.name}” removed — its Xero token was already expired, nothing to revoke.`
+          : `“${target.name}” forgotten. Xero access revoked — it’s back in Xero’s allow-access list for a fresh reconnect.`,
+      );
+      setNonce((n) => n + 1); // refetch — the org is gone everywhere
+    } else {
+      setForgetError(res.error ?? "Forget failed.");
     }
   };
 
@@ -583,14 +628,16 @@ export const AllClientsView = ({ onPick, restrictToIds }: AllClientsViewProps) =
               </span>
               <div>
                 <h3 className="text-base font-semibold text-ink-900">
-                  Delete {deleteTarget.name} permanently?
+                  Remove {deleteTarget.name}?
                 </h3>
                 <p className="mt-1.5 text-sm text-ink-500">
-                  This removes the organisation and{" "}
+                  Deletes{" "}
                   <strong className="font-semibold text-ink-700">all</strong> its
-                  synced data, audits and history.{" "}
+                  synced data, audits and history. Your Xero connection is left
+                  untouched — the org is parked in “Removed Organisations”, where
+                  you can re-allow it later.{" "}
                   <strong className="font-semibold text-rose-700">
-                    This cannot be undone.
+                    The data cannot be recovered.
                   </strong>
                 </p>
               </div>
@@ -635,7 +682,88 @@ export const AllClientsView = ({ onPick, restrictToIds }: AllClientsViewProps) =
                 onClick={onConfirmDelete}
                 className="inline-flex items-center gap-1.5 rounded-lg bg-rose-600 px-3.5 py-1.5 text-sm font-semibold text-white transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {deleting ? "Deleting…" : "Delete permanently"}
+                {deleting ? "Removing…" : "Remove"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {forgetTarget && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-ink-900/40 p-4"
+          onClick={() => {
+            if (!forgetting) {
+              setForgetTarget(null);
+              setForgetConfirm("");
+            }
+          }}
+        >
+          <div
+            className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start gap-3">
+              <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-rose-100 text-rose-700 ring-1 ring-rose-300">
+                <BanIcon className="h-4 w-4" />
+              </span>
+              <div>
+                <h3 className="text-base font-semibold text-ink-900">
+                  Permanently forget {forgetTarget.name}?
+                </h3>
+                <p className="mt-1.5 text-sm text-ink-500">
+                  Deletes all data{" "}
+                  <strong className="font-semibold text-ink-700">and</strong>{" "}
+                  revokes this org’s Xero access (other orgs on the same login
+                  stay connected). It’s gone everywhere — not even in “Removed
+                  Organisations”. It returns to Xero’s allow-access list, so a
+                  fresh reconnect is the only way back.{" "}
+                  <strong className="font-semibold text-rose-700">
+                    This cannot be undone.
+                  </strong>
+                </p>
+              </div>
+            </div>
+            <label className="mt-4 block text-xs font-medium text-ink-600">
+              Type{" "}
+              <span className="font-semibold text-ink-900">
+                {forgetTarget.name}
+              </span>{" "}
+              to confirm
+            </label>
+            <input
+              value={forgetConfirm}
+              onChange={(e) => setForgetConfirm(e.target.value)}
+              disabled={!!forgetting}
+              autoFocus
+              placeholder={forgetTarget.name}
+              className="mt-1 w-full rounded-lg border border-ink-200 px-3 py-1.5 text-sm text-ink-900 shadow-sm focus:border-rose-400 focus:outline-none focus:ring-2 focus:ring-rose-200 disabled:opacity-50"
+            />
+            {forgetError && (
+              <p className="mt-3 rounded-lg bg-rose-50 px-3 py-2 text-xs text-rose-700 ring-1 ring-rose-100">
+                {forgetError}
+              </p>
+            )}
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                type="button"
+                disabled={!!forgetting}
+                onClick={() => {
+                  setForgetTarget(null);
+                  setForgetConfirm("");
+                }}
+                className="rounded-lg px-3 py-1.5 text-sm font-medium text-ink-600 transition hover:text-ink-900 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={
+                  !!forgetting || forgetConfirm.trim() !== forgetTarget.name
+                }
+                onClick={onConfirmForget}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-rose-700 px-3.5 py-1.5 text-sm font-semibold text-white transition hover:bg-rose-800 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {forgetting ? "Forgetting…" : "Permanently forget"}
               </button>
             </div>
           </div>
@@ -785,6 +913,19 @@ export const AllClientsView = ({ onPick, restrictToIds }: AllClientsViewProps) =
             {loading ? "Loading…" : `${filtered.length} client${filtered.length === 1 ? "" : "s"}`}
           </span>
         </div>
+
+        {forgetHint && (
+          <div className="mx-4 mb-3 flex items-start justify-between gap-3 rounded-lg bg-emerald-50 px-3 py-2 text-xs text-emerald-800 ring-1 ring-emerald-100">
+            <span>{forgetHint}</span>
+            <button
+              type="button"
+              onClick={() => setForgetHint(null)}
+              className="shrink-0 font-semibold text-emerald-700 hover:text-emerald-900"
+            >
+              Dismiss
+            </button>
+          </div>
+        )}
 
         {loading ? (
           <div className="px-5 py-10 text-center text-sm text-ink-500">
@@ -978,7 +1119,7 @@ export const AllClientsView = ({ onPick, restrictToIds }: AllClientsViewProps) =
                           )}
                           <button
                             type="button"
-                            title="Delete permanently — removes the org and all its data (cannot be undone)"
+                            title="Remove — delete all data but keep the Xero connection (parked in Removed Organisations, re-allow later)"
                             onClick={(e) => {
                               e.stopPropagation();
                               setDeleteError(null);
@@ -989,6 +1130,21 @@ export const AllClientsView = ({ onPick, restrictToIds }: AllClientsViewProps) =
                           >
                             <TrashIcon className="h-3.5 w-3.5" />
                           </button>
+                          {(r.nango_connection_id || r.xero_tenant_id) && (
+                            <button
+                              type="button"
+                              title="Permanently forget — delete all data AND revoke Xero access (gone everywhere; reconnect fresh via Xero)"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setForgetError(null);
+                                setForgetConfirm("");
+                                setForgetTarget(r);
+                              }}
+                              className="inline-flex items-center rounded-md border border-ink-200 px-2 py-1 text-ink-400 transition hover:border-rose-500 hover:bg-rose-100 hover:text-rose-700"
+                            >
+                              <BanIcon className="h-3.5 w-3.5" />
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>

@@ -1152,9 +1152,9 @@ export const disconnectCompany = async (
   }
 };
 
-/** PERMANENTLY delete an org and ALL its data (irreversible). Unlike disconnect,
- *  nothing is kept. The backend does NOT revoke the Nango grant, so other orgs
- *  under the same Xero authorisation stay intact. */
+/** "Remove" — hard-delete the org and ALL its data (irreversible). The Xero grant
+ *  is NOT revoked (other orgs on the same login stay intact); the org is parked in
+ *  "Removed Organisations" where it can be re-allowed. */
 export const deleteCompanyPermanently = async (
   companyId: string,
 ): Promise<{ ok: boolean; error?: string }> => {
@@ -1173,6 +1173,34 @@ export const deleteCompanyPermanently = async (
         : status === 404
           ? detail || "Company not found."
           : detail || "Delete failed.";
+    return { ok: false, error };
+  }
+};
+
+/** "Permanently forget" — hard-delete the org AND revoke its Xero grant (only this
+ *  org; others on the same login stay), then clear the exclusion. Gone everywhere —
+ *  not even in "Removed Organisations". `revoked=false` = token was already dead. */
+export const forgetCompany = async (
+  companyId: string,
+): Promise<{ ok: boolean; revoked?: boolean; error?: string }> => {
+  try {
+    const { data } = await healthClient.delete<{
+      status: string;
+      revoked?: boolean;
+    }>(`/company/${encodeURIComponent(companyId)}/?forget=true`);
+    return { ok: true, revoked: data?.revoked };
+  } catch (err) {
+    const status = err instanceof AxiosError ? err.response?.status : undefined;
+    const detail =
+      err instanceof AxiosError
+        ? (err.response?.data?.detail as string | undefined)
+        : undefined;
+    const error =
+      status === 403
+        ? detail || "You are not assigned to this company."
+        : status === 404
+          ? detail || "Company not found."
+          : detail || "Forget failed.";
     return { ok: false, error };
   }
 };

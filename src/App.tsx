@@ -547,13 +547,43 @@ const ClientLayout = () => {
     current.startsWith(`${base}/${seg}/`) || // keep parent active on sub-pages
     ((current === base || current === `${base}/`) && seg === "overview");
 
+  // Collapsible rail — only on the checks page, where the table wants the room.
+  const [navCollapsed, setNavCollapsed] = useState(
+    () => localStorage.getItem("eazy.nav.collapsed") === "1",
+  );
+  const isChecks =
+    current === `${base}/checks` || current.startsWith(`${base}/checks/`);
+  const navHidden = isChecks && navCollapsed;
+  const toggleNav = () =>
+    setNavCollapsed((v) => {
+      localStorage.setItem("eazy.nav.collapsed", v ? "0" : "1");
+      return !v;
+    });
+
   return (
     <div className="relative flex h-screen flex-col overflow-hidden bg-ink-50 text-ink-900">
-      <aside className="fixed left-4 top-4 bottom-4 z-30 flex w-20 flex-col items-center rounded-3xl bg-nav-gradient py-4 text-white shadow-[0_20px_60px_-12px_rgba(74,35,184,0.55)]">
+      <aside
+        className={[
+          "fixed left-4 top-4 bottom-4 z-30 flex w-20 flex-col items-center rounded-3xl bg-nav-gradient py-4 text-white shadow-[0_20px_60px_-12px_rgba(74,35,184,0.55)] transition-transform duration-300",
+          navHidden ? "-translate-x-[135%]" : "translate-x-0",
+        ].join(" ")}
+      >
         <span
           aria-hidden
           className="pointer-events-none absolute inset-0 rounded-3xl bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.22),transparent_60%)]"
         />
+        {isChecks && (
+          <button
+            type="button"
+            onClick={toggleNav}
+            title="Hide sidebar"
+            className="absolute -right-2.5 top-6 z-10 flex h-6 w-6 items-center justify-center rounded-full bg-white text-brand-700 shadow ring-1 ring-ink-200 transition hover:bg-brand-50"
+          >
+            <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round">
+              <path d="m15 18-6-6 6-6" />
+            </svg>
+          </button>
+        )}
         <div className="relative mb-4">{LogoMark}</div>
         <div className="relative h-px w-8 bg-white/15" />
         <nav className="relative mt-4 flex flex-1 flex-col items-center gap-2">
@@ -575,7 +605,25 @@ const ClientLayout = () => {
         </div>
       </aside>
 
-      <main className="min-h-0 flex-1 overflow-y-auto pl-28 pr-8 py-6">
+      {navHidden && (
+        <button
+          type="button"
+          onClick={toggleNav}
+          title="Show sidebar"
+          className="fixed left-3 top-8 z-40 flex h-9 w-9 items-center justify-center rounded-xl bg-nav-gradient text-white shadow-lg transition hover:brightness-110"
+        >
+          <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round">
+            <path d="m9 18 6-6-6-6" />
+          </svg>
+        </button>
+      )}
+
+      <main
+        className={[
+          "min-h-0 flex-1 overflow-y-auto pr-8 py-6 transition-[padding] duration-300",
+          navHidden ? "pl-8" : "pl-28",
+        ].join(" ")}
+      >
         <div className="mx-auto w-full max-w-[1280px] space-y-5">
           <ClientBreadcrumb
             client={client}

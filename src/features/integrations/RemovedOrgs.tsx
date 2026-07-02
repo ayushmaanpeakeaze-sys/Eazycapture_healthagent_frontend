@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import {
   ExcludedOrg,
   fetchExcludedOrgs,
+  forgetExcludedOrg,
   reAllowExcludedOrg,
 } from "@/services/audit.service";
 
@@ -21,7 +22,11 @@ export const RemovedOrgs = ({
 }) => {
   const [orgs, setOrgs] = useState<ExcludedOrg[]>([]);
   const [open, setOpen] = useState(defaultOpen);
-  const [busyId, setBusyId] = useState<string | null>(null);
+  const [busy, setBusy] = useState<{
+    id: string;
+    kind: "reallow" | "forget";
+  } | null>(null);
+  const [confirmForgetId, setConfirmForgetId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [hint, setHint] = useState<string | null>(null);
 
@@ -36,10 +41,10 @@ export const RemovedOrgs = ({
   }, [reloadKey]);
 
   const onReAllow = async (org: ExcludedOrg) => {
-    setBusyId(org.xero_tenant_id);
+    setBusy({ id: org.xero_tenant_id, kind: "reallow" });
     setError(null);
     const res = await reAllowExcludedOrg(org.xero_tenant_id);
-    setBusyId(null);
+    setBusy(null);
     if (res.ok) {
       setOrgs((prev) =>
         prev.filter((o) => o.xero_tenant_id !== org.xero_tenant_id),
@@ -50,6 +55,27 @@ export const RemovedOrgs = ({
       onChanged?.();
     } else {
       setError(res.error ?? "Re-allow failed.");
+    }
+  };
+
+  const onForget = async (org: ExcludedOrg) => {
+    setBusy({ id: org.xero_tenant_id, kind: "forget" });
+    setError(null);
+    const res = await forgetExcludedOrg(org.xero_tenant_id);
+    setBusy(null);
+    setConfirmForgetId(null);
+    if (res.ok) {
+      setOrgs((prev) =>
+        prev.filter((o) => o.xero_tenant_id !== org.xero_tenant_id),
+      );
+      setHint(
+        res.revoked === false
+          ? `“${org.name}” forgotten — its Xero token was already expired, nothing to revoke.`
+          : `“${org.name}” forgotten. Xero access revoked — it’s back in Xero’s allow-access list for a fresh reconnect.`,
+      );
+      onChanged?.();
+    } else {
+      setError(res.error ?? "Forget failed.");
     }
   };
 
@@ -96,7 +122,10 @@ export const RemovedOrgs = ({
           )}
           <ul className="divide-y divide-ink-50">
             {orgs.map((o) => {
-              const busy = busyId === o.xero_tenant_id;
+              const anyBusy = busy?.id === o.xero_tenant_id;
+              const reallowing = anyBusy && busy?.kind === "reallow";
+              const forgetting = anyBusy && busy?.kind === "forget";
+              const confirming = confirmForgetId === o.xero_tenant_id;
               return (
                 <li
                   key={o.xero_tenant_id}
@@ -107,17 +136,57 @@ export const RemovedOrgs = ({
                       {o.name}
                     </span>
                     <span className="text-[11px] text-ink-400">
-                      Deleted — re-allow, then reconnect for a fresh sync
+                      Deleted — re-allow to restore (keeps Xero), or forget to
+                      revoke Xero access too
                     </span>
                   </span>
-                  <button
-                    type="button"
-                    onClick={() => onReAllow(o)}
-                    disabled={busy}
-                    className="inline-flex shrink-0 items-center gap-1 rounded-md border border-ink-200 px-3 py-1.5 text-xs font-semibold text-ink-600 shadow-sm transition hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700 disabled:opacity-60"
-                  >
-                    {busy ? "Re-allowing…" : "Re-allow"}
-                  </button>
+                  {confirming ? (
+                    <span className="inline-flex shrink-0 items-center gap-2 text-xs">
+                      <span className="text-ink-600">
+                        Revoke Xero &amp; forget?
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => onForget(o)}
+                        disabled={anyBusy}
+                        className="font-semibold text-rose-700 hover:text-rose-900 disabled:opacity-50"
+                      >
+                        {forgetting ? "Forgetting…" : "Yes"}
+                      </button>
+                      <span className="text-ink-300">·</span>
+                      <button
+                        type="button"
+                        onClick={() => setConfirmForgetId(null)}
+                        disabled={anyBusy}
+                        className="font-medium text-ink-500 hover:text-ink-800 disabled:opacity-50"
+                      >
+                        Cancel
+                      </button>
+                    </span>
+                  ) : (
+                    <span className="flex shrink-0 items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => onReAllow(o)}
+                        disabled={anyBusy}
+                        className="inline-flex items-center gap-1 rounded-md border border-ink-200 px-3 py-1.5 text-xs font-semibold text-ink-600 shadow-sm transition hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700 disabled:opacity-60"
+                      >
+                        {reallowing ? "Re-allowing…" : "Re-allow"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setError(null);
+                          setConfirmForgetId(o.xero_tenant_id);
+                        }}
+                        disabled={anyBusy}
+                        title="Forget — revoke Xero access and remove from this list (reconnect fresh via Xero)"
+                        className="inline-flex items-center gap-1 rounded-md border border-ink-200 px-3 py-1.5 text-xs font-semibold text-ink-500 shadow-sm transition hover:border-rose-300 hover:bg-rose-50 hover:text-rose-700 disabled:opacity-60"
+                      >
+                        Forget
+                      </button>
+                    </span>
+                  )}
                 </li>
               );
             })}

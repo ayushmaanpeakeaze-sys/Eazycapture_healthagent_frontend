@@ -1280,6 +1280,27 @@ export const reAllowExcludedOrg = async (
   }
 };
 
+/** Forget a removed org by tenant — revoke its Xero grant AND clear the exclusion
+ *  so it drops off "Removed Organisations" and returns to Xero's allow-access list
+ *  (reconnect needs a fresh Xero authorisation). Removed orgs have no company_id,
+ *  so this goes via the excluded-org route rather than /company/{id}/. */
+export const forgetExcludedOrg = async (
+  xeroTenantId: string,
+): Promise<{ ok: boolean; revoked?: boolean; error?: string }> => {
+  try {
+    const { data } = await healthClient.delete<{ revoked?: boolean }>(
+      `/excluded-org/${encodeURIComponent(xeroTenantId)}/?forget=true`,
+    );
+    return { ok: true, revoked: data?.revoked };
+  } catch (err) {
+    const error =
+      err instanceof AxiosError
+        ? (err.response?.data?.detail ?? err.message)
+        : "Forget failed.";
+    return { ok: false, error };
+  }
+};
+
 export type NotificationKind = "alert" | "event";
 export type NotificationSeverity = "critical" | "watch" | "info";
 

@@ -8,7 +8,9 @@ import {
   PanoramaClient,
 } from "../../services/audit.service";
 import { fetchFirmSummary } from "../../services/insights.service";
+import { ConnectXeroButton } from "@/features/integrations/ConnectXeroButton";
 import { DisconnectedOrgs } from "@/features/integrations/DisconnectedOrgs";
+import { ReconnectBanner } from "@/features/integrations/ReconnectBanner";
 import { RemovedOrgs } from "@/features/integrations/RemovedOrgs";
 import { XeroOnboarding } from "@/features/integrations/XeroOnboarding";
 
@@ -227,20 +229,32 @@ const StatusIcons = ({ r }: { r: PanoramaClient }) => {
   const provider = effectiveProvider(r);
   // Connected = we have a live integration for it (provider resolved).
   const connected = !!provider;
+  // Dead Xero grant — must never look connected.
+  const dead = !!r.needs_reconnect;
   return (
     <div className="flex items-center gap-1.5">
       <ProviderCircle provider={provider} />
-      <span
-        title={connected ? "Connected" : "Not connected"}
-        className={[
-          "flex h-7 w-7 items-center justify-center rounded-full ring-1",
-          connected
-            ? "bg-emerald-50 text-emerald-600 ring-emerald-200"
-            : "bg-ink-50 text-ink-300 ring-ink-200",
-        ].join(" ")}
-      >
-        <LinkIcon className="h-3.5 w-3.5" />
-      </span>
+      {dead ? (
+        <span
+          title="Xero connection expired — data is no longer syncing"
+          className="inline-flex items-center gap-1 rounded-full bg-rose-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-rose-700 ring-1 ring-rose-200"
+        >
+          <span className="h-1.5 w-1.5 rounded-full bg-rose-500" />
+          Disconnected
+        </span>
+      ) : (
+        <span
+          title={connected ? "Connected" : "Not connected"}
+          className={[
+            "flex h-7 w-7 items-center justify-center rounded-full ring-1",
+            connected
+              ? "bg-emerald-50 text-emerald-600 ring-emerald-200"
+              : "bg-ink-50 text-ink-300 ring-ink-200",
+          ].join(" ")}
+        >
+          <LinkIcon className="h-3.5 w-3.5" />
+        </span>
+      )}
     </div>
   );
 };
@@ -769,6 +783,7 @@ export const AllClientsView = ({ onPick, restrictToIds }: AllClientsViewProps) =
           </div>
         </div>
       )}
+      {filtered.some((r) => r.needs_reconnect) && <ReconnectBanner plural />}
       <header className="grid grid-cols-1 items-start gap-8 lg:grid-cols-[1fr_auto]">
         <div className="max-w-2xl">
           <div className="inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-brand-700">
@@ -1013,19 +1028,38 @@ export const AllClientsView = ({ onPick, restrictToIds }: AllClientsViewProps) =
                   const tone = scoreTone(r.health_score);
                   const ref = clientRef(r.company_id, idx);
                   const bank = bankByCompany[r.company_id];
+                  // State A: dead Xero grant — stale data, no drill-in until re-auth.
+                  const needsReconnect = !!r.needs_reconnect;
                   return (
                     <tr
                       key={r.company_id}
-                      className="group cursor-pointer transition hover:bg-brand-50/30"
-                      onClick={() => onPick(r)}
+                      className={[
+                        "group transition",
+                        needsReconnect
+                          ? "bg-rose-50/30"
+                          : "cursor-pointer hover:bg-brand-50/30",
+                      ].join(" ")}
+                      onClick={needsReconnect ? undefined : () => onPick(r)}
                     >
                       <td className="px-5 py-3 font-mono text-[11px] text-ink-500">
                         {ref}
                       </td>
                       <td className="px-3 py-3">
-                        <span className="font-medium text-ink-900 group-hover:text-brand-700">
+                        <span
+                          className={[
+                            "font-medium",
+                            needsReconnect
+                              ? "text-ink-900"
+                              : "text-ink-900 group-hover:text-brand-700",
+                          ].join(" ")}
+                        >
                           {r.name}
                         </span>
+                        {needsReconnect && (
+                          <span className="mt-0.5 block text-[11px] font-medium text-rose-600">
+                            Xero connection expired — data is no longer syncing.
+                          </span>
+                        )}
                       </td>
                       <td className="px-3 py-3">
                         <StatusIcons r={r} />
@@ -1082,27 +1116,33 @@ export const AllClientsView = ({ onPick, restrictToIds }: AllClientsViewProps) =
                       </td>
                       <td className="px-5 py-3 text-right">
                         <div className="flex items-center justify-end gap-1.5">
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onPick(r);
-                            }}
-                            className="inline-flex items-center gap-1 rounded-md border border-brand-200 bg-brand-50 px-2.5 py-1 text-xs font-semibold text-brand-700 transition hover:bg-brand-100"
-                          >
-                            Open
-                            <svg
-                              viewBox="0 0 24 24"
-                              className="h-3 w-3"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth={2.2}
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
+                          {needsReconnect ? (
+                            <span onClick={(e) => e.stopPropagation()}>
+                              <ConnectXeroButton size="sm" />
+                            </span>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onPick(r);
+                              }}
+                              className="inline-flex items-center gap-1 rounded-md border border-brand-200 bg-brand-50 px-2.5 py-1 text-xs font-semibold text-brand-700 transition hover:bg-brand-100"
                             >
-                              <path d="M5 12h14M13 5l7 7-7 7" />
-                            </svg>
-                          </button>
+                              Open
+                              <svg
+                                viewBox="0 0 24 24"
+                                className="h-3 w-3"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth={2.2}
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              >
+                                <path d="M5 12h14M13 5l7 7-7 7" />
+                              </svg>
+                            </button>
+                          )}
                           {(r.nango_connection_id || r.xero_tenant_id) && (
                             <button
                               type="button"

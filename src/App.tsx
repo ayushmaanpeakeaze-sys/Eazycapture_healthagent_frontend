@@ -22,6 +22,7 @@ import { BookkeepingChecksView } from "@/features/checks/BookkeepingChecksView";
 import { CheckDetailPage } from "@/features/checks/CheckDetailPage";
 import { ClientInsightsView } from "@/features/insights/ClientInsightsView";
 import { ConnectXeroButton } from "@/features/integrations/ConnectXeroButton";
+import { ReconnectBanner } from "@/features/integrations/ReconnectBanner";
 import { SyncButton } from "@/features/integrations/SyncButton";
 import { FirmOverview } from "@/features/firm/FirmOverview";
 import { LedgerHealthDashboard } from "@/features/insights/LedgerHealthDashboard";
@@ -410,6 +411,7 @@ const ClientBreadcrumb = ({
   const providerKey = (derivedProvider ?? "").toUpperCase();
   const providerCls =
     PROVIDER_STYLE[providerKey] ?? "bg-ink-100 text-ink-700 ring-ink-200";
+  const needsReconnect = !!client?.needs_reconnect;
   return (
     <div className="flex flex-wrap items-center gap-3 rounded-xl border border-ink-200 bg-white px-4 py-2.5 shadow-card">
       {navCollapsed && onToggleNav && (
@@ -456,7 +458,19 @@ const ClientBreadcrumb = ({
           {derivedProvider}
         </span>
       )}
-      <SyncButton companyId={client?.company_id ?? companyId} />
+      {needsReconnect && (
+        <span
+          title="Xero connection expired — reconnect to resume syncing"
+          className="inline-flex items-center gap-1 rounded-full bg-rose-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-rose-700 ring-1 ring-rose-200"
+        >
+          <span className="h-1.5 w-1.5 rounded-full bg-rose-500" />
+          Disconnected
+        </span>
+      )}
+      <SyncButton
+        companyId={client?.company_id ?? companyId}
+        disabled={needsReconnect}
+      />
       <span className="ml-auto font-mono text-[10px] text-ink-400">
         {(client?.company_id ?? companyId).slice(0, 8)}…
       </span>
@@ -635,6 +649,9 @@ const ClientLayout = () => {
             navCollapsed={navHidden}
             onToggleNav={toggleNav}
           />
+          {client?.needs_reconnect && (
+            <ReconnectBanner orgName={client.name} />
+          )}
           <Outlet />
         </div>
       </main>

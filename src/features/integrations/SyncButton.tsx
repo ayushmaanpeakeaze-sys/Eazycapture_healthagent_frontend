@@ -24,7 +24,14 @@ const fmtSynced = (ms: number | null): string => {
  * client breadcrumb, so it's on every per-client page. Sync is separate from the
  * Overview re-audit and the Insights recompute — it only refreshes the raw data.
  */
-export const SyncButton = ({ companyId }: { companyId: string }) => {
+export const SyncButton = ({
+  companyId,
+  disabled = false,
+}: {
+  companyId: string;
+  /** Gated off when the Xero grant is dead — reconnect first. */
+  disabled?: boolean;
+}) => {
   const [lastSynced, setLastSynced] = useState<number | null>(null);
   const [syncing, setSyncing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -113,8 +120,12 @@ export const SyncButton = ({ companyId }: { companyId: string }) => {
       <button
         type="button"
         onClick={onSync}
-        disabled={syncing || !companyId}
-        title="Pull the latest data from Xero (no re-audit)"
+        disabled={syncing || !companyId || disabled}
+        title={
+          disabled
+            ? "Reconnect to Xero to resume syncing"
+            : "Pull the latest data from Xero (no re-audit)"
+        }
         className="inline-flex items-center gap-1.5 rounded-lg border border-ink-200 bg-white px-2.5 py-1 text-xs font-semibold text-ink-700 shadow-card transition hover:border-ink-300 hover:bg-ink-50 disabled:cursor-not-allowed disabled:opacity-70"
       >
         <svg
@@ -134,6 +145,8 @@ export const SyncButton = ({ companyId }: { companyId: string }) => {
       <span className="text-[11px] text-ink-400">
         {error ? (
           <span className="text-rose-600">{error}</span>
+        ) : disabled ? (
+          <span className="text-rose-600">Reconnect to resume syncing</span>
         ) : (
           <>Last synced: {fmtSynced(lastSynced)}</>
         )}

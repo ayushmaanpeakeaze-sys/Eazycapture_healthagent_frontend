@@ -1091,9 +1091,9 @@ export interface PanoramaClient {
   top_issue: string | null;
   is_active?: boolean;
   /** true ⇒ the Xero grant is dead (expired/revoked) → needs a full re-auth.
-   *  Missing/false = healthy. Distinct from is_active:false (user turned it off).
-   *  Treat missing as false until the backend ships the column. */
-  needs_reconnect?: boolean;
+   *  false = healthy. Distinct from is_active:false (user turned it off).
+   *  Always present in the panorama response. */
+  needs_reconnect: boolean;
   nango_connection_id?: string | null;
   xero_tenant_id?: string | null;
 }

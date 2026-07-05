@@ -53,14 +53,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const inviteToken = new URLSearchParams(window.location.search).get("token");
-  const isAcceptInvite =
-    window.location.pathname === "/accept-invite" && !!inviteToken;
+  const isAcceptInvite = window.location.pathname === "/accept-invite";
   const isTeamLogin = window.location.pathname === "/team-login";
 
   return (
     <AuthContext.Provider value={{ isLoggedIn, role, me, logout, refresh }}>
       {isAcceptInvite ? (
-        <AcceptInviteGate token={inviteToken as string} />
+        <AcceptInviteGate token={inviteToken ?? ""} />
       ) : isLoggedIn ? (
         children
       ) : isTeamLogin ? (

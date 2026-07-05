@@ -190,7 +190,7 @@ export const DuplicateContactsPage = ({
         <p className="rounded-2xl border border-ink-100 bg-white px-5 py-10 text-center text-sm text-ink-500 shadow-card">
           Loading matches…
         </p>
-      ) : matches.length === 0 ? (
+      ) : error ? null : matches.length === 0 ? (
         <p className="rounded-2xl border border-ink-100 bg-white px-5 py-10 text-center text-sm italic text-ink-400 shadow-card">
           {showDismissed ? "No dismissed matches." : "No duplicate contacts"}
         </p>

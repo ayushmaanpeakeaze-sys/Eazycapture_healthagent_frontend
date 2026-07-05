@@ -198,16 +198,30 @@ export const inviteUser = async (
   }
 };
 
-export const listUsers = async (): Promise<TeamUser[]> => {
+export const listUsersResult = async (): Promise<{
+  ok: boolean;
+  users: TeamUser[];
+  error?: string;
+}> => {
   try {
     const { data } = await apiClient.get<{ users: TeamUser[] } | TeamUser[]>(
       "/api/v1/auth/users",
     );
-    return Array.isArray(data) ? data : (data as { users: TeamUser[] }).users ?? [];
-  } catch {
-    return [];
+    const users = Array.isArray(data)
+      ? data
+      : (data as { users: TeamUser[] }).users ?? [];
+    return { ok: true, users };
+  } catch (err) {
+    return {
+      ok: false,
+      users: [],
+      error: err instanceof Error ? err.message : "Could not load team.",
+    };
   }
 };
+
+export const listUsers = async (): Promise<TeamUser[]> =>
+  (await listUsersResult()).users;
 
 export const setUserCompanies = async (
   userId: string,

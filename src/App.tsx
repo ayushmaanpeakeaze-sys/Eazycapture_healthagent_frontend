@@ -13,6 +13,8 @@ import {
   fetchCompaniesPanorama,
   PanoramaClient,
 } from "@/services/audit.service";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { NotFound } from "@/components/NotFound";
 import { useAuth } from "@/features/auth/AuthProvider";
 import { ActivityFeedView } from "@/features/practice/ActivityFeedView";
 import { TeamActivityView } from "@/features/practice/TeamActivityView";
@@ -392,12 +394,14 @@ const TopNavButton = ({
 const ClientBreadcrumb = ({
   client,
   companyId,
+  resolved = false,
   onBack,
   navCollapsed = false,
   onToggleNav,
 }: {
   client: PanoramaClient | null;
   companyId: string;
+  resolved?: boolean;
   onBack: () => void;
   navCollapsed?: boolean;
   onToggleNav?: () => void;
@@ -443,7 +447,11 @@ const ClientBreadcrumb = ({
       </button>
       <span className="text-ink-300">/</span>
       <span className="truncate text-sm font-semibold text-ink-900">
-        {client ? client.name : "Loading…"}
+        {client
+          ? client.name
+          : resolved
+            ? `Org ${companyId.slice(0, 8)}…`
+            : "Loading…"}
       </span>
       {derivedProvider && (
         <span
@@ -480,9 +488,7 @@ const PracticeLayout = () => {
   const isAdmin = role === "admin";
   const navigate = useNavigate();
   const location = useLocation();
-  const isActive = (path: string) =>
-    location.pathname === path ||
-    (path === "/clients" && location.pathname === "/");
+  const isActive = (path: string) => location.pathname === path;
 
   return (
     <div className="relative flex h-screen flex-col overflow-hidden bg-ink-50 text-ink-900">
@@ -537,7 +543,9 @@ const PracticeLayout = () => {
 
       <main className="min-h-0 flex-1 overflow-y-auto px-8 py-6">
         <div className="mx-auto w-full max-w-[1280px] space-y-5">
-          <Outlet />
+          <ErrorBoundary key={location.pathname}>
+            <Outlet />
+          </ErrorBoundary>
         </div>
       </main>
     </div>
@@ -548,17 +556,22 @@ const ClientLayout = () => {
   const { companyId = "" } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
+  const { role, me } = useAuth();
   const [client, setClient] = useState<PanoramaClient | null>(null);
+  const [resolved, setResolved] = useState(false);
 
   useEffect(() => {
     let active = true;
     setClient(null);
+    setResolved(false);
     fetchCompaniesPanorama(90)
       .then((res) => {
         if (!active) return;
         setClient(res.results?.find((c) => c.company_id === companyId) ?? null);
       })
-      .catch(() => {
+      .catch(() => {})
+      .finally(() => {
+        if (active) setResolved(true);
       });
     return () => {
       active = false;
@@ -583,6 +596,12 @@ const ClientLayout = () => {
       localStorage.setItem("eazy.nav.collapsed", v ? "0" : "1");
       return !v;
     });
+
+  const restricted =
+    role !== "admin" && me && (me.assigned_company_ids?.length ?? 0) > 0;
+  if (restricted && !me!.assigned_company_ids.includes(companyId)) {
+    return <Navigate to="/clients" replace />;
+  }
 
   return (
     <div className="relative flex h-screen flex-col overflow-hidden bg-ink-50 text-ink-900">
@@ -639,6 +658,7 @@ const ClientLayout = () => {
           <ClientBreadcrumb
             client={client}
             companyId={companyId}
+            resolved={resolved}
             onBack={() => navigate("/clients")}
             navCollapsed={navHidden}
             onToggleNav={toggleNav}
@@ -646,7 +666,9 @@ const ClientLayout = () => {
           {client?.needs_reconnect && (
             <ReconnectBanner orgName={client.name} />
           )}
-          <Outlet />
+          <ErrorBoundary key={current}>
+            <Outlet />
+          </ErrorBoundary>
         </div>
       </main>
     </div>
@@ -665,7 +687,7 @@ const ClientsPage = () => {
     <AllClientsView
       onPick={(c) => navigate(`/clients/${c.company_id}/overview`)}
       restrictToIds={
-        me && !isAdmin && me.assigned_company_ids.length > 0
+        me && !isAdmin && (me.assigned_company_ids?.length ?? 0) > 0
           ? me.assigned_company_ids
           : undefined
       }
@@ -720,6 +742,7 @@ export const App = () => (
       <Route path="/alerts" element={<AlertsPage />} />
       <Route path="/team" element={<TeamPage />} />
       <Route path="/settings" element={<SettingsView />} />
+      <Route path="*" element={<NotFound />} />
     </Route>
     <Route path="/clients/:companyId" element={<ClientLayout />}>
       <Route index element={<Navigate to="overview" replace />} />
@@ -731,8 +754,8 @@ export const App = () => (
       <Route path="outbound" element={<ClientOutbound />} />
       <Route path="audit-logs" element={<ClientAuditLogs />} />
       <Route path="batch" element={<BatchAuditInspector />} />
+      <Route path="*" element={<Navigate to="overview" replace />} />
     </Route>
-    <Route path="*" element={<Navigate to="/overview" replace />} />
   </Routes>
 );
 

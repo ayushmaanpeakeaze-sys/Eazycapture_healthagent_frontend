@@ -482,7 +482,7 @@ export const AllClientsView = ({ onPick, restrictToIds }: AllClientsViewProps) =
     fetchFirmSummary().then((r) => {
       if (!active || !r.ok) return;
       const map: Record<string, BankBits> = {};
-      for (const c of r.data.clients) {
+      for (const c of r.data.clients ?? []) {
         map[c.company_id] = {
           unreconciled: c.unreconciled_bank_items,
           lastReconciled: c.last_bank_reconciled,

@@ -5,6 +5,7 @@ import {
   enableUser,
   inviteUser,
   listUsers,
+  listUsersResult,
   removeUser,
   resendInvite,
   setUserCompanies,
@@ -17,6 +18,7 @@ export const TeamView = () => {
   const [users, setUsers] = useState<TeamUser[]>([]);
   const [companies, setCompanies] = useState<PanoramaClient[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(true);
+  const [usersError, setUsersError] = useState<string | null>(null);
   const [showInvite, setShowInvite] = useState(false);
   const [editTarget, setEditTarget] = useState<TeamUser | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -28,9 +30,11 @@ export const TeamView = () => {
   useEffect(() => {
     let active = true;
     setLoadingUsers(true);
-    listUsers().then((u) => {
+    setUsersError(null);
+    listUsersResult().then((res) => {
       if (!active) return;
-      setUsers(u);
+      setUsersError(res.ok ? null : res.error ?? "Could not load team.");
+      setUsers(res.users);
       setLoadingUsers(false);
     });
     fetchCompaniesPanorama(30).then((d) => {
@@ -215,6 +219,27 @@ export const TeamView = () => {
               <tr>
                 <td colSpan={5} className="px-5 py-8 text-center text-sm text-ink-500">
                   Loading…
+                </td>
+              </tr>
+            ) : usersError ? (
+              <tr>
+                <td colSpan={5} className="px-5 py-8 text-center text-sm text-rose-600">
+                  {usersError}{" "}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setLoadingUsers(true);
+                      setUsersError(null);
+                      listUsersResult().then((res) => {
+                        setUsersError(res.ok ? null : res.error ?? "Could not load team.");
+                        setUsers(res.users);
+                        setLoadingUsers(false);
+                      });
+                    }}
+                    className="font-semibold text-brand-700 hover:underline"
+                  >
+                    Retry
+                  </button>
                 </td>
               </tr>
             ) : users.length === 0 ? (

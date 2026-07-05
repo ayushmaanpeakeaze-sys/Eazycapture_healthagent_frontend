@@ -587,6 +587,7 @@ export const uploadBankDocument = async (
     const { data } = await healthClient.post<BankDocument>(
       `/bank-balance-check/${encodeURIComponent(accountCode)}/documents/?company_id=${encodeURIComponent(companyId)}`,
       form,
+      { timeout: 120_000 },
     );
     return { ok: true, document: data };
   } catch (err) {
@@ -640,7 +641,7 @@ export const downloadBankDocument = async (
   try {
     const { data } = await healthClient.get<Blob>(
       `/bank-balance-check/documents/${encodeURIComponent(docId)}/download/?company_id=${encodeURIComponent(companyId)}`,
-      { responseType: "blob" },
+      { responseType: "blob", timeout: 120_000 },
     );
     const url = URL.createObjectURL(data);
     const a = document.createElement("a");
@@ -906,9 +907,9 @@ export const fetchLedgerHealthSummary = async (
     const { data } = await healthClient.get<LedgerHealthSummary>(
       `/summary/?company_id=${encodeURIComponent(companyId)}`,
     );
-    return data;
-  } catch (err) {
-    return unwrap(err);
+    return { ...data, top_issues: data?.top_issues ?? [] };
+  } catch {
+    return null;
   }
 };
 
@@ -1235,17 +1236,18 @@ export interface NotificationsResponse {
 
 export const fetchNotifications = async (
   limit = 50,
-): Promise<NotificationsResponse> => {
+): Promise<NotificationsResponse & { ok: boolean }> => {
   try {
     const { data } = await healthClient.get<NotificationsResponse>(
       `/notifications/?limit=${limit}`,
     );
     return {
+      ok: true,
       counts: data.counts ?? { critical: 0, watch: 0, info: 0 },
       items: data.items ?? [],
     };
   } catch {
-    return { counts: { critical: 0, watch: 0, info: 0 }, items: [] };
+    return { ok: false, counts: { critical: 0, watch: 0, info: 0 }, items: [] };
   }
 };
 

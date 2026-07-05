@@ -322,9 +322,3 @@ const IMPORTANCE: Record<string, Importance> = {
 };
 
 export const importanceOf = (key: string): Importance => IMPORTANCE[key] ?? "medium";
-
-export const IMPORTANCE_RANK: Record<Importance, number> = {
-  critical: 3,
-  high: 2,
-  medium: 1,
-};

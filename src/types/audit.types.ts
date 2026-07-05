@@ -528,10 +528,6 @@ export interface ResolveHealthCheckResponse {
   error?: string;
 }
 
-export interface DismissTrappedRequest {
-  dismissal_reason?: string;
-}
-
 export interface DismissTrappedResponse {
   row_id: string;
   dismissed: boolean;
@@ -583,15 +579,3 @@ export interface LedgerHealthSummary {
   top_issues: LedgerHealthSummaryTopIssue[];
 }
 
-export type FormFieldKey =
-  | "vendor_name"
-  | "invoice_number"
-  | "amount"
-  | "tax_code"
-  | "category"
-  | "date"
-  | "description";
-
-export interface FieldErrorMap {
-  [key: string]: string | undefined;
-}

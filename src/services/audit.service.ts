@@ -4,7 +4,6 @@ import {
   BatchAsyncDispatchResponse,
   BatchHealthCheckRequest,
   BatchHealthCheckResponse,
-  BatchProgressEvent,
   BatchTransaction,
   BankBalanceCheckResponse,
   BankDocument,
@@ -86,33 +85,6 @@ export const dispatchBatchAsync = async (
     }
     return { error: err instanceof Error ? err.message : "Request failed" };
   }
-};
-
-export const subscribeBatchProgress = (
-  batchId: string,
-  handler: (evt: BatchProgressEvent) => void,
-  onError?: () => void,
-): (() => void) => {
-  const url = `/api/v1/audit/progress/${encodeURIComponent(batchId)}`;
-  const es = new EventSource(url);
-
-  es.onmessage = (e) => {
-    try {
-      const parsed = JSON.parse(e.data) as BatchProgressEvent;
-      handler(parsed);
-      if (parsed.event === "end") {
-        es.close();
-      }
-    } catch {
-    }
-  };
-
-  es.onerror = () => {
-    onError?.();
-    es.close();
-  };
-
-  return () => es.close();
 };
 
 export const fetchTrappedTransactions = async (): Promise<BatchTransaction[]> => {
@@ -208,23 +180,6 @@ export const saveAuditConfig = async (
   }
 };
 
-export const saveAuditSettings = async (
-  companyId: string,
-  settings: Record<string, unknown>,
-): Promise<{ ok: boolean; error?: string }> => {
-  try {
-    await healthClient.put(
-      `/audit-config/?company_id=${encodeURIComponent(companyId)}`,
-      { settings },
-    );
-    return { ok: true };
-  } catch (err) {
-    return {
-      ok: false,
-      error: err instanceof Error ? err.message : "Save failed",
-    };
-  }
-};
 
 export const saveAuditConfigFull = async (
   companyId: string,

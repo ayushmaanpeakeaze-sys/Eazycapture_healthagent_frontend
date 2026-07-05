@@ -17,7 +17,6 @@ const matchesRule = (r: HealthCheckResult): boolean =>
   (r.result?.rule_ids ?? []).includes(RULE) ||
   (r.result?.flagged ?? []).some((f) => f.issue_type === RULE);
 
-// null last_activity_date → never used.
 const recentTxn = (r: HealthCheckResult): string => {
   const raw = flagFor(r)?.last_activity_date;
   if (!raw) return "Never";
@@ -36,7 +35,6 @@ const ageText = (r: HealthCheckResult): string => {
   return a == null ? "Never" : `${a} days`;
 };
 
-// Contacts with no recent activity.
 export const InactiveContactsPage = ({
   companyId,
   refreshKey = 0,

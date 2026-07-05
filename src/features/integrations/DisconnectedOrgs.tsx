@@ -6,8 +6,6 @@ import {
   reconnectCompany,
 } from "@/services/audit.service";
 
-// Collapsible list of deactivated orgs; Reconnect flips them back active with no re-OAuth (data + history intact).
-// `reloadKey` bumps to refetch; `onChanged` fires after a reconnect so the parent can refresh.
 export const DisconnectedOrgs = ({
   reloadKey = 0,
   onChanged,
@@ -38,7 +36,6 @@ export const DisconnectedOrgs = ({
     const res = await reconnectCompany(company.company_id);
     setReconnecting(null);
     if (res.ok) {
-      // Optimistically drop it; parent refresh re-syncs both lists.
       setOrgs((prev) => prev.filter((o) => o.company_id !== company.company_id));
       onChanged?.();
     } else {

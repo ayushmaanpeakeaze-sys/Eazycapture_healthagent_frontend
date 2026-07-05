@@ -10,11 +10,6 @@ interface AuthSliderProps {
   onLoggedIn: () => void;
 }
 
-/**
- * Full-screen animated auth: a sliding overlay swaps between Sign In and Create
- * account. The app is invite-only, so Create account degrades to an invite-only
- * message when the backend has no public registration.
- */
 export const AuthSlider = ({ onLoggedIn }: AuthSliderProps) => {
   const [rightActive, setRightActive] = useState(false);
 
@@ -33,7 +28,6 @@ export const AuthSlider = ({ onLoggedIn }: AuthSliderProps) => {
 
         <div className="ec-overlay-c">
           <div className="ec-overlay">
-            {/* Over the sign-up form: invites back to Sign In. */}
             <div className="ec-overlay-panel ec-overlay-left">
               <Ambient />
               <PanelChips />
@@ -60,7 +54,6 @@ export const AuthSlider = ({ onLoggedIn }: AuthSliderProps) => {
               <OverlayArt />
             </div>
 
-            {/* Over the sign-in form: invites to Create account. */}
             <div className="ec-overlay-panel ec-overlay-right">
               <Ambient />
               <PanelChips />
@@ -198,7 +191,6 @@ const SignUpForm = ({ onLoggedIn }: { onLoggedIn: () => void }) => {
     return () => clearTimeout(t);
   }, [cooldown]);
 
-  // Step 1 — email a 6-digit code (account isn't created until verify).
   const sendOtp = async () => {
     setError(null);
     setNotice(null);
@@ -236,7 +228,6 @@ const SignUpForm = ({ onLoggedIn }: { onLoggedIn: () => void }) => {
     setCooldown(30);
   };
 
-  // Step 2 — verify the code → creates the firm + admin and logs in.
   const verify = async () => {
     setError(null);
     if (code.length !== 6) {
@@ -412,7 +403,6 @@ const SignUpForm = ({ onLoggedIn }: { onLoggedIn: () => void }) => {
   );
 };
 
-// Die-cut sticker recreated in CSS so it stays crisp; hidden on narrow screens.
 const AuditSticker = () => (
   <div className="ec-sticker-hang" aria-hidden>
     <div className="ec-sticker-swing">
@@ -451,7 +441,6 @@ const AuditSticker = () => (
   </div>
 );
 
-// White line-art illustration; hides itself if the asset is missing.
 const OverlayArt = () => {
   const [ok, setOk] = useState(true);
   if (!ok) return null;
@@ -487,7 +476,6 @@ const Wordmark = () => (
   />
 );
 
-// Rising ledger papers: width, position, speed, delay, tilt per sheet.
 const DOCS = [
   { left: "9%", w: 46, dur: 18, delay: 0, rot: -8 },
   { left: "24%", w: 30, dur: 14, delay: 3.5, rot: 7 },
@@ -518,7 +506,6 @@ const Docs = () => (
   </div>
 );
 
-// Floating glassmorphic stat cards. Purely decorative.
 const PanelChips = () => (
   <>
     <div className="ec-chip ec-chip-tl" aria-hidden>
@@ -656,8 +643,6 @@ const SLIDER_CSS = `
   align-items: center;
   justify-content: flex-start;
   height: 100%;
-  /* top padding clears the hanging sticker so taller forms (Create account)
-     don't collide with it; flex-start keeps the gap identical across forms */
   padding: 200px 24px 32px;
   overflow-y: auto;
 }
@@ -738,7 +723,6 @@ const SLIDER_CSS = `
   transform: translateX(0);
   transition: transform 0.6s ease-in-out;
   color: #ffffff;
-  /* Brand purple (logo #482890), lightened, with brand-toned flares. */
   background-color: #7d4ee0;
   background-image:
     radial-gradient(at 22% 16%, rgba(186,168,253,0.40) 0px, transparent 55%),
@@ -789,7 +773,6 @@ const SLIDER_CSS = `
   display: flex;
   align-items: center;
   justify-content: center;
-  /* Extra bottom padding lifts the text block above the bottom illustration. */
   padding: 40px 48px 30vh;
   overflow: hidden;
   transition: transform 0.6s ease-in-out;
@@ -861,7 +844,6 @@ const SLIDER_CSS = `
 @media (max-width: 900px) {
   .ec-chip { display: none; }
 }
-/* Hangs from a rope pinned to the top edge, then swings like a pendulum. */
 .ec-sticker-hang {
   position: absolute;
   top: 0;
@@ -879,12 +861,10 @@ const SLIDER_CSS = `
   align-items: center;
   transform-origin: top center;
   will-change: transform;
-  /* alternate keyframes keep the pendulum fastest at center, no mid-swing stall */
   animation:
     ec-swing-in 0.9s ease-in-out 1.85s both,
     ec-swing 1.8s ease-in-out 2.75s infinite alternate;
 }
-/* Fixed height so the sticker never shifts; revealed via a GPU scale transform. */
 .ec-rope {
   display: block;
   width: 5px;
@@ -906,7 +886,6 @@ const SLIDER_CSS = `
   animation: ec-rope-grow 0.9s ease-out 0.25s both;
 }
 .ec-rope-cap {
-  /* separate element so the rope's scale-reveal doesn't squash the eyelet */
   position: absolute;
   top: -4px;
   left: 50%;
@@ -923,7 +902,6 @@ const SLIDER_CSS = `
   padding: 4px;
   margin-top: -2px;
   transform: perspective(720px) rotateX(8deg) rotateY(-12deg);
-  /* flies in as the rope finishes drawing down, slightly overlapping it */
   animation: ec-sticker-in 0.85s cubic-bezier(0.22, 1, 0.36, 1) 1.05s both;
 }
 .ec-sticker-inner {
@@ -937,7 +915,6 @@ const SLIDER_CSS = `
   text-transform: uppercase;
   line-height: 0.95;
   color: #16161d;
-  /* subtle depth: two light faces + one tight low shadow */
   text-shadow:
     0 1px 0 #d8d8df,
     0 2px 0 #c6c6cf,
@@ -962,7 +939,6 @@ const SLIDER_CSS = `
   letter-spacing: 0.3px;
   color: #ffffff;
   background: linear-gradient(#7d8af6 0%, #4450dd 55%, #3540bf 100%);
-  /* fishtail ribbon ends */
   clip-path: polygon(0 0, 100% 0, 91% 50%, 100% 100%, 0 100%, 9% 50%);
   box-shadow:
     inset 0 1.5px 0 rgba(255, 255, 255, 0.4),

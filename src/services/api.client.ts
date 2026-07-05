@@ -16,7 +16,6 @@ const buildClient = (
     baseURL,
     timeout: 30_000,
     headers: { "Content-Type": "application/json" },
-    // cross-origin POC: no cookies (FastAPI uses Bearer JWT only)
     withCredentials: opts.withCredentials ?? true,
   });
 
@@ -35,7 +34,6 @@ const buildClient = (
     (res) => res,
     (err) => {
       if (err?.response?.status === 401) {
-        // Token expired or missing — clear session and reload to login.
         if (typeof window !== "undefined") {
           window.localStorage.removeItem("eazy.auth.token");
           window.localStorage.removeItem("eazy.auth.role");
@@ -50,20 +48,16 @@ const buildClient = (
   return client;
 };
 
-/** Default client — Vite proxy routes /accounting/* and /api/* paths. */
 export const apiClient = buildClient(API_BASE_URL);
 
-/** Health-check client — hits HEALTHCHECK_API_BASE cross-origin (CORS), Bearer JWT only. */
 export const healthClient = buildClient(HEALTHCHECK_API_BASE, {
   withCredentials: false,
 });
 
-/** Insights KPI client — same FastAPI service as healthClient, different router. */
 export const insightsClient = buildClient(INSIGHTS_API_BASE, {
   withCredentials: false,
 });
 
-/** Integrations client — opens a Nango Connect session for the Xero OAuth handshake. */
 export const integrationsClient = buildClient(INTEGRATIONS_API_BASE, {
   withCredentials: false,
 });

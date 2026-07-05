@@ -70,7 +70,6 @@ const matchesRule = (r: HealthCheckResult): boolean =>
   (r.result?.rule_ids ?? []).includes(RULE) ||
   (r.result?.flagged ?? []).some((f) => f.issue_type === RULE);
 
-// Lines on a vague account (e.g. General Expenses) above the materiality threshold.
 export const MisallocatedItemsPage = ({
   companyId,
   refreshKey = 0,

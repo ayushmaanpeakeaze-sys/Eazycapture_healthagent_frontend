@@ -70,7 +70,6 @@ interface Group {
   rows: HealthCheckResult[];
 }
 
-// A contact coded across several accounts/tax codes, grouped by contact.
 export const MultiCodeSuppliersPage = ({
   companyId,
   kind,
@@ -100,7 +99,6 @@ export const MultiCodeSuppliersPage = ({
 
     const load = async () => {
       if (showOk) {
-        // Marked-OK only = (incl. marked-ok) − (currently active).
         const [all, act] = await Promise.all([
           fetchTrappedInvoices({
             company_id: companyId,
@@ -224,7 +222,6 @@ export const MultiCodeSuppliersPage = ({
         <div className="space-y-3">
           {groups.map((g) => {
             const ids = g.rows.map((r) => r.id);
-            // Prefer accounts_used (every code); fall back to per-row codes.
             const codes = (() => {
               const set = new Set<string>();
               for (const r of g.rows) {

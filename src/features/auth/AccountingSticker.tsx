@@ -1,7 +1,3 @@
-/**
- * Hanging "Accounting" sticker for the team-login page. Self-contained (markup +
- * scoped <style>); pins to the top of AuthShell's `sticker` slot.
- */
 export const AccountingSticker = () => (
   <>
     <style>{ACCOUNTING_STICKER_CSS}</style>
@@ -38,7 +34,6 @@ const ACCOUNTING_STICKER_CSS = `
   align-items: center;
   transform-origin: top center;
   will-change: transform;
-  /* alternate keyframes keep the pendulum fastest at centre, no mid-swing stall */
   animation:
     ec-as-swing-in 0.9s ease-in-out 1.85s both,
     ec-as-swing 1.8s ease-in-out 2.75s infinite alternate;
@@ -74,11 +69,9 @@ const ACCOUNTING_STICKER_CSS = `
     inset 1.2px 0 1px rgba(255, 255, 255, 0.22);
   transform-origin: top center;
   will-change: transform;
-  /* scale reveal (GPU transform, no reflow) */
   animation: ec-as-rope-grow 0.9s ease-out 0.25s both;
 }
 .ec-as-sticker {
-  /* white die-cut frame with a 3D tilt */
   padding: 4px;
   margin-top: -2px;
   background: #ffffff;
@@ -97,7 +90,6 @@ const ACCOUNTING_STICKER_CSS = `
   gap: 2px;
   padding: 12px 18px 14px;
   border-radius: 10px;
-  /* beveled black face */
   background: linear-gradient(160deg, #232228 0%, #121116 60%, #0a0910 100%);
   box-shadow:
     inset 0 1.5px 0 rgba(255, 255, 255, 0.14),
@@ -111,7 +103,6 @@ const ACCOUNTING_STICKER_CSS = `
   font-weight: 900;
   font-size: 15px;
   letter-spacing: 0.4px;
-  /* raised-letter depth */
   text-shadow:
     0 1px 0 #45454d,
     0 2px 0 #34343c,

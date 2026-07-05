@@ -70,8 +70,6 @@ const matchesRule = (r: HealthCheckResult): boolean =>
   (r.result?.rule_ids ?? []).includes(RULE) ||
   (r.result?.flagged ?? []).some((f) => f.issue_type === RULE);
 
-// Expense lines above the threshold that may be mis-coded capital items.
-// Re-code to a fixed-asset account, or dismiss if the expense is correct.
 export const CapitalItemReviewPage = ({
   companyId,
   refreshKey = 0,

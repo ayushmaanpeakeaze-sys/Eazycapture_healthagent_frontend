@@ -1,9 +1,5 @@
 import { CSSProperties, ReactNode } from "react";
 
-/**
- * Accountancy icons drifting upward behind auth panels. Self-contained (markup +
- * scoped <style>); pin inside a `relative; overflow:hidden` container.
- */
 const S = {
   fill: "none" as const,
   stroke: "currentColor",

@@ -17,7 +17,6 @@ import { gbp, Tone } from "../lib/format";
 const ratingTone = (r: string): Tone =>
   r === "strong" ? "green" : r === "critical" ? "red" : "amber";
 
-// Month word out of a period like "30 Jun 2026" → "Jun".
 const monthOf = (p: string) =>
   p.split(" ").find((t) => /^[A-Za-z]/.test(t)) ?? p;
 
@@ -65,7 +64,6 @@ export const CashHealthCard = ({
 }) => {
   const [settingsOpen, setSettingsOpen] = useState(false);
 
-  // Legacy snapshots have no cash_health_check — fall back to the simple card.
   if (!data) {
     if (!fallback) {
       return (
@@ -224,7 +222,6 @@ const CashHealthSettings = ({
   const [included, setIncluded] = useState<Record<string, boolean>>({});
   const [overrides, setOverrides] = useState<Record<string, string>>({});
   const [disregarded, setDisregarded] = useState<Set<string>>(new Set());
-  // account_overrides isn't editable here — preserve whatever the backend has.
   const [accountOverrides, setAccountOverrides] = useState<
     Record<string, string>
   >({});
@@ -272,7 +269,6 @@ const CashHealthSettings = ({
   const save = async () => {
     setSaving(true);
     setError(null);
-    // Only send categories the user excluded; only non-empty overrides.
     const inc: Record<string, boolean> = {};
     for (const c of categories) if (!isIncluded(c.category)) inc[c.category] = false;
     const ovr: Record<string, number> = {};

@@ -1,7 +1,5 @@
 import { useEffect, useState } from "react";
 
-// Client-side pagination over an already-fetched list. Page resets when the
-// filter identity (resetKey) or page size changes.
 export function useClientPagination<T>(items: T[], resetKey: string) {
   const [page, setPage] = useState(0);
   const [limit, setLimit] = useState(20);

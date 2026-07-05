@@ -48,7 +48,6 @@ const DOC_TYPE_CLS: Record<string, string> = {
   SPEND: "bg-rose-50 text-rose-700 ring-rose-200",
 };
 
-// Paid / Unpaid from payment_status (fallback to invoice_status / amount_due).
 const paidLabel = (r: HealthCheckResult): "Paid" | "Unpaid" | null => {
   const ps = (r.result?.payment_status || "").toLowerCase();
   if (ps === "paid") return "Paid";
@@ -59,7 +58,6 @@ const paidLabel = (r: HealthCheckResult): "Paid" | "Unpaid" | null => {
   return null;
 };
 
-// "?" tooltip for read-only rows — why it can't be edited in-app.
 const reasonText = (reason?: string | null): string => {
   switch (reason) {
     case "reconciled":
@@ -106,7 +104,6 @@ export const UnexpectedCodingPage = ({
   const [search, setSearch] = useState("");
   const [busyKey, setBusyKey] = useState<string | null>(null);
   const [removed, setRemoved] = useState<Set<string>>(new Set());
-  // "Change To" pick: default (= suggested) vs a custom account from the dropdown.
   const [mode, setMode] = useState<Record<string, "default" | "custom">>({});
   const [customCode, setCustomCode] = useState<Record<string, string>>({});
   const [selected, setSelected] = useState<Set<string>>(new Set());

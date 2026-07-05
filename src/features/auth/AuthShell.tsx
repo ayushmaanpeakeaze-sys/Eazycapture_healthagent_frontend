@@ -1,6 +1,5 @@
 import { ReactNode, useState } from "react";
 
-// Same brand purple as the main slider panel.
 const PANEL_BG: React.CSSProperties = {
   backgroundColor: "#7d4ee0",
   backgroundImage:
@@ -8,20 +7,12 @@ const PANEL_BG: React.CSSProperties = {
 };
 
 interface AuthShellProps {
-  /** Left-panel headline, e.g. "Hello, welcome back". */
   title: string;
-  /** Left-panel supporting line. */
   subtitle: string;
-  /** The form (rendered on the right). */
   children: ReactNode;
-  /** Optional decorative node absolutely-positioned over the right panel
-      (e.g. a hanging sticker). Anchors to the panel, not the form. */
   sticker?: ReactNode;
 }
 
-/**
- * Split-screen auth layout: purple brand panel on the left, form on the right.
- */
 export const AuthShell = ({
   title,
   subtitle,
@@ -32,7 +23,6 @@ export const AuthShell = ({
 
   return (
     <div className="flex h-screen w-full overflow-hidden bg-white">
-      {/* Left brand panel (hidden below lg) */}
       <div
         className="relative hidden w-1/2 flex-col overflow-hidden p-10 text-white lg:flex"
         style={PANEL_BG}
@@ -61,7 +51,6 @@ export const AuthShell = ({
           </p>
         </div>
 
-        {/* White line-art illustration; falls back to the built-in SVG. */}
         <div className="relative mt-auto flex items-end justify-center">
           {imgOk ? (
             <img
@@ -76,12 +65,9 @@ export const AuthShell = ({
         </div>
       </div>
 
-      {/* Right form panel. Top padding clears the hanging sticker (absolute,
-          top:0) so the form never collides with it. */}
       <div className="relative flex w-full items-start justify-center overflow-y-auto px-6 pb-10 pt-[200px] lg:w-1/2">
         {sticker}
         <div className="w-full max-w-sm">
-          {/* Mobile-only logo */}
           <img
             src="/eazycapture-logo.png"
             alt="EazyCapture"
@@ -123,7 +109,6 @@ const BrandMark = ({
   </svg>
 );
 
-// Built-in finance/audit illustration — flat, on-brand, no external asset.
 const AuditArt = () => (
   <svg
     viewBox="0 0 360 280"

@@ -57,7 +57,6 @@ const matchesRule = (r: HealthCheckResult): boolean =>
   (r.result?.rule_ids ?? []).includes(RULE) ||
   (r.result?.flagged ?? []).some((f) => f.issue_type === RULE);
 
-// Capital items below the threshold posted to a fixed-asset account; consider expensing.
 export const LowCostFixedAssetPage = ({
   companyId,
   refreshKey = 0,
@@ -304,7 +303,6 @@ export const LowCostFixedAssetPage = ({
                 const busy = busyKey === r.id;
                 const chosen = choice[r.id] ?? "";
                 const reasoning = f.reasoning || f.message || "";
-                // Highlight the preferred re-code type (e.g. EXPENSE) at the top.
                 const preferred = (mr?.recode_to_account_type || "EXPENSE").toUpperCase();
                 const preferredAccts = accounts.filter(
                   (a) => (a.type || "").toUpperCase() === preferred,

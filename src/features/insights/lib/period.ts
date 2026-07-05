@@ -3,8 +3,6 @@ export const MONTHS = [
   "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
 ];
 
-// Parse a period label into {year, month}. Handles "30 Jun 26", "Jun 26",
-// "Jun-26", "June 2026" and "2026-06". Returns null if unrecognised.
 export const parsePeriodMonth = (
   period: string,
 ): { year: number; month: number } | null => {
@@ -30,9 +28,6 @@ export const formatMonthLabel = (period: string): string => {
   });
 };
 
-// How far through the month we are — honest about real time. For the current
-// calendar month it's today's progress; past months are complete (100% / 0 days
-// left), future months not started. `known` is false when the label won't parse.
 export const monthProgress = (
   period: string,
 ): {

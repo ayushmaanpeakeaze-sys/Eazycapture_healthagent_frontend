@@ -201,7 +201,6 @@ export const RuleSettingsDrawer = ({
                 const unbuiltRules = group.rules.filter((r) => !r.built);
                 const allBuiltEnabled = builtRules.length > 0 &&
                   builtRules.every((r) => !disabledRules.has(r.key));
-                // Groups where every rule is unbuilt → collapse by default
                 const allUnbuilt = builtRules.length === 0;
 
                 return (
@@ -271,7 +270,6 @@ export const RuleSettingsDrawer = ({
                         );
                       })}
 
-                      {/* Unbuilt rules — no toggle. */}
                       {unbuiltRules.map((rule, i) => (
                         <li
                           key={rule.key}
@@ -338,7 +336,6 @@ export const RuleSettingsDrawer = ({
   );
 };
 
-// Keep these helpers exported for any remaining callers.
 export const getActiveRuleKeys = (_companyId: string): string[] => [];
 export const getIgnoreBeforeDate = (_companyId: string): string => "";
 export const saveRuleSettings = (_companyId: string, _settings: unknown) => {};

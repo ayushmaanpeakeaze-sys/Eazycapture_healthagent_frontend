@@ -1,9 +1,5 @@
 import { CSSProperties } from "react";
 
-/**
- * Rising ledger papers used on auth purple panels. Self-contained (markup +
- * scoped <style>); pin inside a `relative; overflow:hidden` container.
- */
 const PAPERS = [
   { left: "10%", w: 46, dur: 18, delay: 0, rot: -8 },
   { left: "26%", w: 30, dur: 14, delay: 3.5, rot: 7 },

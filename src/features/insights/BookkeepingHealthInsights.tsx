@@ -18,13 +18,12 @@ import {
 } from "../../services/audit.service";
 import { HealthStatsResponse } from "../../types/audit.types";
 
-// Severity palette — keep in sync with SEVERITY_STYLES in TrappedInvoicesList.
 const COLOR = {
-  critical: "#f43f5e", // rose-500
-  high: "#f97316",     // orange-500
-  medium: "#0ea5e9",   // sky-500
-  ink: "#94a3b8",      // slate-400 — neutral fallback
-  emerald: "#10b981",  // emerald-500 — only used in lifecycle "resolved"
+  critical: "#f43f5e",
+  high: "#f97316",
+  medium: "#0ea5e9",
+  ink: "#94a3b8",
+  emerald: "#10b981",
 };
 
 const SEVERITY_COLOR: Record<string, string> = {
@@ -57,7 +56,6 @@ export const BookkeepingHealthInsights = ({
   onDrillToIssueType,
 }: {
   companyId: string;
-  /** Jump to the trapped list filtered to one issue type (KPI drill-in). */
   onDrillToIssueType?: (issueType: string) => void;
 }) => {
   const [stats, setStats] = useState<HealthStatsResponse | null>(null);
@@ -75,7 +73,6 @@ export const BookkeepingHealthInsights = ({
       .finally(() => {
         if (active) setLoading(false);
       });
-    // Real health score lives on /summary/ — stats returns null for it.
     fetchLedgerHealthSummary(companyId)
       .then((s) => {
         if (!active || !s) return;
@@ -90,7 +87,6 @@ export const BookkeepingHealthInsights = ({
   }, [companyId]);
 
   const score = useMemo(() => {
-    // Prefer the real backend score (summary → stats), fall back to derived.
     if (summaryScore !== null) return summaryScore;
     if (!stats) return null;
     if (stats.health_score !== null) return stats.health_score;
@@ -155,7 +151,6 @@ export const BookkeepingHealthInsights = ({
               </div>
             </section>
 
-            {/* Documents (score driver) and contacts (hygiene) are shown apart, never lumped. */}
             <div className="grid grid-cols-2 gap-4">
               {stats.open_document_issues !== undefined ? (
                 <KpiCard
@@ -277,7 +272,6 @@ const BarTooltip = ({
   );
 };
 
-// Multi-line x-axis label so long category names don't clip (max 3 lines, ~12 chars each).
 const WrapTick = ({
   x,
   y,
@@ -374,7 +368,6 @@ const IssuesByTypeCard = ({ stats }: { stats: HealthStatsResponse }) => {
               stroke="#e2e8f0"
               tickLine={false}
             />
-            {/* Hidden axis with headroom so the tallest column's label isn't clipped. */}
             <YAxis
               hide
               domain={[0, (max: number) => Math.ceil(max * 1.12)]}

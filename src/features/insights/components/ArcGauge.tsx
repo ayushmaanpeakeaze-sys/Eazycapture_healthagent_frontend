@@ -11,7 +11,6 @@ const Heart = ({ tone }: { tone: Tone }) => (
   </svg>
 );
 
-// 270° arc gauge with a gap at the bottom.
 export const ArcGauge = ({
   value,
   tone,
@@ -26,7 +25,7 @@ export const ArcGauge = ({
   const clamped = Math.max(0, Math.min(100, value));
   const r = 42;
   const c = 2 * Math.PI * r;
-  const track = 0.75 * c; // 270°
+  const track = 0.75 * c;
   const val = (clamped / 100) * track;
   return (
     <div className="relative h-28 w-28 shrink-0">

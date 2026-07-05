@@ -10,7 +10,6 @@ import {
 interface SuggestFixModalProps {
   row: HealthCheckResult;
   onClose: () => void;
-  /** Called after a successful "Fix in Xero" so the parent can refresh the list. */
   onResolved?: () => void;
 }
 
@@ -33,7 +32,6 @@ export const SuggestFixModal = ({
     setApplyResult(res);
     setApplying(false);
     if (res.ok) {
-      // Brief success state before the parent dismisses + refreshes
       setTimeout(() => {
         onResolved?.();
         onClose();
@@ -72,7 +70,6 @@ export const SuggestFixModal = ({
       setCopied(true);
       window.setTimeout(() => setCopied(false), 1500);
     } catch {
-      // Clipboard API can fail in restricted contexts — silent.
     }
   };
 

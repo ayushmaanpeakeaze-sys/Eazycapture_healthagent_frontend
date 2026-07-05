@@ -177,7 +177,6 @@ export const TaxMissingPage = ({
     else setError(res.error ?? "Dismiss failed");
   };
 
-  // Stored uppercased to match the backend's case-insensitive compare.
   const onIgnoreContact = async (r: HealthCheckResult) => {
     const cid = r.result?.contact_id ?? null;
     const name = r.result?.vendor_name ?? null;

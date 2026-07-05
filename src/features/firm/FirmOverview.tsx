@@ -67,7 +67,6 @@ export const FirmOverview = () => {
     null,
   );
   const [search, setSearch] = useState("");
-  // Triage default: lowest cash coverage first.
   const [sortKey, setSortKey] = useState<SortKey>("cash_coverage");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const [nonce, setNonce] = useState(0);
@@ -100,7 +99,6 @@ export const FirmOverview = () => {
       }
       const av = a[sortKey] as number | null;
       const bv = b[sortKey] as number | null;
-      // nulls always last regardless of direction
       if (av == null && bv == null) return 0;
       if (av == null) return 1;
       if (bv == null) return -1;
@@ -117,8 +115,6 @@ export const FirmOverview = () => {
     }
   };
 
-  // 0 connected orgs (or a brand-new firm with no clients payload yet) →
-  // onboarding owns the screen.
   const isEmpty =
     !!res?.ok &&
     ((res.data.totals?.total_clients ?? 0) === 0 ||

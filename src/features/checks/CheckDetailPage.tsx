@@ -71,7 +71,6 @@ export const CheckDetailPage = ({
     checkKey === "duplicate_invoice" ||
     checkKey === "duplicate_bill" ||
     checkKey === "duplicate_credit_note";
-  // These come from a FULL audit, not the fast duplicates-only run.
   const isContact = checkKey === "duplicate_contact";
   const isOldUnpaid =
     checkKey === "old_unpaid_invoice" || checkKey === "old_unpaid_bill";
@@ -114,14 +113,12 @@ export const CheckDetailPage = ({
   const showControls = isDuplicate || fullRun;
 
   const [refreshKey, setRefreshKey] = useState(0);
-  // Re-run the open check once a Xero→DB sync completes.
   useDataSynced(companyId, () => setRefreshKey((k) => k + 1));
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [running, setRunning] = useState(false);
   const [runMsg, setRunMsg] = useState<string | null>(null);
   const [runErr, setRunErr] = useState<string | null>(null);
 
-  // Which checks expose backend-driven settings → drives the Settings button.
   const [configurable, setConfigurable] = useState<Set<string>>(new Set());
   useEffect(() => {
     let active = true;
@@ -139,7 +136,6 @@ export const CheckDetailPage = ({
   }, [companyId]);
   const canConfigure = configurable.has(checkKey);
 
-  // Run — contacts need a FULL audit; invoice/bill/credit-note use the fast scope.
   const onRunCheck = async () => {
     setRunErr(null);
     setRunning(true);

@@ -1,4 +1,3 @@
-/** @type {import('tailwindcss').Config} */
 export default {
   content: [
     "./index.html",
@@ -81,8 +80,6 @@ export default {
           "0 6px 12px -2px rgba(93,47,217,0.10), 0 8px 24px -6px rgba(15,23,42,0.10)",
         brand:
           "0 6px 16px -4px rgba(113,66,238,0.45), 0 2px 4px rgba(93,47,217,0.20)",
-        // Layered soft elevation — the "3D lift" look. Pronounced so cards
-        // clearly float off the page.
         float:
           "0 2px 4px rgba(15,23,42,0.06), 0 10px 20px -4px rgba(15,23,42,0.10), 0 24px 48px -8px rgba(15,23,42,0.14)",
         "float-lg":

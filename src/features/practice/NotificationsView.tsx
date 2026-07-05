@@ -55,9 +55,6 @@ const fmtRelative = (iso: string | null): string => {
   return `${d}d ago`;
 };
 
-// The backend sends `detail` as either a machine key (e.g. "contact_defaults")
-// or a real sentence (e.g. "dropped from 60% to 2%"). Prettify only the
-// machine-key form (snake_case, no spaces); leave real sentences untouched.
 const prettyDetail = (d: string): string =>
   /^[a-z][a-z0-9_]*$/.test(d)
     ? d.replace(/_/g, " ").replace(/^\w/, (c) => c.toUpperCase())
@@ -84,7 +81,6 @@ const EventIcon = (
   </Glyph>
 );
 
-// Distinct glyph per org-lifecycle event; team/other events fall back to EventIcon.
 const TYPE_ICON: Record<string, React.ReactNode> = {
   org_connected: (
     <Glyph>
@@ -119,7 +115,6 @@ const iconFor = (it: NotificationItem): React.ReactNode =>
   it.kind === "alert" ? AlertIcon : (TYPE_ICON[it.type] ?? EventIcon);
 
 interface NotificationsViewProps {
-  /** Open a client's overview when an alert/event row references one. */
   onOpenCompany?: (companyId: string) => void;
 }
 
@@ -141,7 +136,6 @@ export const NotificationsView = ({ onOpenCompany }: NotificationsViewProps) => 
       .finally(() => setLoading(false));
   };
 
-  // Only stored events carry an id and can be deleted; live alerts cannot.
   const deletable = (it: NotificationItem): it is NotificationItem & { id: string } =>
     it.kind === "event" && !!it.id;
   const eventCount = items.filter(deletable).length;
@@ -156,7 +150,7 @@ export const NotificationsView = ({ onOpenCompany }: NotificationsViewProps) => 
       const sev = sevOf(it.severity);
       setCounts((prev) => ({ ...prev, [sev]: Math.max(0, prev[sev] - 1) }));
     } else {
-      load(); // revert to server truth
+      load();
     }
   };
 
@@ -165,7 +159,7 @@ export const NotificationsView = ({ onOpenCompany }: NotificationsViewProps) => 
     const res = await clearNotifications();
     setClearing(false);
     setConfirmClear(false);
-    if (res.ok) load(); // re-derive live alerts, drop stored events
+    if (res.ok) load();
   };
 
   useEffect(() => {

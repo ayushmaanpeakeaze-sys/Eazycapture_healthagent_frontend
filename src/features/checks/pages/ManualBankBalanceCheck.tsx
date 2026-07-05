@@ -22,7 +22,6 @@ import {
 } from "@/types/audit.types";
 import { TeamUser } from "@/types/auth.types";
 
-// Signed GBP, 2dp. Negative → "-£1,234.56".
 const money = (n: number | string | null | undefined): string => {
   const v = typeof n === "string" ? parseFloat(n) : Number(n);
   const num = Number.isFinite(v) ? v : 0;
@@ -58,7 +57,6 @@ const fmtBytes = (n: number): string => {
   return `${(n / 1024 ** i).toFixed(i === 0 ? 0 : 1)} ${units[i]}`;
 };
 
-// End-of-month for the given YYYY-MM ("2026-07" → "2026-07-31").
 const monthEnd = (ym: string): string => {
   const [y, m] = ym.split("-").map(Number);
   if (!y || !m) return ym;
@@ -68,7 +66,6 @@ const monthEnd = (ym: string): string => {
   ).padStart(2, "0")}`;
 };
 
-// YYYY-MM-DD → YYYY-MM for the <input type="month"> value.
 const toMonthValue = (iso: string): string => {
   const m = /^(\d{4})-(\d{2})/.exec(iso || "");
   if (m) return `${m[1]}-${m[2]}`;
@@ -128,7 +125,6 @@ const NotesPanel = ({
     return () => {
       active = false;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [companyId, item.account_code, periodEnd]);
 
   const onAdd = async () => {
@@ -294,7 +290,6 @@ const DocumentsPanel = ({
     return () => {
       active = false;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [companyId, item.account_code, periodEnd]);
 
   const onUpload = async (file: File) => {
@@ -419,7 +414,7 @@ const AccountCard = ({
   const [editingBalance, setEditingBalance] = useState(false);
   const [balanceInput, setBalanceInput] = useState("");
 
-  const cur = periodEnd; // period_end for writes (per (account_code, period_end))
+  const cur = periodEnd;
   const hasStmt = item.per_bank_statement != null;
   const diff = item.difference;
   const diffNonZero =
@@ -740,9 +735,6 @@ const AccountCard = ({
   );
 };
 
-// Manual "Bank Balance Check" — per (account_code, period_end): the ledger
-// (Xero TB) vs a manually entered bank-statement closing balance, with notes,
-// documents and mark-OK / ignore workflow.
 export const ManualBankBalanceCheck = ({
   companyId,
   refreshKey = 0,

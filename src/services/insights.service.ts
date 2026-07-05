@@ -8,12 +8,10 @@ import {
 } from "../types/insights.types";
 import { insightsClient } from "./api.client";
 
-/** Discriminated result so callers can branch on ok without try/catch. */
 export type InsightsResult<T> =
   | { ok: true; data: T }
   | { ok: false; error: string; status?: number };
 
-// Failure modes: 409 = not connected to Xero, 502 = Xero down/rate-limited, 404 = unknown company.
 const toError = (err: unknown): { ok: false; error: string; status?: number } => {
   if (err instanceof AxiosError) {
     const status = err.response?.status;
@@ -39,15 +37,12 @@ const get = async <T>(path: string): Promise<InsightsResult<T>> => {
   }
 };
 
-/** One client — all 9 KPIs from the pre-computed snapshot (fast, DB-backed). */
 export const fetchClientInsights = (companyId: string) =>
   get<ClientInsightsSnapshot>(`/${encodeURIComponent(companyId)}/`);
 
-/** Firm overview roll-up across every client the user can see. */
 export const fetchFirmSummary = () =>
   get<FirmSummaryResponse>(`/firm-summary/`);
 
-/** Queue a recompute of one client's snapshot. Returns 202 {status:"queued"}. */
 export const refreshClientInsights = async (
   companyId: string,
 ): Promise<InsightsResult<{ company_id: string; status: string }>> => {
@@ -62,11 +57,9 @@ export const refreshClientInsights = async (
   }
 };
 
-/** Read a client's sales-target settings. */
 export const fetchSalesTarget = (companyId: string) =>
   get<SalesTargetSettings>(`/${encodeURIComponent(companyId)}/sales-target/`);
 
-/** Write sales-target settings. Does NOT recompute — caller must refresh after. */
 export const updateSalesTarget = async (
   companyId: string,
   body: Partial<SalesTargetSettings>,
@@ -82,13 +75,11 @@ export const updateSalesTarget = async (
   }
 };
 
-/** Read Cash Health settings (includes, overrides, disregarded banks). */
 export const fetchCashHealthSettings = (companyId: string) =>
   get<CashHealthSettings>(
     `/${encodeURIComponent(companyId)}/cash-health-settings/`,
   );
 
-/** Write Cash Health settings. Does NOT recompute — caller must refresh after. */
 export const updateCashHealthSettings = async (
   companyId: string,
   body: Partial<CashHealthSettings>,

@@ -36,11 +36,7 @@ const SEVERITY_META: Record<
   },
 };
 
-// Maps the backend's machine issue keys (result.rule_ids / flagged[].issue_type)
-// to a human label and a family so the feed groups cleanly. Unknown keys fall
-// back to a prettified version of the key (see getIssueMeta).
 const ISSUE_TYPE_META: Record<string, { label: string; group: string }> = {
-  // Bank & reconciliation
   unprocessed_bank: { label: "Unprocessed bank items", group: "Bank" },
   unreconciled_bank: { label: "Unreconciled bank items", group: "Bank" },
   bank_balance_check: { label: "Bank balance mismatch", group: "Bank" },
@@ -48,7 +44,6 @@ const ISSUE_TYPE_META: Record<string, { label: string; group: string }> = {
     label: "Opening balance difference",
     group: "Bank",
   },
-  // Duplicates
   duplicate_invoice: { label: "Duplicate invoice", group: "Duplicates" },
   duplicate_bill: { label: "Duplicate bill", group: "Duplicates" },
   duplicate_credit_note: {
@@ -57,7 +52,6 @@ const ISSUE_TYPE_META: Record<string, { label: string; group: string }> = {
   },
   duplicate_contact: { label: "Duplicate contact", group: "Duplicates" },
   duplicate_vendor: { label: "Duplicate vendor", group: "Duplicates" },
-  // Tax & VAT
   missing_tax: { label: "Missing tax code", group: "Tax coding" },
   invalid_tax_code: { label: "Invalid tax code", group: "Tax coding" },
   sales_tax_missing: { label: "Missing sales tax", group: "Tax coding" },
@@ -72,7 +66,6 @@ const ISSUE_TYPE_META: Record<string, { label: string; group: string }> = {
     label: "Inconsistent tax codes",
     group: "Tax coding",
   },
-  // Categorisation & coding
   wrong_category: { label: "Unusual category", group: "Account coding" },
   unexpected_account: { label: "Unexpected account", group: "Account coding" },
   multi_account_supplier: {
@@ -92,7 +85,6 @@ const ISSUE_TYPE_META: Record<string, { label: string; group: string }> = {
   },
   capital_item_review: { label: "Capital item review", group: "Account coding" },
   currency_mismatch: { label: "Currency mismatch", group: "Account coding" },
-  // Direct booking / settlement
   invoice_or_direct: { label: "Invoice or direct booking", group: "Direct booking" },
   bill_or_direct: { label: "Bill or direct booking", group: "Direct booking" },
   invoice_or_direct_booking: {
@@ -108,7 +100,6 @@ const ISSUE_TYPE_META: Record<string, { label: string; group: string }> = {
     label: "Invoice settled directly",
     group: "Direct booking",
   },
-  // Date & ageing
   future_dated: { label: "Future-dated", group: "Ageing" },
   old_unpaid_bill: { label: "Old unpaid bill", group: "Ageing" },
   old_unpaid_invoice: { label: "Old unpaid invoice", group: "Ageing" },
@@ -120,15 +111,12 @@ const ISSUE_TYPE_META: Record<string, { label: string; group: string }> = {
     label: "Old unsettled purchase credit",
     group: "Ageing",
   },
-  // Approval & status
   unapproved_invoice: { label: "Unapproved invoice", group: "Approval & status" },
   unapproved_bill: { label: "Unapproved bill", group: "Approval & status" },
   invalid_status_combo: { label: "Invalid status", group: "Approval & status" },
-  // Contacts
   missing_vendor: { label: "Missing vendor", group: "Contacts" },
   contact_defaults: { label: "Contact missing defaults", group: "Contacts" },
   inactive_contact: { label: "Inactive contact", group: "Contacts" },
-  // Document integrity
   missing_invoice_number: {
     label: "Missing invoice number",
     group: "Documentation",
@@ -151,12 +139,9 @@ const KIND_META: Record<HealthCheckKind, { label: string }> = {
   post_ledger: { label: "Post-Ledger" },
 };
 
-// The primary issue type for a row: the backend's rule, falling back to the
-// first flagged issue. Drives which group the row lands in.
 const rowIssueType = (r: HealthCheckResult): string =>
   r.result?.rule_ids?.[0] ?? r.result?.flagged?.[0]?.issue_type ?? "other";
 
-// The worst severity across a row's flagged issues (a row can carry several).
 const rowSeverity = (r: HealthCheckResult): Severity => {
   let worst: Severity = "medium";
   for (const f of r.result?.flagged ?? []) {
@@ -236,8 +221,6 @@ export const ActivityFeedView = ({ companyId }: ActivityFeedViewProps) => {
   const [picked, setPicked] = useState<string | null>(null);
   const [companiesLoading, setCompaniesLoading] = useState<boolean>(isGlobal);
 
-  // The trapped feed is per-tenant, so resolve a single company_id: the
-  // drilled-in client, or the one picked in the global tab.
   const targetCompanyId = companyId ?? picked ?? undefined;
   const pickedClient = companies.find((c) => c.company_id === picked) ?? null;
 
@@ -250,7 +233,6 @@ export const ActivityFeedView = ({ companyId }: ActivityFeedViewProps) => {
         if (!active) return;
         const list = data.results ?? [];
         setCompanies(list);
-        // Default to the first client so the tab isn't empty on arrival.
         setPicked((prev) => prev ?? list[0]?.company_id ?? null);
       })
       .finally(() => {
@@ -270,8 +252,6 @@ export const ActivityFeedView = ({ companyId }: ActivityFeedViewProps) => {
     setLoading(true);
     setError(null);
     try {
-      // Audit log shows currently-trapped issues only (the trapped feed already
-      // excludes dismissed/marked-OK). Severity/kind tabs are filtered client-side.
       const res = await fetchTrappedInvoices({
         company_id: targetCompanyId,
         limit: 200,
@@ -294,20 +274,16 @@ export const ActivityFeedView = ({ companyId }: ActivityFeedViewProps) => {
 
   useEffect(() => {
     load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [targetCompanyId]);
 
   useEffect(() => {
     if (!autoRefresh || !targetCompanyId) return;
     const id = setInterval(load, 4000);
     return () => clearInterval(id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoRefresh, targetCompanyId]);
 
-  // Re-fetch the trapped feed once a Xero→DB sync completes.
   useDataSynced(targetCompanyId, () => load());
 
-  // Filter by the severity + kind tabs before grouping.
   const filtered = useMemo(
     () =>
       results.filter(
@@ -318,7 +294,6 @@ export const ActivityFeedView = ({ companyId }: ActivityFeedViewProps) => {
     [results, severityFilter, kindFilter],
   );
 
-  // Severity breakdown across the full result set (drives the summary cards).
   const counts = useMemo(() => {
     const out: Record<Severity | "all", number> = {
       all: results.length,
@@ -330,8 +305,6 @@ export const ActivityFeedView = ({ companyId }: ActivityFeedViewProps) => {
     return out;
   }, [results]);
 
-  // Group the filtered rows by issue type. Sort most-severe families first,
-  // then by volume — so an auditor sees the worst, biggest piles up top.
   const groups = useMemo<IssueGroup[]>(() => {
     const byKey = new Map<string, HealthCheckResult[]>();
     for (const r of filtered) {
@@ -350,8 +323,6 @@ export const ActivityFeedView = ({ companyId }: ActivityFeedViewProps) => {
       }
       list.push({ key, label: meta.label, family: meta.group, rows, severity });
     }
-    // Biggest piles first; severity breaks ties (the dot + the filter cards
-    // surface urgency, so volume is the more intuitive primary order).
     list.sort((a, b) => {
       const vol = b.rows.length - a.rows.length;
       return vol !== 0

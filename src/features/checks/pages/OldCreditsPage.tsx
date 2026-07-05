@@ -52,7 +52,6 @@ const ageDays = (r: HealthCheckResult, f: FlaggedIssue | undefined): number | nu
   return Number.isFinite(d) ? d : null;
 };
 
-// Part-allocated when some of the credit has been used (remaining < total).
 const detailText = (r: HealthCheckResult): string => {
   if (r.result?.details) return r.result.details;
   const total = Number(r.result?.amount);
@@ -62,7 +61,6 @@ const detailText = (r: HealthCheckResult): string => {
   return "credit note";
 };
 
-// Credit notes outstanding more than N days.
 export const OldCreditsPage = ({
   companyId,
   issueType,
@@ -146,7 +144,6 @@ export const OldCreditsPage = ({
 
   const pg = useClientPagination(visible, `${search}|${showDismissed}`);
 
-  // Total Potential Errors = sum of remaining credit (amount_due).
   const totalValue = useMemo(
     () => visible.reduce((s, r) => s + (Number(r.result?.amount_due) || 0), 0),
     [visible],

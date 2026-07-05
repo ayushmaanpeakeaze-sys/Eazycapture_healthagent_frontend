@@ -38,7 +38,6 @@ export const SalesTrackerCard = ({
 }) => {
   const [settingsOpen, setSettingsOpen] = useState(false);
 
-  // Chart: prefer the new chart{}; else fall back to legacy rows (oldest→newest).
   const reversedRows = [...(data.rows ?? [])].reverse();
   const cats = data.chart?.periods ?? reversedRows.map((r) => r.period);
   const actualArr = data.chart?.actual ?? reversedRows.map((r) => r.actual);
@@ -46,7 +45,6 @@ export const SalesTrackerCard = ({
     data.chart?.target ?? reversedRows.map((r) => r.target ?? null);
   const hasChart = cats.length > 0;
 
-  // Current-month panel: prefer the new current_month{}; else compute from legacy.
   const cm = data.current_month ?? null;
   const latestRow = (data.rows ?? [])[0];
   const monthLabel =
@@ -79,7 +77,6 @@ export const SalesTrackerCard = ({
   const daysRemaining = cm?.days_remaining ?? lmp?.daysRemaining ?? null;
   const statusText = cm?.status ?? null;
 
-  // Short status chip derived from pace (sales vs time).
   const tone: "emerald" | "amber" | "rose" | "ink" = noTarget
     ? "ink"
     : met
@@ -107,7 +104,6 @@ export const SalesTrackerCard = ({
           ? "bg-amber-50 text-amber-700 ring-amber-200"
           : "bg-ink-100 text-ink-600 ring-ink-200";
 
-  // Combo: blue actual bars + green target line (null targets → gaps).
   const series = [
     { name: "Actual", type: "column", data: actualArr },
     { name: "Target", type: "line", data: targetArr },
@@ -303,7 +299,6 @@ const SALES_BASIS_OPTIONS: { value: SalesTargetBasis; label: string }[] = [
   { value: "same_month_last_year", label: "Same month last year" },
   { value: "manual", label: "Manual fixed value" },
 ];
-// "xero_budget" is intentionally omitted — not wired on the backend yet.
 const ADJUSTABLE_BASES = new Set([
   "previous_month",
   "average_3",

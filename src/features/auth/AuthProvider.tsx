@@ -52,8 +52,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setRole(authStorage.getRole());
   };
 
-  // Accept-invite must work regardless of session, so it wins over the
-  // logged-in/out branch below.
   const inviteToken = new URLSearchParams(window.location.search).get("token");
   const isAcceptInvite =
     window.location.pathname === "/accept-invite" && !!inviteToken;
@@ -101,7 +99,6 @@ const AcceptInviteGate = ({ token }: { token: string }) => (
     <LazyAcceptInvitePage
       inviteToken={token}
       onAccepted={() => {
-        // Drop the ?token from the URL and reload into the dashboard.
         window.location.href = `${window.location.origin}/`;
       }}
     />

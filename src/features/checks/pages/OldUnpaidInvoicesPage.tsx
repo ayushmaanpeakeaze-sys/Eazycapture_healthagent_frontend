@@ -40,7 +40,6 @@ const matchesRule = (r: HealthCheckResult, ruleId: string): boolean =>
   (r.result?.rule_ids ?? []).includes(ruleId) ||
   (r.result?.flagged ?? []).some((f) => f.issue_type === ruleId);
 
-// Age: prefer the audit-time age_days; fall back to days since the basis date.
 const ageDays = (r: HealthCheckResult, f: FlaggedIssue | undefined): number | null => {
   const a = f?.match_reasons?.age_days;
   if (a != null) return a;

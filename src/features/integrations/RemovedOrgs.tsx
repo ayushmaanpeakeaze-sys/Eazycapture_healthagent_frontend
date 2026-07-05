@@ -7,10 +7,6 @@ import {
   reAllowExcludedOrg,
 } from "@/services/audit.service";
 
-// Collapsible list of permanently-deleted orgs (excluded from re-creation).
-// "Re-allow" clears one org's exclusion (per-org) so the next "Connect to Xero"
-// re-creates it from a fresh sync. Unlike Disconnect, the old data is gone.
-// `reloadKey` bumps to refetch; `onChanged` fires after a re-allow.
 export const RemovedOrgs = ({
   reloadKey = 0,
   onChanged,

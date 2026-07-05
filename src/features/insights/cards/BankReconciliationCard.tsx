@@ -2,7 +2,6 @@ import { BankReconciliation } from "../../../types/insights.types";
 import { Card } from "../components/Card";
 import { formatAsOf, gbp } from "../lib/format";
 
-// Display-only — sourced from Xero's IsReconciled flag.
 export const BankReconciliationCard = ({ data }: { data: BankReconciliation }) => {
   const clean = data.unreconciled_count === 0;
   const reconciled = Math.max(0, data.total_transactions - data.unreconciled_count);

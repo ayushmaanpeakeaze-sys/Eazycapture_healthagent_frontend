@@ -107,7 +107,6 @@ export const TeamView = () => {
             ? `Invite re-created — email delivery isn't configured (logged to console). Copy the link below to share it.`
             : `Invite re-sent to ${email}.`,
       );
-      // Fresh copy-link (prefer backend's accept_url) for manual sharing.
       setNoticeLink(
         res.data.accept_url ||
           `${window.location.origin}/accept-invite?token=${res.data.invite_token}`,
@@ -124,7 +123,6 @@ export const TeamView = () => {
       setNoticeCopied(true);
       setTimeout(() => setNoticeCopied(false), 1500);
     } catch {
-      /* clipboard blocked — link is still visible to copy manually */
     }
   };
 
@@ -285,8 +283,6 @@ export const TeamView = () => {
                       <span className="text-[11px] text-ink-300">Owner</span>
                     ) : (
                       <div className="flex items-center justify-end gap-3">
-                        {/* Edit access — change which clients this member sees,
-                            without re-inviting (PUT replaces the full list). */}
                         <button
                           type="button"
                           onClick={() => {
@@ -298,7 +294,6 @@ export const TeamView = () => {
                         >
                           Edit access
                         </button>
-                        {/* Must disable a member before they can be removed. */}
                         {u.status === "active" && (
                           <button
                             type="button"
@@ -362,8 +357,6 @@ export const TeamView = () => {
   );
 };
 
-// Edit an existing member's client access — no re-invite. The PUT replaces the
-// whole list, so we pre-check their current orgs and send the full updated set.
 const EditAccessForm = ({
   user,
   companies,
@@ -580,7 +573,6 @@ const InviteForm = ({
       setError(res.error);
       return;
     }
-    // Prefer the backend's ready-made link; fall back to the current origin.
     const link =
       res.data.accept_url ||
       `${window.location.origin}/accept-invite?token=${res.data.invite_token}`;
@@ -597,7 +589,6 @@ const InviteForm = ({
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
     } catch {
-      /* ignore */
     }
   };
 

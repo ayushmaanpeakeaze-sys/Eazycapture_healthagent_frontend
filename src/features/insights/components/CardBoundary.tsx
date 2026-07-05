@@ -1,7 +1,5 @@
 import { Component, ReactNode } from "react";
 
-// Isolates a single insight card: if it throws (e.g. a sparse snapshot is
-// missing a section), show a small fallback instead of white-screening the page.
 export class CardBoundary extends Component<
   { children: ReactNode },
   { failed: boolean }

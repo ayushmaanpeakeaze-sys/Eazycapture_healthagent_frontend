@@ -1,16 +1,13 @@
 export type IssueType =
-  // Bank & reconciliation
   | "unprocessed_bank"
   | "unreconciled_bank"
   | "bank_balance_check"
   | "opening_balance_difference"
-  // Duplicates
   | "duplicate_invoice"
   | "duplicate_bill"
   | "duplicate_credit_note"
   | "duplicate_contact"
-  | "duplicate_vendor" // alias kept for legacy backend payloads
-  // Tax & VAT
+  | "duplicate_vendor"
   | "missing_tax"
   | "invalid_tax_code"
   | "sales_tax_missing"
@@ -19,7 +16,6 @@ export type IssueType =
   | "purchase_tax_on_invoices"
   | "unexpected_tax_code"
   | "multi_tax_code_supplier"
-  // Categorisation & coding
   | "wrong_category"
   | "unexpected_account"
   | "multi_account_supplier"
@@ -30,26 +26,20 @@ export type IssueType =
   | "invoice_direct_deposit"
   | "anomaly"
   | "amount_outlier"
-  // Date & ageing
   | "future_dated"
   | "old_unpaid_bill"
   | "old_unpaid_invoice"
   | "old_unsettled_sales_credit"
   | "old_unsettled_purchase_credit"
-  // Approval & status
   | "unapproved_invoice"
   | "unapproved_bill"
-  // Contacts
   | "missing_vendor"
   | "contact_defaults"
   | "inactive_contact"
-  // Document integrity
   | "missing_invoice_number"
   | "undocumented_bill"
-  // Fixed assets
   | "low_cost_fixed_asset"
   | "capital_item_review"
-  // Currency
   | "currency_mismatch";
 
 export type Severity = "critical" | "high" | "medium";
@@ -76,7 +66,6 @@ export interface BatchTransaction {
   description: string;
   amount: number | string;
   vendor_name: string;
-  /** ACCPAY (bill / purchase) or ACCREC (invoice / sales). */
   type?: "ACCPAY" | "ACCREC" | string;
   tax_code?: string | null;
   invoice_number?: string | null;
@@ -101,38 +90,25 @@ export interface MatchReasons {
   currency?: string | null;
   days_apart: number;
   reference_match: "exact" | "none" | "different";
-  /** Both rows carry the same own invoice/doc number. */
   same_invoice_number?: boolean;
-  /** Everything matches but the two doc numbers differ → soft "2 docs?" hint. */
   distinct_documents_possible?: boolean;
-  /** Matched across two merged contact records. */
   cross_contact: boolean;
   confidence: number;
   tier: "high" | "medium" | "low" | string;
-  /** true = different reference → "user decides" (Low / Review). */
   review?: boolean;
-  /** Per-signal score contribution — show why it scored what it did. */
   points?: {
     contact?: number | null;
     amount?: number | null;
     reference?: number | null;
     date?: number | null;
   } | null;
-  /** true = cadence looks like a subscription → label & sort to the bottom. */
   recurring?: boolean;
-  /** RISK: one side is paid while the other is still outstanding. */
   one_paid_one_outstanding?: boolean;
-  /** RISK (stronger): one side is bank-reconciled while the other is outstanding. */
   one_reconciled_one_outstanding?: boolean;
-  /** "high" = money already moved on one copy → flag urgency & sort to the top. */
   risk?: "high" | "normal" | string;
-  // Old-unpaid invoices / bills
-  /** Age at audit time (correct basis) → the "Age" column. */
   age_days?: number | null;
   age_basis?: "invoice_date" | "due_date" | string;
-  /** Outstanding balance as a string. */
   outstanding?: string | null;
-  // Bill or Direct Payment — the two sides of the match
   bill_transaction_id?: string;
   bill_date?: string | null;
   bill_amount?: string | null;
@@ -142,7 +118,6 @@ export interface MatchReasons {
   payment_date?: string | null;
   payment_amount?: string | null;
   payment_description?: string | null;
-  // Invoice or Direct Deposit — the two sides of the match
   invoice_transaction_id?: string;
   invoice_date?: string | null;
   invoice_amount?: string | null;
@@ -151,21 +126,17 @@ export interface MatchReasons {
   deposit_date?: string | null;
   deposit_amount?: string | null;
   deposit_description?: string | null;
-  // Low-cost fixed asset
   line_no?: number | null;
   account_code?: string | null;
   account_name?: string | null;
   line_amount?: string | null;
   threshold?: string | null;
-  /** Preferred account type to re-code to (e.g. "EXPENSE") — highlight these. */
   recode_to_account_type?: string | null;
-  // Wrong-tax-direction (sales tax on bills / purchase tax on invoices)
   net_amount?: string | null;
   tax_amount?: string | null;
   tax_code?: string | null;
 }
 
-/** The status columns for one contact in a duplicate-contact match. */
 export interface ContactHelper {
   has_invoices: boolean;
   has_bills: boolean;
@@ -187,33 +158,23 @@ export interface FlaggedIssue {
   suggested_name?: string | null;
   current_code?: string | null;
   current_name?: string | null;
-  /** Multi-account/tax supplier: every code the contact was coded across. */
   accounts_used?: string[] | null;
   confidence?: number | null;
   reasoning?: string | null;
-  // Duplicate-invoice/bill specifics
   this_is_likely_original?: boolean;
   duplicate_of_transaction_id?: string | null;
   duplicate_of_invoice_number?: string | null;
   duplicate_of_date?: string | null;
   match_reasons?: MatchReasons | null;
-  // Duplicate-contact specifics
   contact_name?: string | null;
   partner_id?: string | null;
   partner_name?: string | null;
-  /** "Similarity %" = name_similarity × 100. */
   name_similarity?: number | null;
   vat_status?: "match" | "mismatch" | "unknown" | string;
-  /** Customer/Supplier split — review, don't merge. */
   is_split?: boolean;
-  // Inactive contact
-  /** ISO date of the contact's last activity, or null = never used. */
   last_activity_date?: string | null;
-  /** Days since last activity, or null = never used. */
   age_days?: number | null;
-  /** Status columns for the subject (this) contact. */
   helper?: ContactHelper | null;
-  /** Status columns for the partner contact — render the 2nd line from this. */
   partner_helper?: ContactHelper | null;
 }
 
@@ -221,25 +182,20 @@ export interface BatchHealthCheckResponse {
   flagged: FlaggedIssue[];
 }
 
-/** One bank account in the Bank Balance Check (card per account). */
 export interface BankBalanceItem {
   id: string;
   account_code: string;
   account_name: string;
   period_end: string;
-  /** Manual entry — null until the user adds the statement balance. */
   per_bank_statement: number | string | null;
-  /** Finance-API gated → always null for now. */
   per_xero_statement: number | string | null;
   per_xero_tb: number | string | null;
-  /** per_bank_statement − per_xero_tb; null until a statement balance exists. */
   difference: number | string | null;
   marked_ok: boolean;
   process_url: string | null;
   currency_code?: string | null;
   notes_count?: number;
   documents_count?: number;
-  // Auto reconciliation (merged in — no manual entry needed).
   statement_balance_calculated?: number | string | null;
   unreconciled_received?: number | null;
   unreconciled_spent?: number | null;
@@ -249,7 +205,6 @@ export interface BankBalanceItem {
   lines?: BankReconLine[];
 }
 
-/** A note on a bank account for one period end (with @mentions). */
 export interface BankNote {
   id: string;
   account_code: string;
@@ -260,7 +215,6 @@ export interface BankNote {
   created_at: string;
 }
 
-/** Uploaded-document metadata for a bank account / period end. */
 export interface BankDocument {
   id: string;
   filename: string;
@@ -276,41 +230,30 @@ export interface BankBalanceCheckResponse {
   items: BankBalanceItem[];
 }
 
-/** One bank account with activity not yet reconciled in the ledger. */
 export interface UnreconciledBankItem {
   account_id: string;
   account_code: string;
   account_name: string;
-  /** RECEIVE money, IsReconciled = false. */
   unreconciled_received: number;
-  /** SPEND money, IsReconciled = false. */
   unreconciled_spent: number;
-  /** Feed-side count — Finance-API gated, so always null → render "—". */
   unexplained: number | null;
-  /** received + spent (ledger-side). */
   total_to_reconcile: number;
   process_url: string | null;
 }
 
 export interface UnreconciledBankResponse {
-  /** Σ total_to_reconcile across all accounts (header count). */
   total_to_reconcile: number;
-  /** false → feed-side "Unexplained" count needs Xero's Finance API. */
   unexplained_available: boolean;
   items: UnreconciledBankItem[];
 }
 
-/** One unreconciled transaction under a bank account (View Details). */
 export interface BankReconLine {
   date: string;
   contact: string;
-  /** "Received" | "Spent". */
   type: string;
-  /** Signed: + for received, − for spent. */
   amount: number;
 }
 
-/** One period row in the Opening Balance Differences check. */
 export interface OpeningBalanceItem {
   id: string;
   period_end: string;
@@ -342,7 +285,6 @@ export interface LateTransactionsResponse {
   items: LateTransaction[];
 }
 
-/** Dropdown options for the "Change To" picker on the coding checks. */
 export interface CodingOptions {
   connected: boolean;
   accounts: { code: string; name: string; type: string }[];
@@ -356,13 +298,11 @@ export interface OutboundDemoSummary {
   duplicate_groups: number;
 }
 
-/** Response from the run-outbound demo batch. */
 export interface OutboundDemoResponse {
   transactions?: BatchTransaction[];
   flagged?: FlaggedIssue[];
   flags_by_txn?: Record<string, FlaggedIssue[]>;
   summary?: OutboundDemoSummary;
-  /** Legacy fallback shape. */
   result?: BatchHealthCheckResponse;
 }
 
@@ -418,22 +358,15 @@ export type HealthCheckStatus =
 export interface HealthCheckResultPayload {
   flagged?: FlaggedIssue[];
   resolved?: boolean;
-  // Trapped-invoice/bill row fields (present on duplicate & other doc checks)
   rule_ids?: string[];
   vendor_name?: string | null;
-  /** Xero ContactID — stable key for ignore-this-contact whitelisting. */
   contact_id?: string | null;
   invoice_number?: string | null;
-  /** Xero Reference — the field duplicate-matching keys on. */
   xero_reference?: string | null;
-  /** Legacy/back-compat reference (same source as xero_reference). */
   reference?: string | null;
-  /** Line-item description ("Details" column). */
   details?: string | null;
-  /** The account the line is coded to (for tax-missing / coding checks). */
   current_account_code?: string | null;
   current_account_name?: string | null;
-  /** Tax code on the document (e.g. "20% (VAT on Expenses)"). */
   tax_code?: string | null;
   amount?: number | string | null;
   currency_code?: string | null;
@@ -442,18 +375,10 @@ export interface HealthCheckResultPayload {
   invoice_status?: string | null;
   amount_due?: number | string | null;
   amount_paid?: number | string | null;
-  /** Bank-matched: the recorded payment was reconciled to a bank statement line
-   *  (Xero Payments.IsReconciled). null when payments weren't fetched. */
   reconciled?: boolean | null;
-  /** Whether the row can be edited in-app (not reconciled / paid / allocated).
-   *  Drives "Change To" dropdown + Save vs a read-only "Edit in Xero". */
   editable?: boolean;
-  /** Why it isn't editable — drives the "?" tooltip on read-only rows.
-   *  reconciled | payment_allocated | payment_or_credit_allocated */
   editable_reason?: string | null;
-  /** "paid" | "unpaid" — payment state for the row. */
   payment_status?: string | null;
-  // Legacy fields kept for backwards-compat with PrecheckTester / older rows
   validation_errors?: string[];
   suggested_category?: string | null;
   confidence_score?: number;
@@ -476,14 +401,11 @@ export interface HealthCheckResult {
   kind: HealthCheckKind;
   target_ledger: "xero" | string;
   status: HealthCheckStatus;
-  /** Human-readable summary of the issue (e.g. "ABC LIMITED is missing default account or tax settings"). */
   title?: string | null;
   error_msgs: string | null;
   result: HealthCheckResultPayload | null;
   ran_at: string;
-  /** AI enrichment — one record per transaction_id (NOT per flagged issue); null until it lands. */
   ai?: AiEnrichment | null;
-  /** Deep-link to this document in Xero — always present (manual fallback). */
   xero_url?: string | null;
 }
 
@@ -514,11 +436,8 @@ export interface SuggestFixSuggestion {
 
 export interface SuggestFixResponse {
   row_id: string;
-  /** Xero's document ID (e.g. InvoiceID) — always present, even when AI is unavailable. */
   document_id: string;
-  /** "accrec" | "accpay" | "accreccredit" | "accpaycredit" — always present. */
   document_type: string;
-  /** Deep-link into Xero for this document — always present. */
   xero_url: string;
   available: boolean;
   suggestion: SuggestFixSuggestion;
@@ -544,9 +463,7 @@ export interface ApplyAiFixFailure {
   ok: false;
   error_code: ApplyAiFixErrorCode;
   error: string;
-  /** Human-friendly explanation from the backend; preferred over walking xero_response. */
   error_detail?: string;
-  /** Deep-link to the document in Xero, so the UI can offer a guaranteed manual path. */
   xero_url?: string;
   xero_response?: unknown;
 }
@@ -622,15 +539,12 @@ export interface DismissTrappedResponse {
 }
 
 export interface LedgerHealthSummaryTopIssue {
-  /** New backend shape: `{ issue_type, count, sample_msg }`. */
   issue_type?: string;
   sample_msg?: string;
   count: number;
-  /** Legacy shape — older backends sent the message directly. */
   message?: string;
 }
 
-/** Per-client aggregate counts for the Insights dashboard. */
 export interface HealthStatsIssueTypeRow {
   issue_type: string;
   count: number;
@@ -647,12 +561,9 @@ export interface HealthStatsResponse {
   health_score: number | null;
   total_issues: number;
   open_issues: number;
-  /** Documents drive the health score; contacts are a separate pool, NOT in audited_documents. */
   open_document_issues?: number;
   open_contact_issues?: number;
-  /** Documents audited in the broadest completed audit. */
   audited_documents?: number;
-  /** Contacts audited (the contact-pool denominator). */
   audited_contacts?: number;
   resolved_issues: number;
   dismissed_issues: number;

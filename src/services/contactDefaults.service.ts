@@ -23,9 +23,7 @@ export interface CdContact {
   is_customer: boolean;
   is_supplier: boolean;
   current_defaults: CdDefaults;
-  /** Which of the four default fields are missing for this contact. */
   missing: string[];
-  /** Trapped row this flag came from (null if last audit didn't flag it). */
   trapped_row_id?: string | null;
   dismissed?: boolean;
 }
@@ -71,7 +69,6 @@ export const fetchContactDefaults = async (
   }
 };
 
-/** Contact-based dismiss — persists even when there's no trapped row yet. */
 export const dismissContactDefault = async (
   companyId: string,
   contactId: string,
@@ -103,7 +100,6 @@ export const reinstateContactDefault = async (
   }
 };
 
-// Send only the fields that changed (the backend accepts any subset of the 4).
 export const confirmContactDefault = async (
   companyId: string,
   contactId: string,
@@ -119,7 +115,6 @@ export const confirmContactDefault = async (
       `/contact-defaults/${encodeURIComponent(contactId)}/confirm/?company_id=${encodeURIComponent(companyId)}`,
       changed,
     );
-    // Treat ok:false as a soft failure the user can retry, not a crash.
     if (data.ok === false || data.error)
       return {
         ok: false,

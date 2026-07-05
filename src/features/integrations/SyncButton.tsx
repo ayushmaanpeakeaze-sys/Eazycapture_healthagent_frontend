@@ -19,17 +19,11 @@ const fmtSynced = (ms: number | null): string => {
   });
 };
 
-/**
- * Pulls Xero → DB (data only, no audit) and shows when it last ran. Lives in the
- * client breadcrumb, so it's on every per-client page. Sync is separate from the
- * Overview re-audit and the Insights recompute — it only refreshes the raw data.
- */
 export const SyncButton = ({
   companyId,
   disabled = false,
 }: {
   companyId: string;
-  /** Gated off when the Xero grant is dead — reconnect first. */
   disabled?: boolean;
 }) => {
   const [lastSynced, setLastSynced] = useState<number | null>(null);
@@ -44,7 +38,6 @@ export const SyncButton = ({
     };
   }, []);
 
-  // Read the current "last synced" time when the client changes.
   useEffect(() => {
     if (!companyId) return;
     let active = true;
@@ -56,7 +49,6 @@ export const SyncButton = ({
     };
   }, [companyId]);
 
-  // If a sync finishes (e.g. triggered elsewhere), keep the timestamp fresh.
   useDataSynced(companyId, () => {
     fetchDataSyncStatus(companyId).then((s) => {
       if (mounted.current) setLastSynced(maxSyncTime(s));
@@ -87,10 +79,6 @@ export const SyncButton = ({
       return;
     }
 
-    // Spin until the backend reports the sync finished: the `syncing` flag going
-    // true→false (the reliable signal, ~5s). Fallback for older backends that
-    // don't send the flag: last_sync_at advancing. The ~36s cap is a safety net
-    // so it can never hang.
     let latest = before;
     let sawSyncing = false;
     for (let i = 0; i < 18; i++) {
@@ -100,17 +88,14 @@ export const SyncButton = ({
       latest = maxSyncTime(s) ?? latest;
       if (typeof s?.syncing === "boolean") {
         if (s.syncing) sawSyncing = true;
-        // Flag idle → sync done (or there was nothing to do). One poll's grace
-        // so a sync that hasn't flipped the flag true yet isn't missed.
         else if (sawSyncing || latest > before || i >= 1) break;
       } else if (latest > before) {
-        break; // no flag: timestamp advanced
+        break;
       }
     }
     if (mounted.current) {
       setLastSynced(latest > 0 ? latest : before);
       setSyncing(false);
-      // Tell whichever data view is open to re-fetch the freshly synced data.
       notifyDataSynced(companyId);
     }
   }, [companyId, lastSynced, syncing]);

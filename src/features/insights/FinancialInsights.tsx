@@ -59,9 +59,6 @@ export const FinancialInsights = ({ companyId }: { companyId: string }) => {
       }
       return;
     }
-    // Poll until the recompute finishes. Primary signal: the backend's
-    // `refreshing` flag going false (reliable, ~5s). Fallback for older backends
-    // without the flag: computed_at advancing. ~24s cap is a safety net.
     for (let i = 0; i < 12; i++) {
       await new Promise((res) => setTimeout(res, 2000));
       if (!mounted.current) return;
@@ -70,9 +67,9 @@ export const FinancialInsights = ({ companyId }: { companyId: string }) => {
       setSnap(r);
       if (!r.ok) continue;
       if (typeof r.data.refreshing === "boolean") {
-        if (!r.data.refreshing) break; // exact: recompute finished
+        if (!r.data.refreshing) break;
       } else if (r.data.status === "ok" && r.data.computed_at !== before) {
-        break; // fallback: snapshot timestamp advanced
+        break;
       }
     }
     if (mounted.current) setRefreshing(false);

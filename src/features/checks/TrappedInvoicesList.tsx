@@ -43,18 +43,15 @@ const ISSUE_META: Record<
   IssueType,
   { label: string; icon: JSX.Element }
 > = {
-  // Bank & reconciliation
   unprocessed_bank: { label: "Unprocessed bank", icon: <ReceiptIcon /> },
   unreconciled_bank: { label: "Unreconciled bank", icon: <ReceiptIcon /> },
   bank_balance_check: { label: "Bank balance check", icon: <ReceiptIcon /> },
   opening_balance_difference: { label: "O/Bal differences", icon: <WarningIcon /> },
-  // Duplicates
   duplicate_invoice: { label: "Duplicate invoice", icon: <CopyIcon /> },
   duplicate_bill: { label: "Duplicate bill", icon: <CopyIcon /> },
   duplicate_credit_note: { label: "Duplicate credit note", icon: <CopyIcon /> },
   duplicate_contact: { label: "Duplicate contact", icon: <BuildingIcon /> },
   duplicate_vendor: { label: "Duplicate vendor", icon: <BuildingIcon /> },
-  // Tax & VAT
   missing_tax: { label: "Missing tax", icon: <ReceiptIcon /> },
   invalid_tax_code: { label: "Invalid tax code", icon: <ReceiptIcon /> },
   sales_tax_missing: { label: "Sales tax missing", icon: <ReceiptIcon /> },
@@ -69,7 +66,6 @@ const ISSUE_META: Record<
     label: "Multi-tax suppliers",
     icon: <BuildingIcon />,
   },
-  // Categorisation & coding
   wrong_category: { label: "Wrong category", icon: <FolderIcon /> },
   unexpected_account: { label: "Unexpected account", icon: <FolderIcon /> },
   multi_account_supplier: {
@@ -98,7 +94,6 @@ const ISSUE_META: Record<
   },
   anomaly: { label: "Anomaly", icon: <WarningIcon /> },
   amount_outlier: { label: "Amount outlier", icon: <WarningIcon /> },
-  // Date & ageing
   future_dated: { label: "Future-dated", icon: <CalendarIcon /> },
   old_unpaid_bill: { label: "Overdue bills (we owe)", icon: <ClockIcon /> },
   old_unpaid_invoice: {
@@ -113,10 +108,8 @@ const ISSUE_META: Record<
     label: "Old purchase credit",
     icon: <CreditNoteIcon />,
   },
-  // Approval & status
   unapproved_invoice: { label: "Unapproved invoices", icon: <WarningIcon /> },
   unapproved_bill: { label: "Unapproved bills", icon: <WarningIcon /> },
-  // Contacts
   missing_vendor: { label: "Missing vendor", icon: <BuildingIcon /> },
   contact_defaults: {
     label: "Contact defaults missing",
@@ -126,10 +119,8 @@ const ISSUE_META: Record<
     label: "Inactive contacts",
     icon: <BuildingIcon />,
   },
-  // Document integrity
   missing_invoice_number: { label: "Missing invoice #", icon: <HashIcon /> },
   undocumented_bill: { label: "Undocumented bills", icon: <ReceiptIcon /> },
-  // Fixed assets
   low_cost_fixed_asset: {
     label: "Low-cost fixed asset",
     icon: <FixedAssetIcon />,
@@ -138,7 +129,6 @@ const ISSUE_META: Record<
     label: "Capital item review",
     icon: <FixedAssetIcon />,
   },
-  // Currency
   currency_mismatch: { label: "Currency mismatch", icon: <SwapIcon /> },
 };
 
@@ -357,7 +347,6 @@ const flaggedFromRow = (row: HealthCheckResult): FlaggedIssue[] => {
   if (row.result?.flagged && row.result.flagged.length > 0) {
     return row.result.flagged;
   }
-  // Legacy fallback: synthesize FlaggedIssue from error_msgs
   return splitErrors(row.error_msgs).map<FlaggedIssue>((m) => ({
     transaction_id: row.document_id ?? row.id,
     issue_type: "anomaly",
@@ -366,8 +355,6 @@ const flaggedFromRow = (row: HealthCheckResult): FlaggedIssue[] => {
   }));
 };
 
-// Chart-of-accounts diff for a wrong_category flag. Falls back to a single
-// value when current_code is null (Xero invoice had no LineItems/AccountCode).
 const CategoryDiff = ({ issue }: { issue: FlaggedIssue }) => {
   const fmtSide = (
     code: string | null | undefined,
@@ -505,15 +492,12 @@ const ISSUE_GROUPS: IssueGroup[] = [
   },
 ];
 
-// Flat list still needed for counts memo
 const ISSUE_TYPE_OPTIONS: IssueType[] = ISSUE_GROUPS.flatMap((g) => g.types);
 
 interface FilterSidebarProps {
   severityCounts: Record<Severity, number>;
   issueCounts: Record<IssueType, number>;
-  /** Single-select. Tap a chip to scope to it; tap again to clear. */
   severityFilter: Severity | null;
-  /** Single-select. Tap a chip to scope to it; tap again to clear. */
   issueFilter: IssueType | null;
   onToggleSeverity: (s: Severity) => void;
   onToggleIssue: (t: IssueType) => void;
@@ -606,7 +590,6 @@ const FilterSidebar = ({
         <div className="max-h-[60vh] overflow-y-auto">
           {(() => {
             const knownTypes = new Set(ISSUE_GROUPS.flatMap((g) => g.types as string[]));
-            // Surface data types not in our known groups under "Other".
             const unknownTypes = Object.keys(issueCounts).filter(
               (t) => !knownTypes.has(t) && (issueCounts[t as IssueType] ?? 0) > 0,
             );
@@ -695,18 +678,12 @@ const FilterSidebar = ({
 interface TrappedInvoicesListProps {
   companyId: string;
   refreshKey: number;
-  /** Latest AI enrichment status — controls the per-row "pending / fallback" UI. */
   aiSummaryReady?: boolean;
-  /** When false, hide the left filter sidebar and let the table take full width. */
   showFilters?: boolean;
   onResolved?: () => void;
-  /** Seed the issue-type filter (e.g. when drilled in from an Insights KPI). */
   initialIssueType?: IssueType | null;
 }
 
-// Per-row AI enrichment panel. One enrichment record per transaction, shared
-// across all flagged issues. Renders the panel when present, else a pending or
-// unavailable note depending on whether the summary is ready.
 const AI_SEVERITY_TONE: Record<
   AiEnrichment["severity_ai"],
   { badge: string; dot: string; label: string }
@@ -783,24 +760,24 @@ const AiRowPanel = ({
         @keyframes ai-flag-pulse {
           0%, 100% {
             background-color: rgb(255, 255, 255);
-            border-color: rgb(253, 164, 175);   /* rose-300 */
+            border-color: rgb(253, 164, 175);
             box-shadow: 0 0 0 0   rgba(244, 63, 94, 0.00),
                         0 0 0 0   rgba(244, 63, 94, 0.00);
           }
           50% {
-            background-color: rgb(255, 241, 242); /* rose-50 */
-            border-color: rgb(244, 63, 94);     /* rose-500 */
+            background-color: rgb(255, 241, 242);
+            border-color: rgb(244, 63, 94);
             box-shadow: 0 0 0 4px rgba(244, 63, 94, 0.18),
                         0 0 18px 2px rgba(244, 63, 94, 0.25);
           }
         }
         @keyframes ai-flag-stripe-pulse {
           0%, 100% {
-            background-color: rgb(244, 63, 94);  /* rose-500 */
+            background-color: rgb(244, 63, 94);
             box-shadow: 0 0 0 0 rgba(244, 63, 94, 0);
           }
           50% {
-            background-color: rgb(225, 29, 72);  /* rose-600 brighter */
+            background-color: rgb(225, 29, 72);
             box-shadow: 0 0 10px 1px rgba(244, 63, 94, 0.65);
           }
         }
@@ -809,7 +786,6 @@ const AiRowPanel = ({
           50%      { transform: scale(1.35); opacity: 1; }
         }
       `}</style>
-      {/* Red accent stripe on the left — pulses brighter as a warning beacon */}
       <span
         aria-hidden
         className="pointer-events-none absolute inset-y-0 left-0 w-1.5"
@@ -882,8 +858,6 @@ interface ActiveResolve {
   flaggedIndex: number;
 }
 
-// "Latest run" = rows within this window of the newest row. A single sweep
-// stamps rows close together; distinct runs are far enough apart not to merge.
 const LATEST_RUN_WINDOW_MS = 5 * 60_000;
 
 export const TrappedInvoicesList = ({
@@ -903,7 +877,6 @@ export const TrappedInvoicesList = ({
     initialIssueType,
   );
 
-  // Track the drill-in target so a stale filter never lingers and empties the table.
   useEffect(() => {
     setIssueFilter(initialIssueType);
   }, [initialIssueType]);
@@ -949,9 +922,6 @@ export const TrappedInvoicesList = ({
     [rows],
   );
 
-  // Anchor "latest run" on the newest row's own ran_at, not
-  // summary.last_audit_at — that tracks the latest audit overall and can be days
-  // newer than the broadest sweep shown here.
   const newestRanAtMs = useMemo(() => {
     if (enriched.length === 0) return null;
     return Math.max(...enriched.map((x) => new Date(x.row.ran_at).getTime()));
@@ -962,8 +932,6 @@ export const TrappedInvoicesList = ({
     return newestRanAtMs - LATEST_RUN_WINDOW_MS;
   }, [latestOnly, newestRanAtMs]);
 
-  // Shared filter predicates. `search` and the latest-run window are global
-  // narrowing; severity and issue type are the two sidebar facets.
   type Enriched = (typeof enriched)[number];
   const q = search.trim().toLowerCase();
   const passSearch = (x: Enriched) => {
@@ -978,9 +946,6 @@ export const TrappedInvoicesList = ({
   const passIssue = (x: Enriched) =>
     !issueFilter || x.issues.some((i) => i.issue_type === issueFilter);
 
-  // Sidebar facet counts, cross-filtered so a shown number equals what you get
-  // when you click it: each facet is counted within every other active filter
-  // but not itself.
   const { severityCounts, issueCounts } = useMemo(() => {
     const sev: Record<Severity, number> = { critical: 0, high: 0, medium: 0 };
     const ity: Record<string, number> = {};
@@ -998,7 +963,6 @@ export const TrappedInvoicesList = ({
       }
     }
     return { severityCounts: sev, issueCounts: ity as Record<IssueType, number> };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [enriched, severityFilter, issueFilter, search, latestCutoffMs]);
 
   const filtered = useMemo(() => {
@@ -1012,10 +976,8 @@ export const TrappedInvoicesList = ({
         if (sb !== sa) return sb - sa;
         return new Date(b.row.ran_at).getTime() - new Date(a.row.ran_at).getTime();
       });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [enriched, severityFilter, issueFilter, search, latestCutoffMs]);
 
-  // Count "latest run" rows so the toggle can show "Latest run (13)".
   const latestCount = useMemo(() => {
     if (newestRanAtMs === null) return 0;
     const cutoff = newestRanAtMs - LATEST_RUN_WINDOW_MS;
@@ -1090,8 +1052,6 @@ export const TrappedInvoicesList = ({
                 type="button"
                 onClick={() => {
                   setLatestOnly(false);
-                  // "All trapped" is a reset — drop every other filter so the
-                  // user actually sees every trapped document.
                   setSeverityFilter(null);
                   setIssueFilter(null);
                   setSearch("");

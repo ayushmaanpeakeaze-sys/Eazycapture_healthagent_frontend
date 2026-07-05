@@ -9,12 +9,9 @@ import {
 
 type State = "idle" | "opening" | "importing" | "done" | "error" | "unavailable";
 
-// The backend webhook (auth.creation) creates orgs and runs the first sync; the browser `connect` event is
-// only a UI signal, so we poll companies-panorama until the org(s) land. Reconnect uses the same flow.
 export const ConnectXeroButton = ({
   size = "sm",
 }: {
-  /** "sm" = compact nav pill (default); "lg" = prominent onboarding CTA. */
   size?: "sm" | "lg";
 }) => {
   const [state, setState] = useState<State>("idle");
@@ -32,22 +29,16 @@ export const ConnectXeroButton = ({
     return false;
   };
 
-  // OAuth done → ask the backend to create + sync the org(s), then poll until
-  // they land (the org is actually created by the backend webhook).
   const runImport = async (sync: boolean) => {
     connectedRef.current = true;
     uiRef.current?.close();
     setState("importing");
     if (sync) await syncNangoConnections();
-    await pollForOrgs(sync ? 20 : 40); // give the hosted-link flow longer
+    await pollForOrgs(sync ? 20 : 40);
     setState("done");
     window.location.assign("/clients");
   };
 
-  // IMPORTANT: open the Nango UI synchronously inside the click handler. If we
-  // await the session fetch first and open afterwards, the browser loses the
-  // user-gesture and blocks the pop-up (Safari especially). So: open now, fetch
-  // the token in the background, then setSessionToken once it's ready.
   const handleConnect = () => {
     setError(null);
     setConnectLink(null);
@@ -60,7 +51,6 @@ export const ConnectXeroButton = ({
         if (event.type === "connect") {
           runImport(true);
         } else if (event.type === "close") {
-          // User backed out before authorising → nothing was created.
           if (!connectedRef.current) setState("idle");
         } else if (event.type === "error") {
           setState("error");
@@ -73,13 +63,11 @@ export const ConnectXeroButton = ({
     createNangoConnectSession("xero")
       .then((res) => {
         if (!res.ok) {
-          // 401 already triggers a reload-to-login via the axios interceptor.
           uiRef.current?.close();
           setState(res.status === 503 ? "unavailable" : "error");
           setError(res.error);
           return;
         }
-        // Keep the hosted link as a fallback in case the modal was blocked.
         setConnectLink(res.session.connect_link ?? null);
         ui.setSessionToken(res.session.token);
       })
@@ -142,9 +130,6 @@ export const ConnectXeroButton = ({
         )}
         {label}
       </button>
-      {/* Fallback for blocked pop-ups: the hosted Nango link opens from a direct
-          user click, so it's never blocked. Opens in a new tab; this tab polls
-          for the org the backend webhook creates. */}
       {connectLink && (state === "opening" || state === "error") && (
         <a
           href={connectLink}

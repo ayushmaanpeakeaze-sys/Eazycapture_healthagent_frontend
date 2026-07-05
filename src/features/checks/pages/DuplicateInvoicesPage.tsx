@@ -48,11 +48,10 @@ const dupFlag = (r: HealthCheckResult, ruleId: string): FlaggedIssue | undefined
 
 interface MatchGroup {
   key: string;
-  keep: HealthCheckResult; // likely original
-  dup: HealthCheckResult | null; // duplicate (void candidate); null if partner not in feed
+  keep: HealthCheckResult;
+  dup: HealthCheckResult | null;
   dupFromFlag?: { invoice_number?: string | null; date?: string | null };
   flag: FlaggedIssue;
-  // true when the engine can't tell which copy is the duplicate (no void recommended).
   undecided: boolean;
 }
 
@@ -61,7 +60,6 @@ export type DuplicateRuleId =
   | "duplicate_bill"
   | "duplicate_credit_note";
 
-// Duplicate invoices / bills / credit notes as grouped keep-vs-void pairs.
 export const DuplicateInvoicesPage = ({
   companyId,
   ruleId,
@@ -69,7 +67,6 @@ export const DuplicateInvoicesPage = ({
 }: {
   companyId: string;
   ruleId: DuplicateRuleId;
-  /** Bump to force a re-fetch (e.g. after a "Run check" on the full page). */
   refreshKey?: number;
 }) => {
   const [rows, setRows] = useState<HealthCheckResult[]>([]);
@@ -90,7 +87,6 @@ export const DuplicateInvoicesPage = ({
 
     const load = async () => {
       if (showDismissed) {
-        // No per-row dismissed flag, so dismissed = (incl. dismissed) − (active).
         const [all, act] = await Promise.all([
           fetchTrappedInvoices({
             company_id: companyId,
@@ -131,7 +127,6 @@ export const DuplicateInvoicesPage = ({
     };
   }, [companyId, ruleId, showDismissed, refreshKey]);
 
-  // Build keep/void pairs, de-duped (both rows reference each other).
   const groups = useMemo<MatchGroup[]>(() => {
     const byTxn = new Map<string, HealthCheckResult>();
     for (const r of rows) {
@@ -149,7 +144,6 @@ export const DuplicateInvoicesPage = ({
         : undefined;
       seen.add(r.id);
       if (partner) seen.add(partner.id);
-      // null/undefined → review pair (engine isn't sure which is the duplicate).
       const undecided = f.this_is_likely_original == null;
       const keepIsR = f.this_is_likely_original !== false;
       const keep = keepIsR ? r : (partner ?? r);
@@ -168,7 +162,6 @@ export const DuplicateInvoicesPage = ({
         undecided,
       });
     }
-    // High-risk to the top, recurring (probably fine) to the bottom.
     const rank = (g: MatchGroup) => {
       const m = g.flag.match_reasons;
       if (m?.risk === "high") return -1;
@@ -187,7 +180,6 @@ export const DuplicateInvoicesPage = ({
         ? "credit note"
         : "invoice";
 
-  // Top AI insight — strongest match's AI enrichment (engine message fallback).
   const top = groups[0];
   const topAiText = top
     ? top.keep.ai?.explanation || top.dup?.ai?.explanation || top.flag.message || ""
@@ -202,7 +194,6 @@ export const DuplicateInvoicesPage = ({
     else setError(r.error ?? "Void failed");
   };
 
-  // dismiss / snooze / mark-ok act on the whole pair (both rows).
   const runPair = async (
     g: MatchGroup,
     action: BulkTrappedAction,
@@ -341,7 +332,6 @@ const MatchCard = ({
   };
 
   const mr = g.flag.match_reasons;
-  // Render the tier as words; confidence % is an optional muted suffix.
   const tl = (mr?.tier ?? g.flag.severity ?? "").toString().toLowerCase();
   const badge =
     tl === "low"
@@ -831,7 +821,7 @@ const Field = ({
 );
 
 const RoleTag = ({ role }: { role: "keep" | "void" | "review" }) => {
-  if (role === "review") return null; // review pairs carry no keep/duplicate label
+  if (role === "review") return null;
   return roleTagInner(role);
 };
 
@@ -891,7 +881,6 @@ const AmountChip = ({
       </Chip>
     );
   }
-  // Fallback (old rows w/o match_reasons): compare the two amounts.
   const a = g.keep.result?.amount;
   const b = g.dup?.result?.amount;
   if (a != null && b != null && Number(a) === Number(b))
@@ -917,4 +906,3 @@ const RefChip = ({ match }: { match: MatchReasons["reference_match"] }) => {
   if (match === "different") return <Chip bad>Different reference</Chip>;
   return <Chip>No reference</Chip>;
 };
-

@@ -9,7 +9,6 @@ import { TeamUser } from "../../types/auth.types";
 import { useAuth } from "@/features/auth/AuthProvider";
 
 interface TeamActivityViewProps {
-  /** Drill into a client when its connection row is clicked. */
   onPickClient?: (client: PanoramaClient) => void;
 }
 
@@ -115,7 +114,6 @@ export const TeamActivityView = ({ onPickClient }: TeamActivityViewProps) => {
 
   useEffect(() => {
     load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const events = useMemo<TeamEvent[]>(() => {
@@ -150,7 +148,6 @@ export const TeamActivityView = ({ onPickClient }: TeamActivityViewProps) => {
           at: u.created_at ?? null,
         });
       } else {
-        // Active team member has accepted the invite.
         out.push({
           id: `${u.id}-joined`,
           kind: "joined",

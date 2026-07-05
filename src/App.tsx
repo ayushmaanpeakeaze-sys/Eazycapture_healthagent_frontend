@@ -50,7 +50,6 @@ interface NavItem {
   label: string;
   description: string;
   icon: ReactNode;
-  /** Practice items use an absolute path; client items use a segment relative to /clients/:companyId. */
   path: string;
 }
 
@@ -83,7 +82,6 @@ const BatchIcon = (
 );
 const LogoMark = (
   <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 ring-1 ring-white/20">
-    {/* Falls back to the inline SVG below if the image is missing. */}
     <img
       src="/eazycapture-icon-white.png"
       alt="EazyCapture"
@@ -398,7 +396,6 @@ const ClientBreadcrumb = ({
   navCollapsed = false,
   onToggleNav,
 }: {
-  /** Null while the client is still being resolved (e.g. on a hard refresh). */
   client: PanoramaClient | null;
   companyId: string;
   onBack: () => void;
@@ -547,7 +544,6 @@ const PracticeLayout = () => {
   );
 };
 
-// Client resolved from :companyId via panorama lookup so the breadcrumb survives a refresh or deep link.
 const ClientLayout = () => {
   const { companyId = "" } = useParams();
   const navigate = useNavigate();
@@ -563,7 +559,6 @@ const ClientLayout = () => {
         setClient(res.results?.find((c) => c.company_id === companyId) ?? null);
       })
       .catch(() => {
-        /* breadcrumb falls back to the id if the lookup fails */
       });
     return () => {
       active = false;
@@ -574,10 +569,9 @@ const ClientLayout = () => {
   const current = location.pathname;
   const isActive = (seg: string) =>
     current === `${base}/${seg}` ||
-    current.startsWith(`${base}/${seg}/`) || // keep parent active on sub-pages
+    current.startsWith(`${base}/${seg}/`) ||
     ((current === base || current === `${base}/`) && seg === "overview");
 
-  // Collapsible rail — only on the checks page, where the table wants the room.
   const [navCollapsed, setNavCollapsed] = useState(
     () => localStorage.getItem("eazy.nav.collapsed") === "1",
   );
@@ -659,7 +653,6 @@ const ClientLayout = () => {
   );
 };
 
-// Thin adapters: read route params and hand the views their props + navigation callbacks.
 const useCompanyId = () => useParams().companyId ?? "";
 
 const FirmOverviewPage = () => <FirmOverview />;

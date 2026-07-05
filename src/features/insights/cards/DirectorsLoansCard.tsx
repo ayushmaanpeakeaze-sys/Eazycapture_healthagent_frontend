@@ -4,7 +4,7 @@ import { gbp } from "../lib/format";
 
 export const DirectorsLoansCard = ({ data }: { data: DirectorsLoansResponse }) => {
   const accounts = data.accounts ?? [];
-  const owesCompany = accounts.filter((a) => a.overdrawn); // director owes co.
+  const owesCompany = accounts.filter((a) => a.overdrawn);
   const owedByCompany = accounts.filter((a) => !a.overdrawn);
   const empty = !data.detected || accounts.length === 0;
 

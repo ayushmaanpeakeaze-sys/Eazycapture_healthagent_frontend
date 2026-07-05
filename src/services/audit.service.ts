@@ -57,10 +57,6 @@ export const runBatchHealthCheck = async (
   }
 };
 
-/**
- * Seed an instant demo batch for the Batch Inspector.
- * POST /api/v1/demo/run-outbound
- */
 export const runOutboundDemo = async (): Promise<OutboundDemoResponse> => {
   try {
     const { data } = await apiClient.post<OutboundDemoResponse>(
@@ -72,10 +68,6 @@ export const runOutboundDemo = async (): Promise<OutboundDemoResponse> => {
   }
 };
 
-/**
- * Kick off an async batch audit. Returns a batch_id immediately; consumer
- * should call subscribeBatchProgress() to stream stage updates over SSE.
- */
 export const dispatchBatchAsync = async (
   payload: BatchHealthCheckRequest,
 ): Promise<BatchAsyncDispatchResponse | { error: string }> => {
@@ -96,11 +88,6 @@ export const dispatchBatchAsync = async (
   }
 };
 
-/**
- * Open an SSE stream on /api/v1/audit/progress/{batch_id} and dispatch each
- * event to the handler. EventSource auto-ignores `:` heartbeat comments, so
- * the handler only sees real events. Returns a close() to tear down early.
- */
 export const subscribeBatchProgress = (
   batchId: string,
   handler: (evt: BatchProgressEvent) => void,
@@ -117,12 +104,10 @@ export const subscribeBatchProgress = (
         es.close();
       }
     } catch {
-      // Skip non-JSON lines.
     }
   };
 
   es.onerror = () => {
-    // Treat any error as fatal: tear down and surface to the caller.
     onError?.();
     es.close();
   };
@@ -171,7 +156,6 @@ export interface SettingsField {
   max?: number | null;
   step?: number | null;
   default?: unknown;
-  /** Raw option values for type "select" (e.g. ["invoice_date","due_date"]). */
   options?: string[] | null;
 }
 
@@ -187,10 +171,8 @@ export interface AuditConfigResponse {
   disabled_rules: string[];
   ignore_before: string | null;
   groups: AuditConfigGroup[];
-  /** Per-client setting overrides + their defaults (e.g. duplicate_*). */
   settings?: Record<string, unknown>;
   settings_defaults?: Record<string, unknown>;
-  /** Backend-driven field metadata per check (render controls from this). */
   settings_schema?: SettingsSchemaEntry[];
 }
 
@@ -226,7 +208,6 @@ export const saveAuditConfig = async (
   }
 };
 
-/** Save per-client check settings (e.g. duplicate_* overrides). */
 export const saveAuditSettings = async (
   companyId: string,
   settings: Record<string, unknown>,
@@ -245,8 +226,6 @@ export const saveAuditSettings = async (
   }
 };
 
-/** PUT audit-config with any of disabled_rules / ignore_before / settings.
- *  Echoes the cleaned/persisted config back so the form can re-hydrate. */
 export const saveAuditConfigFull = async (
   companyId: string,
   body: {
@@ -271,7 +250,6 @@ export const saveAuditConfigFull = async (
   }
 };
 
-/** Poll a historical-audit batch until done. */
 export const fetchSyncStatus = async (
   companyId: string,
   batchId: string,
@@ -287,9 +265,7 @@ export const fetchSyncStatus = async (
 };
 
 export interface DataSyncStatusResponse {
-  /** True while a Xero→DB sync is in flight. Absent on older backends. */
   syncing?: boolean;
-  /** Per-entity sync state keyed by name (contacts, invoices, bills, …). */
   entities: Record<
     string,
     { last_sync_at: string | null; [k: string]: unknown }
@@ -297,7 +273,6 @@ export interface DataSyncStatusResponse {
   [k: string]: unknown;
 }
 
-/** Latest Xero→DB sync timestamps per entity. Drives the "Last synced" label. */
 export const fetchDataSyncStatus = async (
   companyId: string,
 ): Promise<DataSyncStatusResponse | null> => {
@@ -312,7 +287,6 @@ export const fetchDataSyncStatus = async (
   }
 };
 
-/** The most recent last_sync_at across all entities, as epoch ms (or null). */
 export const maxSyncTime = (s: DataSyncStatusResponse | null): number | null => {
   if (!s?.entities) return null;
   const times = Object.values(s.entities)
@@ -321,7 +295,6 @@ export const maxSyncTime = (s: DataSyncStatusResponse | null): number | null => 
   return times.length ? Math.max(...times) : null;
 };
 
-/** Trigger a Xero→DB data sync (no audit). Returns once the job is queued. */
 export const triggerDataSync = async (
   companyId: string,
 ): Promise<{ ok: boolean; error?: string }> => {
@@ -339,7 +312,6 @@ export const triggerDataSync = async (
   }
 };
 
-/** Void a trapped invoice/bill. 400 HAS_PAYMENT_OR_CREDIT if paid/allocated. */
 export const voidTrapped = async (
   companyId: string,
   rowId: string,
@@ -363,8 +335,6 @@ export const voidTrapped = async (
   }
 };
 
-/** Issue a credit note against a trapped invoice/bill (offsets a paid duplicate
- *  that can't be voided). Optional reason. */
 export const creditNoteTrapped = async (
   companyId: string,
   rowId: string,
@@ -388,7 +358,6 @@ export const creditNoteTrapped = async (
   }
 };
 
-/** Approve a draft/submitted document in Xero (Status → AUTHORISED). */
 export const approveTrapped = async (
   companyId: string,
   rowId: string,
@@ -408,7 +377,6 @@ export const approveTrapped = async (
   }
 };
 
-/** Delete a draft document in Xero (Status → DELETED). */
 export const deleteTrapped = async (
   companyId: string,
   rowId: string,
@@ -428,7 +396,6 @@ export const deleteTrapped = async (
   }
 };
 
-/** Mark a trapped row as OK (accept the current coding — not an issue). */
 export const markOkTrapped = async (
   companyId: string,
   rowId: string,
@@ -448,7 +415,6 @@ export const markOkTrapped = async (
   }
 };
 
-/** Restore a previously marked-OK row back to the active list. */
 export const restoreTrapped = async (
   companyId: string,
   rowId: string,
@@ -469,8 +435,6 @@ export const restoreTrapped = async (
 
 export type BulkTrappedAction = "dismiss" | "snooze" | "mark_ok" | "restore";
 
-/** Apply an action to one or more trapped rows (a duplicate pair = both rows).
- *  dismiss → optional reason; snooze → days (+ optional reason); mark_ok → reason. */
 export const bulkTrappedAction = async (
   companyId: string,
   rowIds: string[],
@@ -514,7 +478,6 @@ export const fetchBankBalanceCheck = async (
   }
 };
 
-/** "Click to add balance" — save a manual per-bank-statement closing balance. */
 export const setStatementBalance = async (
   companyId: string,
   accountCode: string,
@@ -532,7 +495,6 @@ export const setStatementBalance = async (
   }
 };
 
-/** Exclude / re-include a bank account from the check. */
 export const excludeBankAccount = async (
   companyId: string,
   accountCode: string,
@@ -549,7 +511,6 @@ export const excludeBankAccount = async (
   }
 };
 
-/** Mark "OK" — uncleared but correct; drop from the issue total. */
 export const markBankBalanceOk = async (
   companyId: string,
   accountCode: string,
@@ -567,7 +528,6 @@ export const markBankBalanceOk = async (
   }
 };
 
-/** Add a note to a bank account for a period end. Optionally @mentions users. */
 export const addBankNote = async (
   companyId: string,
   accountCode: string,
@@ -584,7 +544,6 @@ export const addBankNote = async (
   }
 };
 
-/** List notes for one bank account at a period end. */
 export const fetchBankNotes = async (
   companyId: string,
   accountCode: string,
@@ -601,7 +560,6 @@ export const fetchBankNotes = async (
   }
 };
 
-/** Delete a single bank note by id. */
 export const deleteBankNote = async (
   companyId: string,
   noteId: string,
@@ -616,7 +574,6 @@ export const deleteBankNote = async (
   }
 };
 
-/** Upload a document (≤10MB) against a bank account / period end (multipart). */
 export const uploadBankDocument = async (
   companyId: string,
   accountCode: string,
@@ -627,7 +584,6 @@ export const uploadBankDocument = async (
     const form = new FormData();
     form.append("period_end", periodEnd);
     form.append("file", file);
-    // axios sets the multipart boundary header automatically for FormData bodies.
     const { data } = await healthClient.post<BankDocument>(
       `/bank-balance-check/${encodeURIComponent(accountCode)}/documents/?company_id=${encodeURIComponent(companyId)}`,
       form,
@@ -646,7 +602,6 @@ export const uploadBankDocument = async (
   }
 };
 
-/** List document metadata for one bank account at a period end. */
 export const fetchBankDocuments = async (
   companyId: string,
   accountCode: string,
@@ -663,7 +618,6 @@ export const fetchBankDocuments = async (
   }
 };
 
-/** Delete a single uploaded document by id. */
 export const deleteBankDocument = async (
   companyId: string,
   docId: string,
@@ -678,8 +632,6 @@ export const deleteBankDocument = async (
   }
 };
 
-/** Download a document. Auth is Bearer (header-only), so a bare <a href> can't
- *  authenticate — fetch the blob via healthClient, then trigger a browser save. */
 export const downloadBankDocument = async (
   companyId: string,
   docId: string,
@@ -717,7 +669,6 @@ export const fetchUnreconciledBankItems = async (
   }
 };
 
-/** Exclude / reinstate a bank account from the unreconciled check. */
 export const excludeUnreconciledBankAccount = async (
   companyId: string,
   accountCode: string,
@@ -811,7 +762,6 @@ export const restoreOpeningBalance = (companyId: string, periodEnd: string) =>
     {},
   );
 
-/** Account / tax-rate options for the "Change To" picker. Cache per company. */
 export const fetchCodingOptions = async (
   companyId: string,
 ): Promise<CodingOptions | null> => {
@@ -825,8 +775,6 @@ export const fetchCodingOptions = async (
   }
 };
 
-/** Apply a coding change to Xero (Unexpected Account → AccountCode,
- *  Unexpected Tax → TaxType). Posts via the apply-ai-fix field_updates path. */
 export const applyCodingFix = async (
   companyId: string,
   rowId: string,
@@ -855,8 +803,6 @@ export const applyCodingFix = async (
   }
 };
 
-/** Re-code a trapped line to a chosen account via the resolve endpoint
- *  (apply_category). Used by Low Cost Fixed Assets "Save changes". */
 export const recodeTrapped = async (
   companyId: string,
   rowId: string,
@@ -880,7 +826,6 @@ export const recodeTrapped = async (
   }
 };
 
-/** Upload a document attachment for an undocumented bill (base64 JSON body). */
 export const uploadAttachment = async (
   companyId: string,
   rowId: string,
@@ -904,7 +849,6 @@ export const uploadAttachment = async (
   }
 };
 
-/** Re-check whether an undocumented bill now has an attachment in Xero. */
 export const recheckAttachment = async (
   companyId: string,
   rowId: string,
@@ -926,7 +870,6 @@ export const recheckAttachment = async (
   }
 };
 
-/** One-click AI fix suggestion for a trapped row (void_duplicate etc.). */
 export const fetchSuggestFix = async (
   companyId: string,
   rowId: string,
@@ -1010,9 +953,7 @@ export interface TrappedInvoicesQuery {
   company_id?: string;
   limit?: number;
   include_dismissed?: boolean;
-  /** Include rows the user marked "OK" (multi-account/tax suppliers toggle). */
   include_marked_ok?: boolean;
-  /** Hide Money In/Out bank items (wrong-tax "Show bank payments" toggle OFF). */
   exclude_bank_items?: boolean;
 }
 
@@ -1021,11 +962,8 @@ export interface TrappedInvoicesResponse {
 }
 
 export interface HistoricalAuditDispatchOptions {
-  /** ISO date YYYY-MM-DD; omit for unbounded start. */
   date_from?: string | null;
-  /** ISO date YYYY-MM-DD; omit for unbounded end. */
   date_to?: string | null;
-  /** "duplicates" runs only the duplicate checks; "full" (or omitted) runs the whole audit. */
   scope?: "full" | "duplicates";
 }
 
@@ -1033,7 +971,6 @@ export const dispatchHistoricalAudit = async (
   companyId: string,
   range?: HistoricalAuditDispatchOptions,
 ): Promise<HistoricalAuditDispatchResponse | ServiceErrorDict> => {
-  // All query params optional: dates omitted → all transactions; scope omitted → full audit.
   const params = new URLSearchParams();
   if (range?.date_from) params.set("date_from", range.date_from);
   if (range?.date_to) params.set("date_to", range.date_to);
@@ -1075,24 +1012,16 @@ export interface ConnectedCompany {
 export interface PanoramaClient {
   company_id: string;
   name: string;
-  /** May be missing/null for never-connected orgs on the new FastAPI panorama. */
   integration_provider?: string | null;
   health_score: number | null;
   trapped_count: number;
-  /** Documents audited. NOTE: contacts are NOT included here. */
   post_audited_total: number;
-  /** Contacts audited — present once the backend adds it to the panorama row.
-   *  The blended health_score already uses (post_audited_total + this). */
   audited_contacts?: number | null;
-  /** Optional issue split, if the panorama exposes it. */
   open_document_issues?: number | null;
   open_contact_issues?: number | null;
   last_audit_at: string | null;
   top_issue: string | null;
   is_active?: boolean;
-  /** true ⇒ the Xero grant is dead (expired/revoked) → needs a full re-auth.
-   *  false = healthy. Distinct from is_active:false (user turned it off).
-   *  Always present in the panorama response. */
   needs_reconnect: boolean;
   nango_connection_id?: string | null;
   xero_tenant_id?: string | null;
@@ -1102,10 +1031,7 @@ export interface PanoramaResponse {
   results: PanoramaClient[];
   total: number;
   window_days: number;
-  /** Set when the request failed (auth / network) so the UI can distinguish
-   *  "couldn't load" from "genuinely zero clients". */
   error?: string;
-  /** True for a 401 — caller should prompt for a token / sign-in. */
   authRequired?: boolean;
 }
 
@@ -1138,7 +1064,6 @@ export const fetchCompaniesPanorama = async (
   }
 };
 
-/** Deactivate a connected org (is_active=false). Grant, connection and synced data are kept for reconnect. */
 export const disconnectCompany = async (
   companyId: string,
 ): Promise<{ ok: boolean; error?: string }> => {
@@ -1156,9 +1081,6 @@ export const disconnectCompany = async (
   }
 };
 
-/** "Remove" — hard-delete the org and ALL its data (irreversible). The Xero grant
- *  is NOT revoked (other orgs on the same login stay intact); the org is parked in
- *  "Removed Organisations" where it can be re-allowed. */
 export const deleteCompanyPermanently = async (
   companyId: string,
 ): Promise<{ ok: boolean; error?: string }> => {
@@ -1181,9 +1103,6 @@ export const deleteCompanyPermanently = async (
   }
 };
 
-/** "Permanently forget" — hard-delete the org AND revoke its Xero grant (only this
- *  org; others on the same login stay), then clear the exclusion. Gone everywhere —
- *  not even in "Removed Organisations". `revoked=false` = token was already dead. */
 export const forgetCompany = async (
   companyId: string,
 ): Promise<{ ok: boolean; revoked?: boolean; error?: string }> => {
@@ -1209,14 +1128,12 @@ export const forgetCompany = async (
   }
 };
 
-/** A deactivated org — kept in our DB, hidden from the dashboard until reconnect. */
 export interface DisconnectedCompany {
   company_id: string;
   name: string;
   xero_tenant_id?: string | null;
 }
 
-/** List orgs the user has disconnected (is_active=false) so they can reconnect. */
 export const fetchDisconnectedCompanies = async (): Promise<
   DisconnectedCompany[]
 > => {
@@ -1231,7 +1148,6 @@ export const fetchDisconnectedCompanies = async (): Promise<
   }
 };
 
-/** Reconnect — flips is_active back to true and triggers an incremental sync (no re-OAuth). */
 export const reconnectCompany = async (
   companyId: string,
 ): Promise<{ ok: boolean; error?: string }> => {
@@ -1247,13 +1163,11 @@ export const reconnectCompany = async (
   }
 };
 
-/** An org that was hard-deleted — excluded so the webhook won't re-create it. */
 export interface ExcludedOrg {
   xero_tenant_id: string;
   name: string;
 }
 
-/** List orgs that were permanently deleted (excluded from re-creation). */
 export const fetchExcludedOrgs = async (): Promise<ExcludedOrg[]> => {
   try {
     const { data } = await healthClient.get<{ excluded: ExcludedOrg[] }>(
@@ -1265,8 +1179,6 @@ export const fetchExcludedOrgs = async (): Promise<ExcludedOrg[]> => {
   }
 };
 
-/** Clear one org's exclusion so it can be re-created on the next Connect/sync.
- *  Per-org: only this tenant is re-allowed; others stay excluded. */
 export const reAllowExcludedOrg = async (
   xeroTenantId: string,
 ): Promise<{ ok: boolean; error?: string }> => {
@@ -1284,10 +1196,6 @@ export const reAllowExcludedOrg = async (
   }
 };
 
-/** Forget a removed org by tenant — revoke its Xero grant AND clear the exclusion
- *  so it drops off "Removed Organisations" and returns to Xero's allow-access list
- *  (reconnect needs a fresh Xero authorisation). Removed orgs have no company_id,
- *  so this goes via the excluded-org route rather than /company/{id}/. */
 export const forgetExcludedOrg = async (
   xeroTenantId: string,
 ): Promise<{ ok: boolean; revoked?: boolean; error?: string }> => {
@@ -1308,21 +1216,15 @@ export const forgetExcludedOrg = async (
 export type NotificationKind = "alert" | "event";
 export type NotificationSeverity = "critical" | "watch" | "info";
 
-/** One feed row — a health-score alert, or a team/connect activity event. */
 export interface NotificationItem {
   kind: NotificationKind;
-  /** Notification id — only on events (kind:"event"); used to delete. Alerts
-   *  are live-computed and have no id. */
   id?: string | null;
-  /** Machine type, e.g. "health_drop" | "invite_sent" | "org_connected". */
   type: string;
   severity: NotificationSeverity | string;
   title: string;
   detail?: string | null;
-  /** Who did it — present on events (invites, access changes, connects). */
   actor_email?: string | null;
   company_id?: string | null;
-  /** ISO timestamp. */
   at: string;
 }
 
@@ -1331,8 +1233,6 @@ export interface NotificationsResponse {
   items: NotificationItem[];
 }
 
-/** Unified notifications feed: health alerts (with real score drops) + team /
- *  connect events. Replaces the old client-side derivation. */
 export const fetchNotifications = async (
   limit = 50,
 ): Promise<NotificationsResponse> => {
@@ -1349,8 +1249,6 @@ export const fetchNotifications = async (
   }
 };
 
-/** Delete one stored event notification. Alerts (kind:"alert") have no id and
- *  can't be deleted — they re-derive on the next fetch. */
 export const deleteNotification = async (
   id: string,
 ): Promise<{ ok: boolean; error?: string }> => {
@@ -1366,7 +1264,6 @@ export const deleteNotification = async (
   }
 };
 
-/** Clear all stored events. Live alerts are unaffected — re-derived next fetch. */
 export const clearNotifications = async (): Promise<{
   ok: boolean;
   deleted?: number;

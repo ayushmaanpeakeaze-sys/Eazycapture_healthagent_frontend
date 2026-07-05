@@ -8,10 +8,6 @@ interface TeamLoginPageProps {
   onLoggedIn: () => void;
 }
 
-/**
- * Dedicated team-member login page (route: /team-login). Same backend login();
- * the JWT's role drives the UI.
- */
 export const TeamLoginPage = ({ onLoggedIn }: TeamLoginPageProps) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -33,7 +29,6 @@ export const TeamLoginPage = ({ onLoggedIn }: TeamLoginPageProps) => {
       setError(res.error);
       return;
     }
-    // Team-members only: login() already stored the token, so undo it for others.
     if (res.data.role !== "team_member") {
       authStorage.clear();
       setLoading(false);

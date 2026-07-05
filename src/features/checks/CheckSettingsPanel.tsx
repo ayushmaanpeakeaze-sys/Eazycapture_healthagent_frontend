@@ -11,22 +11,17 @@ import {
 
 const DONE = new Set(["completed", "complete", "done", "success", "finished"]);
 
-// Checks that can run via the fast duplicates-only scope (~8s vs ~60s full).
 const DUP_CHECKS = new Set([
   "duplicate_invoice",
   "duplicate_bill",
   "duplicate_credit_note",
 ]);
 
-// Checks that reuse another's schema: duplicate settings are stored globally by
-// field key and drive one engine, so duplicate bills share the invoice knobs.
-// The master on/off toggle still targets the scoped check (see re-key below).
 export const SETTINGS_ALIAS: Record<string, string> = {
   duplicate_bill: "duplicate_invoice",
   duplicate_credit_note: "duplicate_invoice",
 };
 
-// When a check borrows another's schema, swap the noun so the copy reads right.
 const SETTINGS_NOUN: Record<string, { from: RegExp; to: string }[]> = {
   duplicate_bill: [
     { from: /\bInvoices\b/g, to: "Bills" },
@@ -52,8 +47,6 @@ const relabel = (
   return subs.reduce((acc, s) => acc.replace(s.from, s.to), text);
 };
 
-// Backend-driven check settings rendered from audit-config `settings_schema` +
-// `groups`. Used as the Checks-landing drawer or scoped to one check.
 export const CheckSettingsPanel = ({
   companyId,
   onClose,
@@ -62,9 +55,7 @@ export const CheckSettingsPanel = ({
 }: {
   companyId: string;
   onClose: () => void;
-  /** Called after a save (and after a re-run completes). */
   onSaved?: () => void;
-  /** Limit the panel to one check key (e.g. "duplicate_invoice"). */
   scopeCheck?: string;
 }) => {
   const [cfg, setCfg] = useState<AuditConfigResponse | null>(null);
@@ -105,7 +96,6 @@ export const CheckSettingsPanel = ({
     };
   }, [companyId]);
 
-  // Master on/off label per check (from groups → rule label).
   const ruleLabel = useMemo(() => {
     const m: Record<string, string> = {};
     for (const g of cfg?.groups ?? [])
@@ -113,13 +103,10 @@ export const CheckSettingsPanel = ({
     return m;
   }, [cfg]);
 
-  // Resolve any alias, then re-key the entry to the scoped check so the on/off
-  // toggle targets the right rule while the fields stay the shared engine knobs.
   const resolved = scopeCheck ? SETTINGS_ALIAS[scopeCheck] ?? scopeCheck : null;
   const schema = (cfg?.settings_schema ?? [])
     .filter((e) => !resolved || e.check === resolved)
     .map((e) => {
-      // Borrowed schema → re-key to the scoped check and relabel its copy.
       if (!scopeCheck || e.check === scopeCheck) return e;
       return {
         ...e,
@@ -171,7 +158,6 @@ export const CheckSettingsPanel = ({
     if (!ok) return;
     setRunning(true);
     setStatus("Starting audit…");
-    // Duplicate checks use the fast duplicates-only scope; others run full.
     const scope =
       scopeCheck && DUP_CHECKS.has(scopeCheck) ? "duplicates" : undefined;
     const d = await dispatchHistoricalAudit(companyId, { scope });
@@ -201,7 +187,6 @@ export const CheckSettingsPanel = ({
   };
 
   const busy = saving || running;
-  // Duplicate checks only update after a re-run, so a bare "Save" is pointless.
   const isDup = !!scopeCheck && DUP_CHECKS.has(scopeCheck);
 
   return (
@@ -390,7 +375,6 @@ const FieldControl = ({
       </div>
     );
   }
-  // amount / list / fallback → text input
   return (
     <div>
       <Label field={field} />

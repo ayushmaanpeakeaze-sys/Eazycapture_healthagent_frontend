@@ -21,7 +21,7 @@ const isContactRow = (r: HealthCheckResult): boolean =>
   (r.result?.flagged ?? []).some((f) => f.issue_type === RULE);
 
 interface ContactLine {
-  id: string | null; // row id (for dismiss); null if partner not in the feed
+  id: string | null;
   name: string;
   helper: ContactHelper | null;
   xeroUrl: string | null;
@@ -29,15 +29,13 @@ interface ContactLine {
 
 interface ContactMatch {
   key: string;
-  sim: number; // 0..1
-  vat: string; // vat_status
+  sim: number;
+  vat: string;
   isSplit: boolean;
   a: ContactLine;
   b: ContactLine;
 }
 
-// Two-line match blocks per duplicate pair. Fed by a full audit, not the
-// duplicates-only run.
 export const DuplicateContactsPage = ({
   companyId,
   refreshKey = 0,
@@ -62,7 +60,6 @@ export const DuplicateContactsPage = ({
 
     const load = async () => {
       if (showDismissed) {
-        // Dismissed-only = (everything incl. dismissed) − (currently active).
         const [all, act] = await Promise.all([
           fetchTrappedInvoices({
             company_id: companyId,
@@ -105,9 +102,7 @@ export const DuplicateContactsPage = ({
     };
   }, [companyId, showDismissed, refreshKey]);
 
-  // Backend emits two rows per match (A→B and B→A); pair them on the sorted key.
   const matches = useMemo<ContactMatch[]>(() => {
-    // Index by both transaction_id and document_id so partner lookup is robust.
     const byId = new Map<string, HealthCheckResult>();
     for (const r of rows) {
       const f = contactFlag(r);
@@ -124,7 +119,6 @@ export const DuplicateContactsPage = ({
       const key = [myId, partnerId].sort().join("|");
       if (seen.has(key)) continue;
       seen.add(key);
-      // The partner row is only needed for its Xero link + dismiss id.
       const partnerRow = partnerId ? byId.get(partnerId) : undefined;
       out.push({
         key,

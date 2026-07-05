@@ -46,7 +46,6 @@ const groupRows = (
   return groups;
 };
 
-// Split a CSV line, honoring quoted values with commas and escaped ("") quotes.
 const splitCsvLine = (line: string): string[] => {
   const out: string[] = [];
   let cur = "";
@@ -77,7 +76,6 @@ const splitCsvLine = (line: string): string[] => {
   return out.map((f) => f.trim());
 };
 
-// Parse header-row CSV; header names match case-insensitively with normalized spaces/underscores.
 const parseCsv = (raw: string): BatchTransaction[] => {
   const lines = raw
     .split(/\r?\n/)
@@ -125,7 +123,6 @@ const parseCsv = (raw: string): BatchTransaction[] => {
   return txs;
 };
 
-// Coerce loosely-shaped JSON into BatchTransaction[]. Returns [] if invalid.
 const parseTransactionsInput = (raw: string): BatchTransaction[] => {
   let parsed: unknown;
   try {
@@ -241,7 +238,6 @@ export const BatchAuditInspector = () => {
       setError(null);
     };
     reader.readAsText(file);
-    // reset input so the same file can be re-selected later
     e.target.value = "";
   };
 

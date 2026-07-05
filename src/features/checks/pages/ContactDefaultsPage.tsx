@@ -17,7 +17,6 @@ const EMPTY: CdDefaults = {
   purchases_tax: "",
 };
 
-// Editable contact-defaults table; Confirm writes the changed fields back to Xero.
 export const ContactDefaultsPage = ({ companyId }: { companyId: string }) => {
   const [data, setData] = useState<ContactDefaultsResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -57,7 +56,6 @@ export const ContactDefaultsPage = ({ companyId }: { companyId: string }) => {
     };
   }, [companyId, missingOnly, includeDismissed]);
 
-  // "Show dismissed" ON → only the dismissed ones (empty if none yet).
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     return (data?.contacts ?? []).filter(
@@ -67,11 +65,10 @@ export const ContactDefaultsPage = ({ companyId }: { companyId: string }) => {
     );
   }, [data, search, includeDismissed]);
 
-  // Flip dismissed locally so the row updates without a refetch (backend persists it).
   const setDismissedFlag = (id: string, val: boolean) =>
     setData((d) => {
       if (!d) return d;
-      const delta = val ? -1 : 1; // dismiss removes from the active counts
+      const delta = val ? -1 : 1;
       return {
         ...d,
         contacts: d.contacts.map((c) =>
@@ -110,7 +107,6 @@ export const ContactDefaultsPage = ({ companyId }: { companyId: string }) => {
     }));
 
   const confirm = async (id: string) => {
-    // Send only the fields that actually changed vs current_defaults.
     const cur =
       data?.contacts.find((c) => c.contact_id === id)?.current_defaults ?? EMPTY;
     const ed = edits[id] ?? EMPTY;

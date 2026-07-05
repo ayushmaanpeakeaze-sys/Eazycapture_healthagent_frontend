@@ -34,7 +34,6 @@ export class DocumentServiceError extends Error {
   }
 }
 
-/** Coerce FastAPI's `detail` (string | array | object) into a readable string. */
 const formatDetail = (detail: unknown, fallback: string): string => {
   if (detail == null) return fallback;
   if (typeof detail === "string") return detail;
@@ -92,7 +91,6 @@ export const validateInvoice = async (
   }
 };
 
-/** Publish-time gate: returns { blocked, result }; blocked === true shows validation_errors. */
 export const precheckPublishingDocument = async (
   payload: PrecheckRequest,
 ): Promise<PrecheckResponse> => {
@@ -107,7 +105,6 @@ export const precheckPublishingDocument = async (
   }
 };
 
-/** List persisted firewall results — every precheck/publish attempt is saved. */
 export const fetchHealthCheckResults = async (
   query: HealthCheckResultsQuery = {},
 ): Promise<HealthCheckResultsResponse> => {
@@ -132,7 +129,6 @@ export const fetchHealthCheckResults = async (
   }
 };
 
-/** Org's valid tax rates for the tax-code dropdowns; send tax_type to /resolve/, show name. */
 export const fetchTaxRates = async (
   companyId: string,
   limit = 100,
@@ -149,7 +145,6 @@ export const fetchTaxRates = async (
   }
 };
 
-/** AI enrichment status for a completed batch — poll until status complete && ai_summary_ready. */
 export const fetchAiStatus = async (
   batchId: string,
 ): Promise<AiStatusResponse> => {
@@ -163,7 +158,6 @@ export const fetchAiStatus = async (
   }
 };
 
-/** Ask the AI to draft a fix plan for a single trapped row (synchronous). */
 export const suggestFix = async (
   rowId: string,
   companyId: string,
@@ -178,7 +172,6 @@ export const suggestFix = async (
   }
 };
 
-/** Apply the AI-drafted fix to Xero. Pass the shown suggestion to skip a second LLM call. */
 const KNOWN_ERROR_CODES: ApplyAiFixErrorCode[] = [
   "LINE_ITEM_FIX_NOT_SUPPORTED",
   "NO_FIELD_UPDATES",
@@ -235,7 +228,6 @@ export const applyAiFix = async (
   }
 };
 
-/** Resolve a trapped row — marks resolved=true and drops it from the default feed (kept in DB). */
 export const resolveHealthCheckRow = async (
   rowId: string,
   companyId: string,
@@ -252,7 +244,6 @@ export const resolveHealthCheckRow = async (
   }
 };
 
-/** Mark a trapped row as a false positive — drops it from the feed. */
 export const dismissTrapped = async (
   rowId: string,
   companyId: string,

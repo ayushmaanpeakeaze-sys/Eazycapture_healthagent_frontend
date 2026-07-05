@@ -31,7 +31,6 @@ export const authStorage = {
   isLoggedIn: () => !!window.localStorage.getItem(TOKEN_KEY)?.trim(),
 };
 
-// FastAPI returns `detail` as a string or an array of validation objects — coerce either to text.
 const fmtDetail = (detail: unknown): string | null => {
   if (detail == null) return null;
   if (typeof detail === "string") return detail;
@@ -91,9 +90,6 @@ export interface RegisterOtpRequest {
   fullName?: string;
 }
 
-// Step 1 of signup: email a 6-digit code. The account is NOT created yet — the
-// backend holds the (hashed) details ~10 min until the code is verified.
-// Re-calling overwrites the previous code (used by "Resend").
 export const requestRegisterOtp = async (
   req: RegisterOtpRequest,
 ): Promise<
@@ -122,7 +118,6 @@ export const requestRegisterOtp = async (
   }
 };
 
-// Step 2 of signup: verify the code → creates the firm + admin and logs in.
 export const verifyRegisterOtp = async (
   email: string,
   code: string,
@@ -142,7 +137,6 @@ export const verifyRegisterOtp = async (
   }
 };
 
-/** Public — resolves an invite token to the invited email. Returns null only on transport failure. */
 export const fetchInviteInfo = async (
   token: string,
 ): Promise<InviteInfoResponse | null> => {
@@ -209,15 +203,12 @@ export const listUsers = async (): Promise<TeamUser[]> => {
     const { data } = await apiClient.get<{ users: TeamUser[] } | TeamUser[]>(
       "/api/v1/auth/users",
     );
-    // Backend may return { users: [...] } or a bare array.
     return Array.isArray(data) ? data : (data as { users: TeamUser[] }).users ?? [];
   } catch {
     return [];
   }
 };
 
-/** Replace an existing member's client access (no re-invite). Sends the FULL
- *  list — pass all orgs they should keep, not just the new one. */
 export const setUserCompanies = async (
   userId: string,
   companyIds: string[],

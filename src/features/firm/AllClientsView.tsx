@@ -14,7 +14,6 @@ import { ReconnectBanner } from "@/features/integrations/ReconnectBanner";
 import { RemovedOrgs } from "@/features/integrations/RemovedOrgs";
 import { XeroOnboarding } from "@/features/integrations/XeroOnboarding";
 
-// Bank-reconciliation fields live on firm-summary, not companies-panorama, so we fetch and merge by company_id.
 interface BankBits {
   unreconciled: number | null;
   lastReconciled: string | null;
@@ -70,7 +69,6 @@ const scoreTone = (score: number | null): ScoreTone => {
   return { text: "text-rose-700", dot: "bg-rose-500", label: "At risk" };
 };
 
-// Backend doesn't always send `integration_provider`; derive it from the connection IDs (xero_tenant_id ⇒ XERO).
 const effectiveProvider = (
   r: Pick<
     PanoramaClient,
@@ -178,7 +176,6 @@ const TrashIcon = ({ className }: { className?: string }) => (
   </svg>
 );
 
-// Circle-slash — "revoke access", used for Permanently forget.
 const BanIcon = ({ className }: { className?: string }) => (
   <svg
     viewBox="0 0 24 24"
@@ -227,9 +224,7 @@ const ProviderCircle = ({ provider }: { provider?: string | null }) => {
 
 const StatusIcons = ({ r }: { r: PanoramaClient }) => {
   const provider = effectiveProvider(r);
-  // Connected = we have a live integration for it (provider resolved).
   const connected = !!provider;
-  // Dead Xero grant — must never look connected.
   const dead = !!r.needs_reconnect;
   return (
     <div className="flex items-center gap-1.5">
@@ -380,7 +375,6 @@ const KpiStat = ({
 
 interface AllClientsViewProps {
   onPick: (client: PanoramaClient) => void;
-  /** When set (team member with selected access), only show these IDs. */
   restrictToIds?: string[];
 }
 
@@ -397,16 +391,13 @@ export const AllClientsView = ({ onPick, restrictToIds }: AllClientsViewProps) =
     {},
   );
   const [nonce, setNonce] = useState(0);
-  // Disconnect: which org is awaiting confirm, and which is mid-request.
   const [confirmTarget, setConfirmTarget] = useState<PanoramaClient | null>(null);
   const [disconnecting, setDisconnecting] = useState<string | null>(null);
   const [disconnectError, setDisconnectError] = useState<string | null>(null);
-  // Remove: hard-delete but keep the Xero grant (type-to-confirm, irreversible).
   const [deleteTarget, setDeleteTarget] = useState<PanoramaClient | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState("");
-  // Permanently forget: hard-delete AND revoke the Xero grant (gone everywhere).
   const [forgetTarget, setForgetTarget] = useState<PanoramaClient | null>(null);
   const [forgetting, setForgetting] = useState<string | null>(null);
   const [forgetError, setForgetError] = useState<string | null>(null);
@@ -443,7 +434,7 @@ export const AllClientsView = ({ onPick, restrictToIds }: AllClientsViewProps) =
     setDisconnecting(null);
     if (res.ok) {
       setConfirmTarget(null);
-      setNonce((n) => n + 1); // refetch — the org drops off the list
+      setNonce((n) => n + 1);
     } else {
       setDisconnectError(res.error ?? "Disconnect failed.");
     }
@@ -459,7 +450,7 @@ export const AllClientsView = ({ onPick, restrictToIds }: AllClientsViewProps) =
     if (res.ok) {
       setDeleteTarget(null);
       setDeleteConfirm("");
-      setNonce((n) => n + 1); // refetch — the org drops off, parked in Removed
+      setNonce((n) => n + 1);
     } else {
       setDeleteError(res.error ?? "Delete failed.");
     }
@@ -480,13 +471,12 @@ export const AllClientsView = ({ onPick, restrictToIds }: AllClientsViewProps) =
           ? `“${target.name}” removed — its Xero token was already expired, nothing to revoke.`
           : `“${target.name}” forgotten. Xero access revoked — it’s back in Xero’s allow-access list for a fresh reconnect.`,
       );
-      setNonce((n) => n + 1); // refetch — the org is gone everywhere
+      setNonce((n) => n + 1);
     } else {
       setForgetError(res.error ?? "Forget failed.");
     }
   };
 
-  // Bank-rec columns come from firm-summary, merged by company_id. Best-effort: failure just shows "—".
   useEffect(() => {
     let active = true;
     fetchFirmSummary().then((r) => {
@@ -509,7 +499,6 @@ export const AllClientsView = ({ onPick, restrictToIds }: AllClientsViewProps) =
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
 
-    // Defensive: re-apply the provider chip client-side in case the backend returns mixed providers. QBO and QUICKBOOKS are equivalent.
     const providerMatches = (p?: string | null): boolean => {
       if (provider === "all") return true;
       if (!p) return false;
@@ -538,14 +527,12 @@ export const AllClientsView = ({ onPick, restrictToIds }: AllClientsViewProps) =
     } else if (sortKey === "trapped") {
       sorted.sort((a, b) => b.trapped_count - a.trapped_count);
     } else if (sortKey === "score") {
-      // null scores last
       sorted.sort((a, b) => {
         const av = a.health_score ?? 101;
         const bv = b.health_score ?? 101;
         return av - bv;
       });
     } else {
-      // severity: worst-first — low score + high trapped first; nulls last
       sorted.sort((a, b) => {
         const av = a.health_score ?? 999;
         const bv = b.health_score ?? 999;
@@ -568,7 +555,6 @@ export const AllClientsView = ({ onPick, restrictToIds }: AllClientsViewProps) =
     return { risky, healthy, trapped };
   }, [filtered]);
 
-  // Empty state: no active orgs shows onboarding — firm-wide only, never when scoped to fixed ids.
   if (!loading && !restrictToIds && rows.length === 0 && !loadError && !authRequired) {
     return (
       <XeroOnboarding reloadKey={nonce} onChanged={() => setNonce((n) => n + 1)} />
@@ -1028,7 +1014,6 @@ export const AllClientsView = ({ onPick, restrictToIds }: AllClientsViewProps) =
                   const tone = scoreTone(r.health_score);
                   const ref = clientRef(r.company_id, idx);
                   const bank = bankByCompany[r.company_id];
-                  // State A: dead Xero grant — stale data, no drill-in until re-auth.
                   const needsReconnect = !!r.needs_reconnect;
                   return (
                     <tr

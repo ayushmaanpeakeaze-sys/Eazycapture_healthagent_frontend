@@ -9,8 +9,6 @@ import {
   UnreconciledBankResponse,
 } from "@/types/audit.types";
 
-// We can only see the ledger side (Received + Spent); "Unexplained" needs Xero's
-// Finance API, so it's null here rather than a misleadingly low 0.
 export const UnreconciledBankItemsPage = ({
   companyId,
   refreshKey = 0,

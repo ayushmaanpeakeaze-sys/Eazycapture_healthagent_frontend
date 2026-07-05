@@ -78,7 +78,6 @@ const SeverityDonut = ({
           stroke="rgba(15,23,42,0.07)"
           strokeWidth="8"
         />
-        {/* Only render segments when there's real flagged data. */}
         {total > 0 &&
           segments.map((seg) => {
             if (seg.count === 0) return null;
@@ -208,7 +207,6 @@ interface LaneStage {
   label: string;
   value: number | string;
   tone: LaneTone;
-  /** Small denominator line under the value, e.g. "of 51". */
   sub?: string;
 }
 
@@ -391,14 +389,12 @@ export const LedgerHealthDashboard = ({
   const [error, setError] = useState<string | null>(null);
   const [severityCounts, setSeverityCounts] =
     useState<SeverityCounts>(ZERO_SEV);
-  // Outbound counts derive from the audit log (pre_ledger + preview), not the summary's placeholder fields.
   const [prePublish, setPrePublish] = useState({ blocked: 0, passed: 0 });
 
   const load = async () => {
     setLoading(true);
     setError(null);
     try {
-      // Summary drives the health score; stats carries the document vs contact split.
       const [data, statsData] = await Promise.all([
         fetchLedgerHealthSummary(companyId),
         fetchHealthStats(companyId),
@@ -412,7 +408,6 @@ export const LedgerHealthDashboard = ({
     } finally {
       setLoading(false);
     }
-    // Pull outbound review counts from the audit log.
     try {
       const [pre, prev] = await Promise.all([
         fetchHealthCheckResults({
@@ -448,7 +443,6 @@ export const LedgerHealthDashboard = ({
     }
   };
 
-  // Trapped invoices feed the severity breakdown ring (critical / high / medium).
   const loadSeverity = async () => {
     try {
       const data = await fetchTrappedInvoices({
@@ -470,17 +464,13 @@ export const LedgerHealthDashboard = ({
 
   useEffect(() => {
     loadSeverity();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [companyId]);
 
-  // After a Xero→DB sync finishes, pull the fresh data into every card.
   useDataSynced(companyId, () => {
     load();
     loadSeverity();
   });
 
-  // Overview "Refresh" = re-audit already-synced data, then refetch every KPI.
-  // (Pulling fresh data from Xero is the separate Sync button in the breadcrumb.)
   const refreshOverview = async () => {
     setReauditing(true);
     setAuditStage("Starting re-audit…");
@@ -491,7 +481,6 @@ export const LedgerHealthDashboard = ({
         setError(res.error);
         return;
       }
-      // Poll every 2s until the batch completes (cap ~5 min).
       for (let i = 0; i < 150; i++) {
         await new Promise((r) => setTimeout(r, 2000));
         const st = await fetchHistoricalAuditStatus(res.batch_id);
@@ -520,7 +509,6 @@ export const LedgerHealthDashboard = ({
     [severityCounts],
   );
 
-  // Documents drive the score; contacts are a separate pool. Older backends have no split, so fall back to trapped_count.
   const auditedDocs =
     stats?.audited_documents ?? summary?.post_audited_total ?? null;
   const docIssues =
@@ -536,7 +524,6 @@ export const LedgerHealthDashboard = ({
     auditedDocs !== null || auditedContacts !== null
       ? (auditedDocs ?? 0) + (auditedContacts ?? 0)
       : null;
-  // Top-issue counts sum to less than the real total, so anchor percentages to open_issues and show the remainder.
   const topIssuesShownSum =
     summary?.top_issues.reduce((acc, i) => acc + i.count, 0) ?? 0;
   const topIssuesTotal = totalIssues ?? topIssuesShownSum;
@@ -544,7 +531,6 @@ export const LedgerHealthDashboard = ({
 
   useEffect(() => {
     load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [companyId]);
 
   return (
@@ -874,7 +860,6 @@ export const LedgerHealthDashboard = ({
               );
               const max = summary.top_issues[0]?.count ?? 1;
               const widthPct = Math.max(6, (issue.count / max) * 100);
-              // New shape: { issue_type, sample_msg, count }; legacy: { message, count }.
               const label =
                 issue.sample_msg ??
                 issue.message ??

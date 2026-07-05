@@ -10,8 +10,6 @@ interface AcceptInvitePageProps {
   onAccepted: () => void;
 }
 
-// Read email from the stored JWT synchronously, so the wrong-account gate
-// decides on first render without a flash of the password form.
 const currentEmailFromToken = (): string | null => {
   try {
     const t = window.localStorage.getItem("eazy.auth.token");
@@ -128,10 +126,8 @@ export const AcceptInvitePage = ({
     );
   }
 
-  // Valid invite, or info unavailable: fall through to the form.
   const invitedEmail = info?.email ?? null;
   const sessionEmail = me?.email ?? currentEmailFromToken();
-  // Signed in as someone else: force a sign-out so they accept as the invitee.
   const wrongAccount =
     isLoggedIn &&
     !!sessionEmail &&

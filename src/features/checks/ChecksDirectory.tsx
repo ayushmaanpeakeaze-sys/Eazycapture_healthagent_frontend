@@ -61,8 +61,6 @@ const IMP_STYLE: Record<Importance, { label: string; chip: string }> = {
   medium: { label: "Medium", chip: "bg-amber-50 text-amber-700 ring-amber-200" },
 };
 
-// A duplicate match is a pair of rows = one issue, but the backend counts rows,
-// so fold to matches (round up for an orphaned partner row).
 const DUP_KEYS = new Set([
   "duplicate_invoice",
   "duplicate_bill",
@@ -74,8 +72,6 @@ const issueCount = (key: string, rawRows: number) =>
 
 type CheckFilter = "all" | "attention" | "critical" | "high" | "medium";
 
-// Checks overview: main column lists detailed results with an inline expand;
-// side lists every check (tap → its dedicated page).
 export const ChecksDirectory = ({
   companyId,
   refreshKey = 0,
@@ -91,8 +87,6 @@ export const ChecksDirectory = ({
   const [configurable, setConfigurable] = useState<Set<string>>(new Set());
   const [settingsCheck, setSettingsCheck] = useState<string | null>(null);
   const [nonce, setNonce] = useState(0);
-  // Bank checks whose real counts live in dedicated endpoints, not the audit
-  // feed (by_issue_type = 0), which would otherwise show a false "OK".
   const [extraCounts, setExtraCounts] = useState<Record<string, number>>({});
 
   useEffect(() => {
@@ -110,7 +104,6 @@ export const ChecksDirectory = ({
     };
   }, [companyId, refreshKey, nonce]);
 
-  // Real counts for the dedicated-endpoint bank checks (best-effort).
   useEffect(() => {
     let active = true;
     Promise.all([
@@ -123,7 +116,6 @@ export const ChecksDirectory = ({
         unreconciled_bank: unrec?.total_to_reconcile ?? 0,
         opening_balance_difference: obal?.items?.length ?? 0,
       };
-      // Live count when connected; else fall back to the stored audit count.
       if (cd.ok && cd.data.connected)
         next.contact_defaults = cd.data.missing_count;
       setExtraCounts(next);
@@ -133,13 +125,11 @@ export const ChecksDirectory = ({
     };
   }, [companyId, refreshKey, nonce]);
 
-  // Which checks are configurable — drives the per-row Settings gear.
   useEffect(() => {
     let active = true;
     fetchAuditConfig(companyId).then((c) => {
       if (!active || !c) return;
       const own = new Set((c.settings_schema ?? []).map((e) => e.check));
-      // Aliased checks (e.g. duplicate_bill) are configurable once their target has a schema.
       const conf = new Set(own);
       for (const [alias, target] of Object.entries(SETTINGS_ALIAS))
         if (own.has(target)) conf.add(alias);
@@ -156,11 +146,9 @@ export const ChecksDirectory = ({
     return m;
   }, [stats]);
 
-  // Dedicated-endpoint count if we have one, else the audit-feed count.
   const countFor = (key: string) =>
     extraCounts[key] ?? issueCount(key, byType[key] ?? 0);
 
-  // Catalog order — same sequence as the side "All checks" list, grouped.
   const rows = useMemo(
     () =>
       ALL_CHECKS.map((c) => ({
@@ -168,13 +156,11 @@ export const ChecksDirectory = ({
         count: countFor(c.key),
         importance: importanceOf(c.key),
       })),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [byType, extraCounts],
   );
 
   const withIssues = rows.filter((r) => r.count > 0).length;
   const okCount = rows.length - withIssues;
-  // Checks health = share of checks that passed (no findings).
   const checksHealth =
     loading || rows.length === 0
       ? null
@@ -186,7 +172,6 @@ export const ChecksDirectory = ({
         ? r.count > 0
         : r.importance === filter,
   );
-  // Sum per-check counts (duplicates folded) so the headline agrees with rows.
   const totalIssues = rows.reduce((a, r) => a + r.count, 0);
   const itemsChecked =
     (stats?.audited_documents ?? 0) + (stats?.audited_contacts ?? 0);
@@ -437,7 +422,6 @@ const CheckRow = ({
             </span>
           )}
         </div>
-        {/* Fixed slot even when empty so rows stay aligned. */}
         <div className="flex w-8 shrink-0 justify-center">
           {configurable && (
             <button

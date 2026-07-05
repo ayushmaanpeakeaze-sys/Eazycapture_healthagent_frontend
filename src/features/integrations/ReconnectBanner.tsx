@@ -1,13 +1,10 @@
 import { ConnectXeroButton } from "@/features/integrations/ConnectXeroButton";
 
-// Shown when an org's Xero grant is dead (needs_reconnect === true) — a full
-// re-authorisation is required, so the primary action is the Xero OAuth flow.
 export const ReconnectBanner = ({
   orgName,
   plural = false,
 }: {
   orgName?: string;
-  /** true ⇒ dashboard-level banner ("one or more orgs"). */
   plural?: boolean;
 }) => (
   <div className="flex flex-wrap items-center gap-3 rounded-xl border-l-4 border-rose-500 bg-rose-50 px-4 py-3 ring-1 ring-rose-100">

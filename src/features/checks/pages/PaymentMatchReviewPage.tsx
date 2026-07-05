@@ -12,7 +12,6 @@ import {
 
 export type PaymentMatchRuleId = "bill_direct_payment" | "invoice_direct_deposit";
 
-// One config drives both directions; only the field prefixes and badge labels differ.
 interface Side {
   date?: string | null;
   desc?: string | null;
@@ -23,8 +22,8 @@ interface RuleConfig {
   leftBadge: string;
   rightBadge: string;
   empty: string;
-  left: (mr: MatchReasons) => Side; // the unpaid doc (View → row.xero_url)
-  right: (mr: MatchReasons) => Side; // the bank movement (View → deep link)
+  left: (mr: MatchReasons) => Side;
+  right: (mr: MatchReasons) => Side;
 }
 
 const CONFIG: Record<PaymentMatchRuleId, RuleConfig> = {
@@ -85,7 +84,6 @@ const shortDate = (iso: string | null | undefined) => {
   });
 };
 
-// Org shortcode for the bank-transaction deep link is embedded in the document's xero_url.
 const shortcodeOf = (url?: string | null): string | null => {
   const m = (url || "").match(/[?&]shortcode=([^&]+)/i);
   return m ? m[1] : null;

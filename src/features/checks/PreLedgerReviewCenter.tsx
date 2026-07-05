@@ -27,7 +27,6 @@ interface TrappedInvoice {
   reasoning: string;
   suggested_category: string | null;
   document_url?: string;
-  /** "blocked" → held by the gate; "passed" → cleared. */
   outcome: "blocked" | "passed" | "other";
 }
 
@@ -332,7 +331,6 @@ const SEV_RANK: Record<Severity, number> = { high: 3, med: 2, low: 1 };
 const flagSeverityToLocal = (s: FlaggedIssue["severity"]): Severity =>
   s === "critical" || s === "high" ? "high" : s === "medium" ? "med" : "low";
 
-// Adapt the demo endpoint's transactions + flags into the held-documents list.
 const adaptDemo = (
   transactions: BatchTransaction[],
   flagsByTxn: Record<string, FlaggedIssue[]>,
@@ -380,8 +378,6 @@ export const PreLedgerReviewCenter = ({
     setLoading(true);
     setError(null);
     try {
-      // Outbound publish reviews only (kind preview | pre_ledger); post-ledger
-      // rows live on the Trapped feed. All statuses, so cleared rows show too.
       const res = await fetchHealthCheckResults({
         company_id: companyId,
         limit: 100,
@@ -428,7 +424,6 @@ export const PreLedgerReviewCenter = ({
 
   useEffect(() => {
     load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [companyId]);
 
   const filtered = useMemo(

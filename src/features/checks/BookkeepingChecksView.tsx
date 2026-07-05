@@ -30,8 +30,6 @@ type PeriodKey =
   | "year"
   | "custom";
 
-// Local calendar components, not toISOString() — UTC shifts boundaries a day
-// in +offset timezones (IST turns local 1 Jun into 2026-05-31).
 const isoDate = (d: Date) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
     d.getDate(),
@@ -44,8 +42,6 @@ const endOfQuarter = (d: Date) => {
   return new Date(d.getFullYear(), q * 3 + 3, 0);
 };
 
-// Period option → inclusive { from, to } range. Quarter/Year/Current-month
-// end at the period's last day (to match their labels), not at today.
 const periodToRange = (
   key: PeriodKey,
   customStart: string,
@@ -129,7 +125,6 @@ const HistoricalAuditPanel = ({
     newTrapped: number;
     stageLabel: string | null;
   }>({ total: 0, trapped: 0, newTrapped: 0, stageLabel: null });
-  // Full doc + contact split — the live audit status only reports documents.
   const [stats, setStats] = useState<HealthStatsResponse | null>(null);
   const [period, setPeriod] = useState<PeriodKey>("all");
   const [customStart, setCustomStart] = useState<string>("");
@@ -178,7 +173,6 @@ const HistoricalAuditPanel = ({
     setStats(null);
     setBatchId(null);
     const { start, end } = periodToRange(period, customStart, customEnd);
-    // Clamp start to the ignore-before setting.
     const ignoreBefore = getIgnoreBeforeDate(companyId);
     const effectiveStart =
       ignoreBefore && (!start || ignoreBefore > start) ? ignoreBefore : start;
@@ -194,7 +188,6 @@ const HistoricalAuditPanel = ({
     setBatchId(resp.batch_id);
   };
 
-  // Phase 1: poll dispatch status until completed/failed.
   useEffect(() => {
     if (!batchId || phase !== "in_progress") return;
     const id = window.setInterval(async () => {
@@ -215,7 +208,6 @@ const HistoricalAuditPanel = ({
           setPhase("failed");
           if (data.error) setError(data.error);
         } else {
-          // Audit done — enrich phase polls AI status next.
           setPhase("enriching");
           onComplete();
           fetchHealthStats(companyId).then((s) => s && setStats(s));
@@ -225,7 +217,6 @@ const HistoricalAuditPanel = ({
     return () => window.clearInterval(id);
   }, [batchId, phase, onComplete, companyId]);
 
-  // Phase 2: poll AI enrichment until ai_summary_ready (or 60s timeout).
   useEffect(() => {
     if (!batchId || phase !== "enriching") return;
     const startedAt = Date.now();
@@ -241,10 +232,8 @@ const HistoricalAuditPanel = ({
           return;
         }
       } catch {
-        // ignore transient errors — keep polling until the 60s timeout
       }
       if (Date.now() - startedAt > 60_000) {
-        // Timed out — fall back to rule-based output.
         setPhase("completed");
         return;
       }
@@ -259,8 +248,6 @@ const HistoricalAuditPanel = ({
 
   const running = phase === "in_progress" || phase === "enriching";
 
-  // Documents come live from audit status; contacts and totals from /stats
-  // once the sweep completes.
   const docAudited = stats?.audited_documents ?? progress.total;
   const contactAudited = stats?.audited_contacts ?? null;
   const docFlagged = stats?.open_document_issues ?? progress.trapped;
@@ -427,7 +414,6 @@ const HistoricalAuditPanel = ({
           )}
 
           {phase === "in_progress" ? (
-            // Live document progress; contacts appear in the split once done.
             <span>
               Auditing ledger… <strong>{progress.total}</strong> document
               {progress.total === 1 ? "" : "s"} fetched
@@ -439,7 +425,6 @@ const HistoricalAuditPanel = ({
               <span className="text-ink-400"> · checking contacts too</span>
             </span>
           ) : (
-            // Enriching or completed — full doc + contact split from /stats.
             <>
               <span>
                 {phase === "completed" ? "Audited " : "Audited "}

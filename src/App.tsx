@@ -1,4 +1,4 @@
-import { ReactNode, useEffect, useState } from "react";
+import { lazy, ReactNode, Suspense, useEffect, useState } from "react";
 import {
   Navigate,
   Outlet,
@@ -16,22 +16,79 @@ import {
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { NotFound } from "@/components/NotFound";
 import { useAuth } from "@/features/auth/AuthProvider";
-import { ActivityFeedView } from "@/features/practice/ActivityFeedView";
-import { TeamActivityView } from "@/features/practice/TeamActivityView";
-import { AllClientsView } from "@/features/firm/AllClientsView";
-import { BatchAuditInspector } from "@/features/batch/BatchAuditInspector";
-import { BookkeepingChecksView } from "@/features/checks/BookkeepingChecksView";
-import { CheckDetailPage } from "@/features/checks/CheckDetailPage";
-import { ClientInsightsView } from "@/features/insights/ClientInsightsView";
 import { ConnectXeroButton } from "@/features/integrations/ConnectXeroButton";
 import { ReconnectBanner } from "@/features/integrations/ReconnectBanner";
 import { SyncButton } from "@/features/integrations/SyncButton";
-import { FirmOverview } from "@/features/firm/FirmOverview";
-import { LedgerHealthDashboard } from "@/features/insights/LedgerHealthDashboard";
-import { NotificationsView } from "@/features/practice/NotificationsView";
-import { PreLedgerReviewCenter } from "@/features/checks/PreLedgerReviewCenter";
-import { SettingsView } from "@/features/practice/SettingsView";
-import { TeamView } from "@/features/practice/TeamView";
+
+// Route-level views are code-split: each loads its own chunk on first visit,
+// so the chart-heavy insights/check pages don't weigh down the initial load.
+const FirmOverview = lazy(() =>
+  import("@/features/firm/FirmOverview").then((m) => ({ default: m.FirmOverview })),
+);
+const AllClientsView = lazy(() =>
+  import("@/features/firm/AllClientsView").then((m) => ({
+    default: m.AllClientsView,
+  })),
+);
+const TeamActivityView = lazy(() =>
+  import("@/features/practice/TeamActivityView").then((m) => ({
+    default: m.TeamActivityView,
+  })),
+);
+const NotificationsView = lazy(() =>
+  import("@/features/practice/NotificationsView").then((m) => ({
+    default: m.NotificationsView,
+  })),
+);
+const TeamView = lazy(() =>
+  import("@/features/practice/TeamView").then((m) => ({ default: m.TeamView })),
+);
+const SettingsView = lazy(() =>
+  import("@/features/practice/SettingsView").then((m) => ({
+    default: m.SettingsView,
+  })),
+);
+const ActivityFeedView = lazy(() =>
+  import("@/features/practice/ActivityFeedView").then((m) => ({
+    default: m.ActivityFeedView,
+  })),
+);
+const LedgerHealthDashboard = lazy(() =>
+  import("@/features/insights/LedgerHealthDashboard").then((m) => ({
+    default: m.LedgerHealthDashboard,
+  })),
+);
+const ClientInsightsView = lazy(() =>
+  import("@/features/insights/ClientInsightsView").then((m) => ({
+    default: m.ClientInsightsView,
+  })),
+);
+const BookkeepingChecksView = lazy(() =>
+  import("@/features/checks/BookkeepingChecksView").then((m) => ({
+    default: m.BookkeepingChecksView,
+  })),
+);
+const CheckDetailPage = lazy(() =>
+  import("@/features/checks/CheckDetailPage").then((m) => ({
+    default: m.CheckDetailPage,
+  })),
+);
+const PreLedgerReviewCenter = lazy(() =>
+  import("@/features/checks/PreLedgerReviewCenter").then((m) => ({
+    default: m.PreLedgerReviewCenter,
+  })),
+);
+const BatchAuditInspector = lazy(() =>
+  import("@/features/batch/BatchAuditInspector").then((m) => ({
+    default: m.BatchAuditInspector,
+  })),
+);
+
+const PageLoading = () => (
+  <div className="flex min-h-[50vh] items-center justify-center">
+    <span className="h-6 w-6 animate-spin rounded-full border-2 border-ink-200 border-t-brand-500" />
+  </div>
+);
 
 type ViewKey =
   | "firmOverview"
@@ -544,7 +601,9 @@ const PracticeLayout = () => {
       <main className="min-h-0 flex-1 overflow-y-auto px-8 py-6">
         <div className="mx-auto w-full max-w-[1280px] space-y-5">
           <ErrorBoundary key={location.pathname}>
-            <Outlet />
+            <Suspense fallback={<PageLoading />}>
+              <Outlet />
+            </Suspense>
           </ErrorBoundary>
         </div>
       </main>
@@ -667,7 +726,9 @@ const ClientLayout = () => {
             <ReconnectBanner orgName={client.name} />
           )}
           <ErrorBoundary key={current}>
-            <Outlet />
+            <Suspense fallback={<PageLoading />}>
+              <Outlet />
+            </Suspense>
           </ErrorBoundary>
         </div>
       </main>

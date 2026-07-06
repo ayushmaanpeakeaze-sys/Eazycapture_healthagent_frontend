@@ -188,6 +188,9 @@ export const DuplicateInvoicesPage = ({
   const topAiText = top
     ? top.keep.ai?.explanation || top.dup?.ai?.explanation || top.flag.message || ""
     : "";
+  // Cross-contact is a soft "please verify" — calm amber badge, no blink.
+  // A same-contact confirmed dupe keeps the red blinking warning.
+  const topCross = !!top?.flag?.match_reasons?.cross_contact;
 
   const onVoid = async (g: MatchGroup) => {
     if (!g.dup) return;
@@ -216,7 +219,14 @@ export const DuplicateInvoicesPage = ({
       {!loading && topAiText && (
         <div className="rounded-2xl border border-brand-100 bg-gradient-to-br from-brand-50 to-white p-4 shadow-card">
           <p className="flex flex-wrap items-center gap-2">
-            <span className="inline-flex animate-blink items-center gap-1 rounded-full bg-rose-600 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wider text-white shadow-sm ring-1 ring-rose-300">
+            <span
+              className={[
+                "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-bold uppercase tracking-wider text-white shadow-sm ring-1",
+                topCross
+                  ? "bg-amber-500 ring-amber-300"
+                  : "animate-blink bg-rose-600 ring-rose-300",
+              ].join(" ")}
+            >
               <svg viewBox="0 0 24 24" className="h-3 w-3" fill="currentColor" aria-hidden>
                 <path d="M12 2l2.2 6.8H21l-5.5 4 2.1 6.8L12 15.6 6.4 19.6l2.1-6.8L3 8.8h6.8L12 2Z" />
               </svg>

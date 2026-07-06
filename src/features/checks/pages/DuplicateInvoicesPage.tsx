@@ -367,6 +367,9 @@ const MatchCard = ({
   const conf = g.flag.confidence ?? mr?.confidence;
   const confPct = typeof conf === "number" ? Math.round(conf * 100) : null;
   const highRisk = mr?.risk === "high";
+  // A bill has no number of its own — its supplier reference IS its identity, so
+  // headline the reference and hide the (blank) invoice number.
+  const isBill = g.flag.issue_type === "duplicate_bill";
   const contact = g.keep.result?.vendor_name || "Contact";
 
   return (
@@ -403,14 +406,17 @@ const MatchCard = ({
             <Chip ok>Same contact</Chip>
           )}
           {mr?.cross_contact && <PartyChip mr={mr} />}
+          {isBill && mr && <RefChip match={mr.reference_match} bill />}
           <AmountChip g={g} mr={mr} />
           <DateChip g={g} mr={mr} />
-          {mr && <RefChip match={mr.reference_match} />}
-          {mr?.cross_contact && mr.same_invoice_number != null && (
-            <Chip ok={mr.same_invoice_number}>
-              {mr.same_invoice_number ? "Same" : "Diff"} invoice #
-            </Chip>
-          )}
+          {!isBill && mr && <RefChip match={mr.reference_match} />}
+          {mr?.cross_contact &&
+            !isBill &&
+            mr.same_invoice_number != null && (
+              <Chip ok={mr.same_invoice_number}>
+                {mr.same_invoice_number ? "Same" : "Diff"} invoice #
+              </Chip>
+            )}
           {mr?.cross_contact && mr.same_description != null && (
             <Chip ok={mr.same_description}>
               {mr.same_description ? "Same" : "Diff"} description
@@ -929,10 +935,18 @@ const DateChip = ({ g, mr }: { g: MatchGroup; mr?: MatchReasons | null }) => {
   return null;
 };
 
-const RefChip = ({ match }: { match: MatchReasons["reference_match"] }) => {
-  if (match === "exact") return <Chip ok>Same reference</Chip>;
-  if (match === "different") return <Chip bad>Different reference</Chip>;
-  return <Chip>No reference</Chip>;
+const RefChip = ({
+  match,
+  bill = false,
+}: {
+  match: MatchReasons["reference_match"];
+  bill?: boolean;
+}) => {
+  // For a bill the reference IS the document number, so label it as such.
+  const ref = bill ? "reference (bill no.)" : "reference";
+  if (match === "exact") return <Chip ok>Same {ref}</Chip>;
+  if (match === "different") return <Chip bad>Different {ref}</Chip>;
+  return <Chip>No {ref}</Chip>;
 };
 
 // How the two contacts were linked on a cross-contact match. VAT = high

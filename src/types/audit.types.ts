@@ -93,6 +93,12 @@ export interface MatchReasons {
   same_invoice_number?: boolean;
   distinct_documents_possible?: boolean;
   cross_contact: boolean;
+  /** How the two contacts were matched on a cross-contact flag. */
+  party_by?: "vat" | "name" | string;
+  /** 0..1 name similarity — only meaningful when party_by === "name". */
+  name_similarity?: number | null;
+  same_reference?: boolean;
+  same_description?: boolean;
   confidence: number;
   tier: "high" | "medium" | "low" | string;
   review?: boolean;

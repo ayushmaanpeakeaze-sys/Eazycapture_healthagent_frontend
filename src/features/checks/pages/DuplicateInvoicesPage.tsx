@@ -144,7 +144,11 @@ export const DuplicateInvoicesPage = ({
         : undefined;
       seen.add(r.id);
       if (partner) seen.add(partner.id);
-      const undecided = f.this_is_likely_original == null;
+      // Cross-contact matches are always a review, never a confirmed dupe —
+      // keep them in the softer "verify" mode (no Void CTA) whatever the backend
+      // sends for this_is_likely_original.
+      const undecided =
+        f.this_is_likely_original == null || !!f.match_reasons?.cross_contact;
       const keepIsR = f.this_is_likely_original !== false;
       const keep = keepIsR ? r : (partner ?? r);
       const dup = keepIsR ? (partner ?? null) : r;
@@ -383,11 +387,25 @@ const MatchCard = ({
           </span>
         )}
         <div className="flex flex-wrap items-center gap-1.5">
-          <Chip ok>Same contact</Chip>
+          {mr?.cross_contact ? (
+            <Chip warn>Across 2 contacts — verify</Chip>
+          ) : (
+            <Chip ok>Same contact</Chip>
+          )}
+          {mr?.cross_contact && <PartyChip mr={mr} />}
           <AmountChip g={g} mr={mr} />
           <DateChip g={g} mr={mr} />
           {mr && <RefChip match={mr.reference_match} />}
-          {mr?.cross_contact && <Chip warn>Across 2 contact records</Chip>}
+          {mr?.cross_contact && mr.same_invoice_number != null && (
+            <Chip ok={mr.same_invoice_number}>
+              {mr.same_invoice_number ? "Same" : "Diff"} invoice #
+            </Chip>
+          )}
+          {mr?.cross_contact && mr.same_description != null && (
+            <Chip ok={mr.same_description}>
+              {mr.same_description ? "Same" : "Diff"} description
+            </Chip>
+          )}
           {mr?.recurring && <Chip warn>Could be recurring</Chip>}
         </div>
         <div className="relative ml-auto flex items-center gap-2">
@@ -905,4 +923,22 @@ const RefChip = ({ match }: { match: MatchReasons["reference_match"] }) => {
   if (match === "exact") return <Chip ok>Same reference</Chip>;
   if (match === "different") return <Chip bad>Different reference</Chip>;
   return <Chip>No reference</Chip>;
+};
+
+// How the two contacts were linked on a cross-contact match. VAT = high
+// certainty; a low name similarity is flagged as a caution ("may be separate").
+const PartyChip = ({ mr }: { mr: MatchReasons }) => {
+  if (mr.party_by === "vat") return <Chip ok>Matched by VAT</Chip>;
+  if (mr.party_by === "name") {
+    const pct =
+      mr.name_similarity != null ? Math.round(mr.name_similarity * 100) : null;
+    const caution = mr.name_similarity != null && mr.name_similarity < 0.7;
+    return (
+      <Chip warn={caution}>
+        Names {pct != null ? `${pct}% similar` : "compared"}
+        {caution ? " — may be separate" : ""}
+      </Chip>
+    );
+  }
+  return null;
 };

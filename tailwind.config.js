@@ -68,11 +68,16 @@ export default {
           from: { transform: "translateY(8px)", opacity: "0" },
           to: { transform: "translateY(0)", opacity: "1" },
         },
+        blink: {
+          "0%, 100%": { opacity: "1" },
+          "50%": { opacity: "0.2" },
+        },
       },
       animation: {
         "flow-right": "flow-right 3.4s ease-in-out infinite",
         "pulse-ring": "pulse-ring 1.8s ease-out infinite",
         "tick-up": "tick-up 400ms ease-out",
+        blink: "blink 1s ease-in-out infinite",
       },
       boxShadow: {
         card: "0 1px 2px rgba(15,23,42,0.04), 0 4px 16px rgba(15,23,42,0.04)",

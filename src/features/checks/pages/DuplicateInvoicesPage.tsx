@@ -182,8 +182,7 @@ export const DuplicateInvoicesPage = ({
 
   const top = groups[0];
   const topAiText = top
-    ? top.flag.match_reasons?.advisory ||
-      top.keep.ai?.explanation ||
+    ? top.keep.ai?.explanation ||
       top.dup?.ai?.explanation ||
       top.flag.message ||
       ""

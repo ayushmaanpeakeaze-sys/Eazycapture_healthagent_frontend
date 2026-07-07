@@ -400,17 +400,11 @@ const MatchCard = ({
           <AmountChip g={g} mr={mr} />
           <DateChip g={g} mr={mr} />
           {!isBill && mr && <RefChip mr={mr} />}
-          {mr?.cross_contact &&
-            !isBill &&
-            mr.same_invoice_number != null && (
-              <Chip ok={mr.same_invoice_number}>
-                {mr.same_invoice_number ? "Same" : "Diff"} invoice #
-              </Chip>
-            )}
-          {mr?.cross_contact && mr.same_description != null && (
-            <Chip ok={mr.same_description}>
-              {mr.same_description ? "Same" : "Diff"} description
-            </Chip>
+          {mr?.cross_contact && !isBill && mr.same_invoice_number && (
+            <Chip ok>Same invoice #</Chip>
+          )}
+          {mr?.cross_contact && mr.same_description && (
+            <Chip ok>Same description</Chip>
           )}
           {mr?.recurring && <Chip warn>Could be recurring</Chip>}
         </div>

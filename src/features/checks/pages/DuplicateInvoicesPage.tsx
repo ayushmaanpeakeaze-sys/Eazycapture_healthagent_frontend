@@ -144,11 +144,7 @@ export const DuplicateInvoicesPage = ({
         : undefined;
       seen.add(r.id);
       if (partner) seen.add(partner.id);
-      // Cross-contact matches are always a review, never a confirmed dupe —
-      // keep them in the softer "verify" mode (no Void CTA) whatever the backend
-      // sends for this_is_likely_original.
-      const undecided =
-        f.this_is_likely_original == null || !!f.match_reasons?.cross_contact;
+      const undecided = f.this_is_likely_original == null;
       const keepIsR = f.this_is_likely_original !== false;
       const keep = keepIsR ? r : (partner ?? r);
       const dup = keepIsR ? (partner ?? null) : r;
@@ -186,10 +182,12 @@ export const DuplicateInvoicesPage = ({
 
   const top = groups[0];
   const topAiText = top
-    ? top.keep.ai?.explanation || top.dup?.ai?.explanation || top.flag.message || ""
+    ? top.flag.match_reasons?.advisory ||
+      top.keep.ai?.explanation ||
+      top.dup?.ai?.explanation ||
+      top.flag.message ||
+      ""
     : "";
-  // Cross-contact is a soft "please verify" — calm amber badge, no blink.
-  // A same-contact confirmed dupe keeps the red blinking warning.
   const topCross = !!top?.flag?.match_reasons?.cross_contact;
 
   const onVoid = async (g: MatchGroup) => {
@@ -348,27 +346,23 @@ const MatchCard = ({
   const mr = g.flag.match_reasons;
   const tl = (mr?.tier ?? g.flag.severity ?? "").toString().toLowerCase();
   const badge =
-    tl === "low"
+    tl === "high" || tl === "critical"
       ? {
-          label: mr?.recurring ? "Review (recurring)" : "Review",
-          cls: "bg-ink-100 text-ink-600 ring-ink-200",
+          label: "Likely duplicate",
+          cls: "bg-rose-50 text-rose-700 ring-rose-200",
         }
-      : tl === "medium"
+      : tl === "medium" || tl === "review"
         ? {
             label: "Possible — review",
             cls: "bg-amber-50 text-amber-700 ring-amber-200",
           }
-        : tl === "high" || tl === "critical"
-          ? {
-              label: "Likely duplicate",
-              cls: "bg-rose-50 text-rose-700 ring-rose-200",
-            }
-          : null;
+        : {
+            label: mr?.recurring ? "Review (recurring)" : "Review",
+            cls: "bg-ink-100 text-ink-600 ring-ink-200",
+          };
   const conf = g.flag.confidence ?? mr?.confidence;
   const confPct = typeof conf === "number" ? Math.round(conf * 100) : null;
   const highRisk = mr?.risk === "high";
-  // A bill has no number of its own — its supplier reference IS its identity, so
-  // headline the reference and hide the (blank) invoice number.
   const isBill = g.flag.issue_type === "duplicate_bill";
   const contact = g.keep.result?.vendor_name || "Contact";
 
@@ -400,16 +394,12 @@ const MatchCard = ({
           </span>
         )}
         <div className="flex flex-wrap items-center gap-1.5">
-          {mr?.cross_contact ? (
-            <Chip warn>Across 2 contacts — verify</Chip>
-          ) : (
-            <Chip ok>Same contact</Chip>
-          )}
+          {!mr?.cross_contact && <Chip ok>Same contact</Chip>}
           {mr?.cross_contact && <PartyChip mr={mr} />}
-          {isBill && mr && <RefChip match={mr.reference_match} bill />}
+          {isBill && mr && <RefChip mr={mr} bill />}
           <AmountChip g={g} mr={mr} />
           <DateChip g={g} mr={mr} />
-          {!isBill && mr && <RefChip match={mr.reference_match} />}
+          {!isBill && mr && <RefChip mr={mr} />}
           {mr?.cross_contact &&
             !isBill &&
             mr.same_invoice_number != null && (
@@ -471,6 +461,12 @@ const MatchCard = ({
           )}
         </div>
       </header>
+
+      {mr?.cross_contact && (mr.advisory || g.flag.message) && (
+        <div className="border-b border-amber-100 bg-amber-50/60 px-4 py-2 text-[11px] leading-relaxed text-amber-800">
+          {mr.advisory || g.flag.message}
+        </div>
+      )}
 
       {dismissOpen && (
         <div className="flex flex-wrap items-center gap-2 border-b border-ink-100 bg-ink-50/40 px-4 py-2">
@@ -935,34 +931,22 @@ const DateChip = ({ g, mr }: { g: MatchGroup; mr?: MatchReasons | null }) => {
   return null;
 };
 
-const RefChip = ({
-  match,
-  bill = false,
-}: {
-  match: MatchReasons["reference_match"];
-  bill?: boolean;
-}) => {
-  // For a bill the reference IS the document number, so label it as such.
+const RefChip = ({ mr, bill = false }: { mr: MatchReasons; bill?: boolean }) => {
   const ref = bill ? "reference (bill no.)" : "reference";
-  if (match === "exact") return <Chip ok>Same {ref}</Chip>;
-  if (match === "different") return <Chip bad>Different {ref}</Chip>;
+  const same = mr.same_reference === true || mr.reference_match === "exact";
+  const different =
+    !same && (mr.reference_match === "different" || mr.same_reference === false);
+  if (same) return <Chip ok>Same {ref}</Chip>;
+  if (different) return <Chip bad>Different {ref}</Chip>;
   return <Chip>No {ref}</Chip>;
 };
 
-// How the two contacts were linked on a cross-contact match. VAT = high
-// certainty; a low name similarity is flagged as a caution ("may be separate").
 const PartyChip = ({ mr }: { mr: MatchReasons }) => {
   if (mr.party_by === "vat") return <Chip ok>Matched by VAT</Chip>;
   if (mr.party_by === "name") {
     const pct =
       mr.name_similarity != null ? Math.round(mr.name_similarity * 100) : null;
-    const caution = mr.name_similarity != null && mr.name_similarity < 0.7;
-    return (
-      <Chip warn={caution}>
-        Names {pct != null ? `${pct}% similar` : "compared"}
-        {caution ? " — may be separate" : ""}
-      </Chip>
-    );
+    return <Chip>Names {pct != null ? `${pct}% similar` : "compared"}</Chip>;
   }
   return null;
 };

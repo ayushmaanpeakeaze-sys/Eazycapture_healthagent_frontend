@@ -99,6 +99,7 @@ export interface MatchReasons {
   name_similarity?: number | null;
   same_reference?: boolean;
   same_description?: boolean;
+  advisory?: string | null;
   confidence: number;
   tier: "high" | "medium" | "low" | string;
   review?: boolean;

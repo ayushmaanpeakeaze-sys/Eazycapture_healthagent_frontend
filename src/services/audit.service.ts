@@ -612,6 +612,35 @@ export const downloadBankDocument = async (
   }
 };
 
+export const downloadHealthReportCsv = async (
+  companyId: string,
+): Promise<{ ok: boolean; error?: string }> => {
+  try {
+    const res = await healthClient.get<Blob>(
+      `/report/csv/?company_id=${encodeURIComponent(companyId)}`,
+      { responseType: "blob", timeout: 120_000 },
+    );
+    const cd = (res.headers["content-disposition"] as string | undefined) ?? "";
+    const filename =
+      cd.match(/filename\*?=(?:UTF-8'')?"?([^";]+)"?/i)?.[1] ??
+      "Health_Check_Report.csv";
+    const url = URL.createObjectURL(res.data);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = decodeURIComponent(filename);
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    return { ok: true };
+  } catch (err) {
+    return {
+      ok: false,
+      error: err instanceof Error ? err.message : "Download failed",
+    };
+  }
+};
+
 export const fetchUnreconciledBankItems = async (
   companyId: string,
 ): Promise<UnreconciledBankResponse | null> => {

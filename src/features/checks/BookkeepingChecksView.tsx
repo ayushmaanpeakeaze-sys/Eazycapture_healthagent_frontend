@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import {
   dispatchHistoricalAudit,
+  downloadHealthReportCsv,
   fetchHealthStats,
   fetchHistoricalAuditStatus,
   fetchLedgerHealthSummary,
@@ -132,6 +133,17 @@ const HistoricalAuditPanel = ({
   const [lastSyncAt, setLastSyncAt] = useState<string | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [settingsVersion, setSettingsVersion] = useState(0);
+  const [csvBusy, setCsvBusy] = useState(false);
+  const [csvError, setCsvError] = useState<string | null>(null);
+
+  const onDownloadCsv = async () => {
+    if (csvBusy) return;
+    setCsvBusy(true);
+    setCsvError(null);
+    const res = await downloadHealthReportCsv(companyId);
+    setCsvBusy(false);
+    if (!res.ok) setCsvError(res.error ?? "Download failed");
+  };
 
   useEffect(() => {
     let active = true;
@@ -340,6 +352,26 @@ const HistoricalAuditPanel = ({
 
             <button
               type="button"
+              onClick={onDownloadCsv}
+              disabled={csvBusy}
+              title="Download all check results as a CSV"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-ink-200 bg-white px-3.5 py-2.5 text-sm font-semibold text-ink-700 shadow-sm transition hover:border-brand-300 hover:bg-brand-50 hover:text-brand-700 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {csvBusy ? (
+                <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4}>
+                  <circle cx="12" cy="12" r="9" opacity="0.25" />
+                  <path d="M21 12a9 9 0 0 0-9-9" strokeLinecap="round" />
+                </svg>
+              ) : (
+                <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" />
+                </svg>
+              )}
+              {csvBusy ? "Preparing…" : "Download CSV"}
+            </button>
+
+            <button
+              type="button"
               onClick={startAudit}
               disabled={running}
               className="inline-flex items-center gap-2 rounded-lg bg-brand-gradient px-4 py-2.5 text-sm font-semibold text-white shadow-brand transition hover:brightness-110 hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60"
@@ -384,6 +416,9 @@ const HistoricalAuditPanel = ({
             </svg>
             Rules
           </button>
+          {csvError && (
+            <span className="text-[11px] text-rose-600">{csvError}</span>
+          )}
         </div>
       </div>
 

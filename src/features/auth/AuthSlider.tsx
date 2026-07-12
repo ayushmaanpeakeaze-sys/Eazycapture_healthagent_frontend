@@ -811,7 +811,7 @@ const SLIDER_CSS = `
   position: absolute;
   bottom: 5vh;
   left: 50%;
-  width: 88%;
+  width: 74%;
   display: flex;
   justify-content: center;
   transform: translateX(-50%) translate3d(var(--px, 0px), var(--py, 0px), 0);
@@ -821,7 +821,7 @@ const SLIDER_CSS = `
 }
 .ec-overlay-art {
   width: auto;
-  max-height: 40vh;
+  max-height: 32vh;
   max-width: 100%;
   object-fit: contain;
   opacity: 0.9;
@@ -956,8 +956,6 @@ const SLIDER_CSS = `
   align-items: center;
   gap: 2px;
   background: transparent;
-  transform: scale(0.82);
-  transform-origin: top center;
   font-family: "Arial Black", "Archivo Black", system-ui, sans-serif;
   font-weight: 900;
   text-transform: uppercase;

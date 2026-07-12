@@ -1,4 +1,4 @@
-import { CSSProperties, FormEvent, useEffect, useRef, useState } from "react";
+import { CSSProperties, FormEvent, useEffect, useState } from "react";
 
 import {
   login,
@@ -443,41 +443,15 @@ const AuditSticker = () => (
 
 const OverlayArt = () => {
   const [ok, setOk] = useState(true);
-  const wrapRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    let raf = 0;
-    const onMove = (e: MouseEvent) => {
-      cancelAnimationFrame(raf);
-      raf = requestAnimationFrame(() => {
-        const el = wrapRef.current;
-        if (!el) return;
-        el.style.setProperty(
-          "--px",
-          `${(e.clientX / window.innerWidth - 0.5) * 18}px`,
-        );
-        el.style.setProperty(
-          "--py",
-          `${(e.clientY / window.innerHeight - 0.5) * 12}px`,
-        );
-      });
-    };
-    window.addEventListener("mousemove", onMove);
-    return () => {
-      window.removeEventListener("mousemove", onMove);
-      cancelAnimationFrame(raf);
-    };
-  }, []);
   if (!ok) return null;
   return (
-    <div ref={wrapRef} className="ec-overlay-art-wrap">
-      <img
-        src="/auth-illustration-white.png"
-        alt=""
-        aria-hidden
-        onError={() => setOk(false)}
-        className="ec-overlay-art"
-      />
-    </div>
+    <img
+      src="/auth-illustration-white.png"
+      alt=""
+      aria-hidden
+      onError={() => setOk(false)}
+      className="ec-overlay-art"
+    />
   );
 };
 
@@ -807,38 +781,18 @@ const SLIDER_CSS = `
 .ec-auth.active .ec-overlay-left { transform: translateX(0); }
 .ec-overlay-right { right: 0; transform: translateX(0); }
 .ec-auth.active .ec-overlay-right { transform: translateX(20%); }
-.ec-overlay-art-wrap {
+.ec-overlay-art {
   position: absolute;
   bottom: 5vh;
   left: 50%;
-  width: 74%;
-  display: flex;
-  justify-content: center;
-  transform: translateX(-50%) translate3d(var(--px, 0px), var(--py, 0px), 0);
-  transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+  transform: translateX(-50%);
+  width: auto;
+  max-height: 40vh;
+  max-width: 88%;
+  object-fit: contain;
+  opacity: 0.85;
   pointer-events: none;
   z-index: 1;
-}
-.ec-overlay-art {
-  width: auto;
-  max-height: 32vh;
-  max-width: 100%;
-  object-fit: contain;
-  opacity: 0.9;
-  transform-origin: 50% 100%;
-  animation: ec-art-float 7s ease-in-out infinite;
-  will-change: transform;
-}
-@keyframes ec-art-float {
-  0%   { transform: translateY(0) rotate(0deg); }
-  28%  { transform: translateY(-7px) rotate(-1deg); }
-  52%  { transform: translateY(-11px) rotate(0.5deg); }
-  76%  { transform: translateY(-4px) rotate(1.1deg); }
-  100% { transform: translateY(0) rotate(0deg); }
-}
-@media (prefers-reduced-motion: reduce) {
-  .ec-overlay-art { animation: none; }
-  .ec-overlay-art-wrap { transition: none; }
 }
 .ec-ghost-btn {
   margin-top: 28px;

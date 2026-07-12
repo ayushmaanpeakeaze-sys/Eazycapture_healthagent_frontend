@@ -920,6 +920,13 @@ const SLIDER_CSS = `
     0 2px 0 #c6c6cf,
     0 3px 2px rgba(20, 8, 60, 0.13);
 }
+.dark .ec-sticker-inner {
+  color: #eef0f6;
+  text-shadow:
+    0 1px 0 #3b3b46,
+    0 2px 0 #2a2a33,
+    0 3px 3px rgba(0, 0, 0, 0.5);
+}
 .ec-acc-top {
   font-size: 17px;
   letter-spacing: 0.2px;

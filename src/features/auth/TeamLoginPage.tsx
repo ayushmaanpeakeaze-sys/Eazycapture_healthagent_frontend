@@ -49,7 +49,7 @@ export const TeamLoginPage = ({ onLoggedIn }: TeamLoginPageProps) => {
     >
       <a
         href="/"
-        className="mb-5 inline-flex items-center gap-1.5 rounded-lg border border-ink-200 bg-white px-3 py-1.5 text-xs font-medium text-ink-600 transition hover:border-brand-300 hover:text-brand-700"
+        className="mb-5 inline-flex items-center gap-1.5 rounded-lg border border-ink-200 bg-surface px-3 py-1.5 text-xs font-medium text-ink-600 transition hover:border-brand-300 hover:text-brand-700"
       >
         <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
           <path d="m15 18-6-6 6-6" />
@@ -77,7 +77,7 @@ export const TeamLoginPage = ({ onLoggedIn }: TeamLoginPageProps) => {
             onChange={(e) => setEmail(e.target.value)}
             disabled={loading}
             placeholder="you@firm.com"
-            className="mt-1 block w-full rounded-lg border border-ink-300 bg-white px-3 py-2.5 text-sm text-ink-900 shadow-sm transition focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200 disabled:opacity-60"
+            className="mt-1 block w-full rounded-lg border border-ink-300 bg-surface px-3 py-2.5 text-sm text-ink-900 shadow-sm transition focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200 disabled:opacity-60"
           />
         </div>
 
@@ -94,7 +94,7 @@ export const TeamLoginPage = ({ onLoggedIn }: TeamLoginPageProps) => {
               onChange={(e) => setPassword(e.target.value)}
               disabled={loading}
               placeholder="••••••••"
-              className="block w-full rounded-lg border border-ink-300 bg-white py-2.5 pl-3 pr-10 text-sm text-ink-900 shadow-sm transition focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200 disabled:opacity-60"
+              className="block w-full rounded-lg border border-ink-300 bg-surface py-2.5 pl-3 pr-10 text-sm text-ink-900 shadow-sm transition focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200 disabled:opacity-60"
             />
             <button
               type="button"

@@ -273,7 +273,7 @@ export const BatchAuditInspector = () => {
             {transactions.length} transactions · {duplicateGroups.length}{" "}
             duplicate group{duplicateGroups.length === 1 ? "" : "s"}
           </span>
-          <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-ink-200 bg-white px-3 py-2 text-xs font-semibold text-ink-700 transition hover:border-brand-300 hover:bg-brand-50 hover:text-brand-700">
+          <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-ink-200 bg-surface px-3 py-2 text-xs font-semibold text-ink-700 transition hover:border-brand-300 hover:bg-brand-50 hover:text-brand-700">
             <svg
               viewBox="0 0 24 24"
               className="h-3.5 w-3.5"
@@ -298,7 +298,7 @@ export const BatchAuditInspector = () => {
           <button
             type="button"
             onClick={() => setPasteOpen((v) => !v)}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-ink-200 bg-white px-3 py-2 text-xs font-semibold text-ink-700 transition hover:border-brand-300 hover:bg-brand-50 hover:text-brand-700"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-ink-200 bg-surface px-3 py-2 text-xs font-semibold text-ink-700 transition hover:border-brand-300 hover:bg-brand-50 hover:text-brand-700"
           >
             <svg
               viewBox="0 0 24 24"
@@ -338,7 +338,7 @@ export const BatchAuditInspector = () => {
       </header>
 
       {pasteOpen && (
-        <div className="rounded-xl border border-ink-200 bg-white p-4 shadow-card">
+        <div className="rounded-xl border border-ink-200 bg-surface p-4 shadow-card">
           <label
             htmlFor="paste-json"
             className="block text-[10px] font-semibold uppercase tracking-wider text-ink-500"
@@ -362,7 +362,7 @@ export const BatchAuditInspector = () => {
     "current_account_code": "485"
   }
 ]`}
-            className="mt-2 block w-full resize-y rounded-md border border-ink-300 bg-white px-3 py-2 font-mono text-[11px] text-ink-900 shadow-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200"
+            className="mt-2 block w-full resize-y rounded-md border border-ink-300 bg-surface px-3 py-2 font-mono text-[11px] text-ink-900 shadow-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200"
           />
           <div className="mt-3 flex items-center justify-end gap-2">
             <button
@@ -371,7 +371,7 @@ export const BatchAuditInspector = () => {
                 setPasteOpen(false);
                 setPasteDraft("");
               }}
-              className="rounded-md border border-ink-200 bg-white px-3 py-1.5 text-xs font-medium text-ink-700 transition hover:bg-ink-50"
+              className="rounded-md border border-ink-200 bg-surface px-3 py-1.5 text-xs font-medium text-ink-700 transition hover:bg-ink-50"
             >
               Cancel
             </button>
@@ -393,7 +393,7 @@ export const BatchAuditInspector = () => {
         </div>
       )}
 
-      <div className="overflow-hidden rounded-xl border border-ink-200 bg-white shadow-card">
+      <div className="overflow-hidden rounded-xl border border-ink-200 bg-surface shadow-card">
         <table className="w-full border-collapse text-sm">
           <thead className="bg-ink-50 text-[10px] uppercase tracking-wider text-ink-500">
             <tr>

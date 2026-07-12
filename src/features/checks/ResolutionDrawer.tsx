@@ -145,11 +145,11 @@ export const ResolutionDrawer = ({
       aria-modal="true"
     >
       <div
-        className="absolute inset-0 bg-ink-900/40 backdrop-blur-sm transition"
+        className="absolute inset-0 bg-scrim/40 backdrop-blur-sm transition"
         onClick={submitting ? undefined : onClose}
       />
 
-      <aside className="relative flex h-full w-full max-w-md flex-col overflow-hidden bg-white shadow-2xl">
+      <aside className="relative flex h-full w-full max-w-md flex-col overflow-hidden bg-surface shadow-2xl">
         <header className="flex items-start justify-between border-b border-ink-200 px-6 py-5">
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-wider text-ink-500">
@@ -231,7 +231,7 @@ export const ResolutionDrawer = ({
                   id="tax-rate-select"
                   value={selectedTaxCode}
                   onChange={(e) => setSelectedTaxCode(e.target.value)}
-                  className="mt-2 w-full rounded-lg border border-ink-300 bg-white px-3 py-2 text-sm text-ink-900 shadow-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200"
+                  className="mt-2 w-full rounded-lg border border-ink-300 bg-surface px-3 py-2 text-sm text-ink-900 shadow-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200"
                 >
                   <option value="">Select a tax rate…</option>
                   {filteredRates.map((r) => (
@@ -300,7 +300,7 @@ export const ResolutionDrawer = ({
                     <>
                       <select
                         defaultValue={issue.suggested_code}
-                        className="mt-1 w-full appearance-none rounded-md border border-brand-200 bg-white px-2 py-1 font-mono text-sm font-semibold text-ink-900 shadow-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200"
+                        className="mt-1 w-full appearance-none rounded-md border border-brand-200 bg-surface px-2 py-1 font-mono text-sm font-semibold text-ink-900 shadow-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200"
                         title="Full chart of accounts not exposed yet — only the AI suggestion is available."
                       >
                         <option value={issue.suggested_code}>
@@ -325,7 +325,7 @@ export const ResolutionDrawer = ({
               </div>
 
               {(issue.confidence != null || issue.reasoning) && (
-                <div className="rounded-lg border border-brand-100 bg-white px-3 py-2.5">
+                <div className="rounded-lg border border-brand-100 bg-surface px-3 py-2.5">
                   {issue.confidence != null && (
                     <span className="inline-flex items-center gap-1 rounded-full bg-brand-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-brand-700 ring-1 ring-brand-200">
                       <svg
@@ -368,7 +368,7 @@ export const ResolutionDrawer = ({
             type="button"
             onClick={onClose}
             disabled={submitting}
-            className="rounded-lg border border-ink-200 bg-white px-3 py-2 text-sm font-medium text-ink-700 transition hover:bg-ink-50 disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded-lg border border-ink-200 bg-surface px-3 py-2 text-sm font-medium text-ink-700 transition hover:bg-ink-50 disabled:cursor-not-allowed disabled:opacity-50"
           >
             Cancel
           </button>

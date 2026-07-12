@@ -171,7 +171,7 @@ export const DuplicateContactsPage = ({
           >
             <span
               className={[
-                "absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition",
+                "absolute top-0.5 h-4 w-4 rounded-full bg-surface shadow transition",
                 showDismissed ? "left-[18px]" : "left-0.5",
               ].join(" ")}
             />
@@ -187,11 +187,11 @@ export const DuplicateContactsPage = ({
       )}
 
       {loading ? (
-        <p className="rounded-2xl border border-ink-100 bg-white px-5 py-10 text-center text-sm text-ink-500 shadow-card">
+        <p className="rounded-2xl border border-ink-100 bg-surface px-5 py-10 text-center text-sm text-ink-500 shadow-card">
           Loading matches…
         </p>
       ) : error ? null : matches.length === 0 ? (
-        <p className="rounded-2xl border border-ink-100 bg-white px-5 py-10 text-center text-sm italic text-ink-400 shadow-card">
+        <p className="rounded-2xl border border-ink-100 bg-surface px-5 py-10 text-center text-sm italic text-ink-400 shadow-card">
           {showDismissed ? "No dismissed matches." : "No duplicate contacts"}
         </p>
       ) : (
@@ -237,7 +237,7 @@ const MatchCard = ({
         : "bg-ink-100 text-ink-600 ring-ink-200";
 
   return (
-    <section className="overflow-hidden rounded-2xl border border-ink-100 bg-white shadow-card">
+    <section className="overflow-hidden rounded-2xl border border-ink-100 bg-surface shadow-card">
       <header className="flex flex-wrap items-center gap-x-3 gap-y-1.5 border-b border-ink-100 bg-ink-50/50 px-4 py-2.5">
         <span
           className={[

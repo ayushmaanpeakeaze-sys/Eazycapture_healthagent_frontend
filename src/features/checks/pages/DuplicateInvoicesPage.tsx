@@ -256,7 +256,7 @@ export const DuplicateInvoicesPage = ({
           >
             <span
               className={[
-                "absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition",
+                "absolute top-0.5 h-4 w-4 rounded-full bg-surface shadow transition",
                 showDismissed ? "left-[18px]" : "left-0.5",
               ].join(" ")}
             />
@@ -272,11 +272,11 @@ export const DuplicateInvoicesPage = ({
       )}
 
       {loading ? (
-        <p className="rounded-2xl border border-ink-100 bg-white px-5 py-10 text-center text-sm text-ink-500 shadow-card">
+        <p className="rounded-2xl border border-ink-100 bg-surface px-5 py-10 text-center text-sm text-ink-500 shadow-card">
           Loading matches…
         </p>
       ) : groups.length === 0 ? (
-        <p className="rounded-2xl border border-ink-100 bg-white px-5 py-10 text-center text-sm italic text-ink-400 shadow-card">
+        <p className="rounded-2xl border border-ink-100 bg-surface px-5 py-10 text-center text-sm italic text-ink-400 shadow-card">
           {showDismissed ? "No dismissed matches." : `No duplicate ${noun}s`}
         </p>
       ) : (
@@ -368,7 +368,7 @@ const MatchCard = ({
   return (
     <section
       className={[
-        "overflow-hidden rounded-2xl border bg-white shadow-card",
+        "overflow-hidden rounded-2xl border bg-surface shadow-card",
         highRisk ? "border-rose-300 ring-1 ring-rose-200" : "border-ink-100",
       ].join(" ")}
     >
@@ -428,7 +428,7 @@ const MatchCard = ({
                 className="fixed inset-0 z-10"
                 onClick={() => setMenuOpen(false)}
               />
-              <div className="absolute right-0 top-full z-20 mt-1 w-44 overflow-hidden rounded-lg border border-ink-100 bg-white py-1 shadow-lg">
+              <div className="absolute right-0 top-full z-20 mt-1 w-44 overflow-hidden rounded-lg border border-ink-100 bg-surface py-1 shadow-lg">
                 <MenuItem
                   onClick={() => {
                     setMenuOpen(false);
@@ -507,7 +507,7 @@ const MatchCard = ({
             onVoid={g.undecided ? undefined : onVoid}
           />
         ) : (
-          <div className="bg-white p-4">
+          <div className="bg-surface p-4">
             {!g.undecided && <RoleTag role="void" />}
             <p className="mt-1 text-sm font-medium text-ink-900">
               {g.dupFromFlag?.invoice_number ||
@@ -617,13 +617,13 @@ const SuggestFixModal = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-ink-900/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-ink-100">
+      <div className="absolute inset-0 bg-scrim/40 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative w-full max-w-md overflow-hidden rounded-2xl bg-surface shadow-2xl ring-1 ring-ink-100">
         <div className="relative bg-brand-gradient px-5 py-4 text-white">
           <button
             type="button"
             onClick={onClose}
-            className="absolute right-3 top-3 rounded-md p-1 text-white/80 transition hover:bg-white/20 hover:text-white"
+            className="absolute right-3 top-3 rounded-md p-1 text-white/80 transition hover:bg-surface/20 hover:text-white"
             aria-label="Close"
           >
             <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
@@ -755,7 +755,7 @@ const InvoiceCell = ({
   const paid = isPaid(r);
   const ref = res?.xero_reference || res?.reference;
   return (
-    <div className="bg-white p-4">
+    <div className="bg-surface p-4">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
           <RoleTag role={role} />

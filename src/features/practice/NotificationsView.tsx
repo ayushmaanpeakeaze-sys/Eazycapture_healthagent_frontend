@@ -194,21 +194,21 @@ export const NotificationsView = ({ onOpenCompany }: NotificationsViewProps) => 
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-rose-700 ring-1 ring-rose-200">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-surface px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-rose-700 ring-1 ring-rose-200">
             <span className="h-1.5 w-1.5 rounded-full bg-rose-500" />
             {counts.critical} critical
           </span>
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-amber-700 ring-1 ring-amber-200">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-surface px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-amber-700 ring-1 ring-amber-200">
             <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
             {counts.watch} watch
           </span>
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-brand-700 ring-1 ring-brand-200">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-surface px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-brand-700 ring-1 ring-brand-200">
             <span className="h-1.5 w-1.5 rounded-full bg-brand-500" />
             {counts.info} info
           </span>
           {eventCount > 0 &&
             (confirmClear ? (
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-2.5 py-1 text-[11px] font-semibold ring-1 ring-rose-200">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-surface px-2.5 py-1 text-[11px] font-semibold ring-1 ring-rose-200">
                 <span className="text-ink-600">Clear {eventCount}?</span>
                 <button
                   type="button"
@@ -233,7 +233,7 @@ export const NotificationsView = ({ onOpenCompany }: NotificationsViewProps) => 
                 type="button"
                 onClick={() => setConfirmClear(true)}
                 title="Clear all stored events (live alerts stay)"
-                className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1 text-[11px] font-semibold text-ink-600 ring-1 ring-ink-200 transition hover:text-rose-700 hover:ring-rose-200"
+                className="inline-flex items-center gap-1.5 rounded-full bg-surface px-3 py-1 text-[11px] font-semibold text-ink-600 ring-1 ring-ink-200 transition hover:text-rose-700 hover:ring-rose-200"
               >
                 Clear all
               </button>
@@ -243,7 +243,7 @@ export const NotificationsView = ({ onOpenCompany }: NotificationsViewProps) => 
             onClick={load}
             disabled={loading}
             title="Refresh notifications"
-            className="inline-flex items-center justify-center rounded-full bg-white p-1.5 text-ink-500 ring-1 ring-ink-200 transition hover:text-ink-800 disabled:opacity-50"
+            className="inline-flex items-center justify-center rounded-full bg-surface p-1.5 text-ink-500 ring-1 ring-ink-200 transition hover:text-ink-800 disabled:opacity-50"
           >
             <svg
               viewBox="0 0 24 24"
@@ -261,7 +261,7 @@ export const NotificationsView = ({ onOpenCompany }: NotificationsViewProps) => 
         </div>
       </header>
 
-      <section className="overflow-hidden rounded-xl border border-ink-200 bg-white shadow-card">
+      <section className="overflow-hidden rounded-xl border border-ink-200 bg-surface shadow-card">
         {loading ? (
           <div className="px-5 py-10 text-center text-sm text-ink-500">
             Loading notifications…

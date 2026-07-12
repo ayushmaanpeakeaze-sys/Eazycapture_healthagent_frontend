@@ -111,7 +111,7 @@ export const SyncButton = ({
             ? "Reconnect to Xero to resume syncing"
             : "Pull the latest data from Xero (no re-audit)"
         }
-        className="inline-flex items-center gap-1.5 rounded-lg border border-ink-200 bg-white px-2.5 py-1 text-xs font-semibold text-ink-700 shadow-card transition hover:border-ink-300 hover:bg-ink-50 disabled:cursor-not-allowed disabled:opacity-70"
+        className="inline-flex items-center gap-1.5 rounded-lg border border-ink-200 bg-surface px-2.5 py-1 text-xs font-semibold text-ink-700 shadow-card transition hover:border-ink-300 hover:bg-ink-50 disabled:cursor-not-allowed disabled:opacity-70"
       >
         <svg
           viewBox="0 0 24 24"

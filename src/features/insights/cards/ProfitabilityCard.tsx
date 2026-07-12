@@ -28,7 +28,7 @@ export const ProfitabilityCard = ({
     legend: {
       position: "bottom",
       fontSize: "10px",
-      labels: { colors: "#475569" },
+      labels: { colors: "#94a3b8" },
       itemMargin: { horizontal: 5, vertical: 0 },
       markers: { size: 5 },
     },

@@ -131,7 +131,7 @@ export const OpeningBalanceDiffsPage = ({
           >
             <span
               className={[
-                "absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition",
+                "absolute top-0.5 h-4 w-4 rounded-full bg-surface shadow transition",
                 showAll ? "left-[18px]" : "left-0.5",
               ].join(" ")}
             />
@@ -162,7 +162,7 @@ export const OpeningBalanceDiffsPage = ({
               value={regInput}
               onChange={(e) => setRegInput(e.target.value)}
               placeholder="Registration number"
-              className="rounded-md border border-amber-300 bg-white px-2.5 py-1 text-xs focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-200"
+              className="rounded-md border border-amber-300 bg-surface px-2.5 py-1 text-xs focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-200"
             />
             <button
               type="button"
@@ -183,15 +183,15 @@ export const OpeningBalanceDiffsPage = ({
       )}
 
       {loading ? (
-        <p className="rounded-2xl border border-ink-100 bg-white px-5 py-10 text-center text-sm text-ink-500 shadow-card">
+        <p className="rounded-2xl border border-ink-100 bg-surface px-5 py-10 text-center text-sm text-ink-500 shadow-card">
           Loading…
         </p>
       ) : items.length === 0 ? (
-        <p className="rounded-2xl border border-ink-100 bg-white px-5 py-10 text-center text-sm italic text-ink-400 shadow-card">
+        <p className="rounded-2xl border border-ink-100 bg-surface px-5 py-10 text-center text-sm italic text-ink-400 shadow-card">
           {showAll ? "No dismissed periods." : "Opening balances tie out"}
         </p>
       ) : (
-        <div className="overflow-x-auto rounded-2xl border border-ink-100 bg-white shadow-card">
+        <div className="overflow-x-auto rounded-2xl border border-ink-100 bg-surface shadow-card">
           <table className="w-full min-w-[760px] text-sm">
             <thead>
               <tr className="border-b border-ink-100 bg-ink-50/50 text-left text-[10px] font-semibold uppercase tracking-wider text-ink-400">
@@ -400,8 +400,8 @@ const LateTxnModal = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-ink-900/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative w-full max-w-2xl overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-ink-100">
+      <div className="absolute inset-0 bg-scrim/40 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative w-full max-w-2xl overflow-hidden rounded-2xl bg-surface shadow-2xl ring-1 ring-ink-100">
         <header className="flex items-center justify-between border-b border-ink-100 px-5 py-3">
           <div>
             <h3 className="text-sm font-semibold text-ink-900">Late transactions</h3>

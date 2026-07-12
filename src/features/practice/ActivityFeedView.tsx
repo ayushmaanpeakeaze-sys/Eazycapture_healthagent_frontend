@@ -30,8 +30,8 @@ const SEVERITY_META: Record<
   },
   medium: {
     label: "Medium",
-    badge: "bg-slate-100 text-slate-600 ring-slate-200",
-    dot: "bg-slate-400",
+    badge: "bg-ink-100 text-ink-600 ring-ink-200",
+    dot: "bg-ink-400",
     rank: 1,
   },
 };
@@ -368,7 +368,7 @@ export const ActivityFeedView = ({ companyId }: ActivityFeedViewProps) => {
                 value={picked ?? ""}
                 onChange={(e) => setPicked(e.target.value || null)}
                 disabled={companiesLoading || companies.length === 0}
-                className="max-w-[200px] rounded-lg border border-ink-300 bg-white px-3 py-2 text-sm font-medium text-ink-800 shadow-card transition focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200 disabled:opacity-60"
+                className="max-w-[200px] rounded-lg border border-ink-300 bg-surface px-3 py-2 text-sm font-medium text-ink-800 shadow-card transition focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200 disabled:opacity-60"
               >
                 {companiesLoading && <option value="">Loading…</option>}
                 {!companiesLoading && companies.length === 0 && (
@@ -434,7 +434,7 @@ export const ActivityFeedView = ({ companyId }: ActivityFeedViewProps) => {
                 "rounded-xl border p-3 text-left shadow-card transition",
                 active
                   ? "border-brand-400 bg-brand-50/40"
-                  : "border-ink-200 bg-white hover:border-ink-300",
+                  : "border-ink-200 bg-surface hover:border-ink-300",
               ].join(" ")}
             >
               <p className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-ink-500">
@@ -460,7 +460,7 @@ export const ActivityFeedView = ({ companyId }: ActivityFeedViewProps) => {
         <span className="text-[11px] font-semibold uppercase tracking-wider text-ink-500">
           Kind
         </span>
-        <div className="inline-flex rounded-lg border border-ink-200 bg-white p-1 text-xs font-medium shadow-card">
+        <div className="inline-flex rounded-lg border border-ink-200 bg-surface p-1 text-xs font-medium shadow-card">
           {(["all", "preview", "pre_ledger", "post_ledger"] as const).map(
             (k) => (
               <button
@@ -486,7 +486,7 @@ export const ActivityFeedView = ({ companyId }: ActivityFeedViewProps) => {
       </div>
 
       {!loading && groups.length === 0 ? (
-        <section className="overflow-hidden rounded-xl border border-ink-200 bg-white px-4 py-10 text-center shadow-card">
+        <section className="overflow-hidden rounded-xl border border-ink-200 bg-surface px-4 py-10 text-center shadow-card">
           <p className="text-sm font-medium text-ink-700">No matching issues</p>
           <p className="mt-1 text-xs text-ink-500">
             {results.length === 0
@@ -502,7 +502,7 @@ export const ActivityFeedView = ({ companyId }: ActivityFeedViewProps) => {
             return (
               <section
                 key={g.key}
-                className="overflow-hidden rounded-xl border border-ink-200 bg-white shadow-card"
+                className="overflow-hidden rounded-xl border border-ink-200 bg-surface shadow-card"
               >
                 <button
                   type="button"
@@ -604,7 +604,7 @@ export const ActivityFeedView = ({ companyId }: ActivityFeedViewProps) => {
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     onClick={(e) => e.stopPropagation()}
-                                    className="inline-flex items-center gap-1.5 rounded-md border border-brand-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-brand-700 transition hover:bg-brand-50"
+                                    className="inline-flex items-center gap-1.5 rounded-md border border-brand-200 bg-surface px-2.5 py-1 text-[11px] font-semibold text-brand-700 transition hover:bg-brand-50"
                                   >
                                     Open in Xero
                                     <svg
@@ -676,7 +676,7 @@ export const ActivityFeedView = ({ companyId }: ActivityFeedViewProps) => {
                                   <p className="text-[10px] font-semibold uppercase tracking-wider text-ink-500">
                                     Raw response
                                   </p>
-                                  <pre className="mt-2 max-h-80 overflow-auto rounded-lg border border-ink-200 bg-white p-3 text-[11px] leading-relaxed text-ink-700">
+                                  <pre className="mt-2 max-h-80 overflow-auto rounded-lg border border-ink-200 bg-surface p-3 text-[11px] leading-relaxed text-ink-700">
                                     {JSON.stringify(
                                       {
                                         id: r.id,

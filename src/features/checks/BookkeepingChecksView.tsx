@@ -269,7 +269,7 @@ const HistoricalAuditPanel = ({
     (contactFlagged !== null ? docFlagged + contactFlagged : progress.trapped);
 
   return (
-    <section className="rounded-xl border border-ink-200 bg-white p-5 shadow-card">
+    <section className="rounded-xl border border-ink-200 bg-surface p-5 shadow-card">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div className="flex flex-wrap items-end gap-3">
           <div>
@@ -284,7 +284,7 @@ const HistoricalAuditPanel = ({
               value={period}
               onChange={(e) => setPeriod(e.target.value as PeriodKey)}
               disabled={running}
-              className="mt-1 rounded-lg border border-ink-200 bg-white px-3 py-2 text-sm font-medium text-ink-900 shadow-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200 disabled:cursor-not-allowed disabled:opacity-60"
+              className="mt-1 rounded-lg border border-ink-200 bg-surface px-3 py-2 text-sm font-medium text-ink-900 shadow-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200 disabled:cursor-not-allowed disabled:opacity-60"
             >
               <option value="all">All transactions</option>
               <option value="current_month">Current month</option>
@@ -308,7 +308,7 @@ const HistoricalAuditPanel = ({
                   value={customStart}
                   onChange={(e) => setCustomStart(e.target.value)}
                   disabled={running}
-                  className="mt-1 rounded-lg border border-ink-200 bg-white px-3 py-2 text-sm text-ink-900 shadow-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="mt-1 rounded-lg border border-ink-200 bg-surface px-3 py-2 text-sm text-ink-900 shadow-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200 disabled:cursor-not-allowed disabled:opacity-60"
                 />
               </div>
               <div>
@@ -320,7 +320,7 @@ const HistoricalAuditPanel = ({
                   value={customEnd}
                   onChange={(e) => setCustomEnd(e.target.value)}
                   disabled={running}
-                  className="mt-1 rounded-lg border border-ink-200 bg-white px-3 py-2 text-sm text-ink-900 shadow-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="mt-1 rounded-lg border border-ink-200 bg-surface px-3 py-2 text-sm text-ink-900 shadow-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200 disabled:cursor-not-allowed disabled:opacity-60"
                 />
               </div>
             </>
@@ -355,7 +355,7 @@ const HistoricalAuditPanel = ({
               onClick={onDownloadCsv}
               disabled={csvBusy}
               title="Download all check results as a CSV"
-              className="inline-flex items-center gap-1.5 rounded-lg border border-ink-200 bg-white px-3.5 py-2.5 text-sm font-semibold text-ink-700 shadow-sm transition hover:border-brand-300 hover:bg-brand-50 hover:text-brand-700 disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-ink-200 bg-surface px-3.5 py-2.5 text-sm font-semibold text-ink-700 shadow-sm transition hover:border-brand-300 hover:bg-brand-50 hover:text-brand-700 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {csvBusy ? (
                 <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4}>

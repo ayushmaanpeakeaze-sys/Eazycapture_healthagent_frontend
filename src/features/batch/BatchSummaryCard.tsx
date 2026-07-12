@@ -10,7 +10,7 @@ export const BatchSummaryCard = ({ summary, loading }: BatchSummaryCardProps) =>
 
   if (loading && !summary) {
     return (
-      <section className="relative overflow-hidden rounded-2xl border border-brand-200 bg-gradient-to-br from-brand-50/70 via-white to-brand-100/40 p-5 shadow-card">
+      <section className="relative overflow-hidden rounded-2xl border border-brand-200 bg-gradient-to-br from-brand-50/70 via-surface to-brand-100/40 p-5 shadow-card">
         <span
           aria-hidden
           className="pointer-events-none absolute -right-12 -top-12 h-40 w-40 rounded-full bg-brand-200/40 blur-3xl"
@@ -44,7 +44,7 @@ export const BatchSummaryCard = ({ summary, loading }: BatchSummaryCardProps) =>
   if (!summary) return null;
 
   return (
-    <section className="relative overflow-hidden rounded-2xl border border-brand-200 bg-gradient-to-br from-brand-50/70 via-white to-brand-100/40 shadow-card">
+    <section className="relative overflow-hidden rounded-2xl border border-brand-200 bg-gradient-to-br from-brand-50/70 via-surface to-brand-100/40 shadow-card">
       <span
         aria-hidden
         className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-brand-200/40 blur-3xl"
@@ -56,7 +56,7 @@ export const BatchSummaryCard = ({ summary, loading }: BatchSummaryCardProps) =>
 
       <div className="relative grid grid-cols-1 gap-5 p-5 lg:grid-cols-[1.4fr_1fr]">
         <div>
-          <div className="inline-flex items-center gap-1.5 rounded-full bg-white/90 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-brand-700 shadow-sm ring-1 ring-brand-200">
+          <div className="inline-flex items-center gap-1.5 rounded-full bg-surface/90 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-brand-700 shadow-sm ring-1 ring-brand-200">
             <svg
               viewBox="0 0 24 24"
               className="h-3 w-3"
@@ -80,7 +80,7 @@ export const BatchSummaryCard = ({ summary, loading }: BatchSummaryCardProps) =>
                 {summary.top_themes.map((theme, i) => (
                   <span
                     key={`${theme}-${i}`}
-                    className="inline-flex items-center rounded-full bg-white px-2.5 py-1 text-xs font-medium text-brand-700 shadow-sm ring-1 ring-brand-200"
+                    className="inline-flex items-center rounded-full bg-surface px-2.5 py-1 text-xs font-medium text-brand-700 shadow-sm ring-1 ring-brand-200"
                   >
                     {theme}
                   </span>
@@ -90,7 +90,7 @@ export const BatchSummaryCard = ({ summary, loading }: BatchSummaryCardProps) =>
           )}
         </div>
 
-        <div className="rounded-xl border border-brand-200 bg-white/80 p-4 shadow-sm backdrop-blur-sm">
+        <div className="rounded-xl border border-brand-200 bg-surface/80 p-4 shadow-sm backdrop-blur-sm">
           <p className="text-[10px] font-semibold uppercase tracking-wider text-brand-700">
             Suggested cleanup order
           </p>

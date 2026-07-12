@@ -75,7 +75,7 @@ const SeverityDonut = ({
           cy="50"
           r={r}
           fill="none"
-          stroke="rgba(15,23,42,0.07)"
+          style={{ stroke: "rgb(var(--ink-900) / 0.07)" }}
           strokeWidth="8"
         />
         {total > 0 &&
@@ -184,7 +184,7 @@ const HealthGaugeRing = ({ score }: { score: number | null }) => {
 type LaneTone = "ghost" | "warning" | "success";
 
 const LANE_TONE: Record<LaneTone, string> = {
-  ghost: "bg-white/70",
+  ghost: "bg-surface/70",
   warning: "bg-amber-300 shadow-[0_0_10px_rgba(252,211,77,0.7)]",
   success: "bg-emerald-300 shadow-[0_0_10px_rgba(110,231,183,0.7)]",
 };
@@ -221,7 +221,7 @@ const FlowLane = ({
   caption: string;
   stages: LaneStage[];
 }) => (
-  <div className="relative overflow-hidden rounded-2xl bg-white/10 p-4 ring-1 ring-white/20 backdrop-blur-sm">
+  <div className="relative overflow-hidden rounded-2xl bg-surface/10 p-4 ring-1 ring-white/20 backdrop-blur-sm">
     <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-wider text-white/75">
       {direction === "outbound" ? <ArrowGlyph /> : <ArrowGlyph flip />}
       <span>{title}</span>
@@ -318,7 +318,7 @@ const MiniGauge = ({ score }: { score: number | null }) => {
           cy="50"
           r={r}
           fill="none"
-          stroke="rgba(15,23,42,0.08)"
+          style={{ stroke: "rgb(var(--ink-900) / 0.08)" }}
           strokeWidth="8"
         />
         <circle
@@ -660,7 +660,7 @@ export const LedgerHealthDashboard = ({
       </section>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <div className="group relative overflow-hidden rounded-2xl border border-ink-200 bg-white p-6 shadow-card transition duration-200 hover:-translate-y-0.5 hover:shadow-card-hover">
+        <div className="group relative overflow-hidden rounded-2xl border border-ink-200 bg-surface p-6 shadow-card transition duration-200 hover:-translate-y-0.5 hover:shadow-card-hover">
           <span
             aria-hidden
             className="pointer-events-none absolute -right-8 -top-8 h-28 w-28 rounded-full bg-rose-100/70 blur-2xl"
@@ -707,7 +707,7 @@ export const LedgerHealthDashboard = ({
           </div>
         </div>
 
-        <div className="group relative overflow-hidden rounded-2xl border border-ink-200 bg-white p-6 shadow-card transition duration-200 hover:-translate-y-0.5 hover:shadow-card-hover">
+        <div className="group relative overflow-hidden rounded-2xl border border-ink-200 bg-surface p-6 shadow-card transition duration-200 hover:-translate-y-0.5 hover:shadow-card-hover">
           <span
             aria-hidden
             className="pointer-events-none absolute -right-8 -top-8 h-28 w-28 rounded-full bg-brand-100/60 blur-2xl"
@@ -751,7 +751,7 @@ export const LedgerHealthDashboard = ({
           </div>
         </div>
 
-        <div className="group relative overflow-hidden rounded-2xl border border-ink-200 bg-white p-6 shadow-card transition duration-200 hover:-translate-y-0.5 hover:shadow-card-hover">
+        <div className="group relative overflow-hidden rounded-2xl border border-ink-200 bg-surface p-6 shadow-card transition duration-200 hover:-translate-y-0.5 hover:shadow-card-hover">
           <span
             aria-hidden
             className="pointer-events-none absolute -right-8 -top-8 h-28 w-28 rounded-full bg-emerald-100/60 blur-2xl"
@@ -768,7 +768,7 @@ export const LedgerHealthDashboard = ({
               </p>
             </div>
             {summary && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-white px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-ink-700 ring-1 ring-ink-200">
+              <span className="inline-flex items-center gap-1 rounded-full bg-surface px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-ink-700 ring-1 ring-ink-200">
                 <TrendDot tone={scoreGrade(summary.health_score).tone} />
                 {scoreGrade(summary.health_score).label}
               </span>
@@ -824,7 +824,7 @@ export const LedgerHealthDashboard = ({
         </div>
       </div>
 
-      <section className="overflow-hidden rounded-2xl border border-ink-200 bg-white shadow-card">
+      <section className="overflow-hidden rounded-2xl border border-ink-200 bg-surface shadow-card">
         <header className="flex items-center justify-between border-b border-ink-100 px-5 py-4">
           <div>
             <h3 className="text-base font-semibold text-ink-900">

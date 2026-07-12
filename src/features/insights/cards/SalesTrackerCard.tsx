@@ -108,6 +108,7 @@ export const SalesTrackerCard = ({
     { name: "Actual", type: "column", data: actualArr },
     { name: "Target", type: "line", data: targetArr },
   ];
+  const surfaceRgb = `rgb(${getComputedStyle(document.documentElement).getPropertyValue("--surface").trim() || "255 255 255"})`;
   const options: ApexOptions = {
     chart: { ...baseChart(), type: "line" },
     colors: [COLOR.sky, COLOR.emerald],
@@ -115,7 +116,7 @@ export const SalesTrackerCard = ({
     plotOptions: {
       bar: { columnWidth: "55%", borderRadius: 3, borderRadiusApplication: "end" },
     },
-    markers: { size: [0, 4], strokeColors: "#fff", strokeWidth: 1.5 },
+    markers: { size: [0, 4], strokeColors: surfaceRgb, strokeWidth: 1.5 },
     dataLabels: { enabled: false },
     legend: { show: false },
     xaxis: miniAxisX(cats),
@@ -369,13 +370,13 @@ const SalesTargetSettings = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-ink-900/40 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-scrim/40 p-4"
       onClick={() => {
         if (!saving) onClose();
       }}
     >
       <div
-        className="w-full max-w-md rounded-2xl bg-white p-5 shadow-xl"
+        className="w-full max-w-md rounded-2xl bg-surface p-5 shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-4 flex items-center justify-between">
@@ -398,7 +399,7 @@ const SalesTargetSettings = ({
           value={basis}
           disabled={loading || saving}
           onChange={(e) => setBasis(e.target.value)}
-          className="mt-1.5 w-full rounded-lg border border-ink-300 bg-white px-3 py-2 text-sm font-medium text-ink-900 shadow-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200 disabled:opacity-60"
+          className="mt-1.5 w-full rounded-lg border border-ink-300 bg-surface px-3 py-2 text-sm font-medium text-ink-900 shadow-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200 disabled:opacity-60"
         >
           {SALES_BASIS_OPTIONS.map((o) => (
             <option key={o.value} value={o.value}>

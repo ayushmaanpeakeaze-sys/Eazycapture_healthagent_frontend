@@ -87,11 +87,11 @@ export const UnreconciledBankItemsPage = ({
       )}
 
       {loading ? (
-        <p className="rounded-2xl border border-ink-100 bg-white px-5 py-10 text-center text-sm text-ink-500 shadow-card">
+        <p className="rounded-2xl border border-ink-100 bg-surface px-5 py-10 text-center text-sm text-ink-500 shadow-card">
           Loading…
         </p>
       ) : !data ? null : items.length === 0 ? (
-        <p className="rounded-2xl border border-ink-100 bg-white px-5 py-10 text-center text-sm italic text-ink-400 shadow-card">
+        <p className="rounded-2xl border border-ink-100 bg-surface px-5 py-10 text-center text-sm italic text-ink-400 shadow-card">
           All bank accounts reconciled
         </p>
       ) : (
@@ -101,7 +101,7 @@ export const UnreconciledBankItemsPage = ({
             return (
               <section
                 key={it.account_code}
-                className="relative rounded-2xl border border-ink-100 bg-white p-4 text-center shadow-card"
+                className="relative rounded-2xl border border-ink-100 bg-surface p-4 text-center shadow-card"
               >
                 <button
                   type="button"

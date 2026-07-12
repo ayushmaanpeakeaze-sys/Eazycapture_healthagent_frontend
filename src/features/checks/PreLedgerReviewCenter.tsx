@@ -150,7 +150,7 @@ const PrecheckTester = ({
   };
 
   return (
-    <section className="rounded-xl border border-ink-200 bg-white p-5 shadow-card">
+    <section className="rounded-xl border border-ink-200 bg-surface p-5 shadow-card">
       <div className="flex items-start justify-between gap-4">
         <h3 className="text-base font-semibold text-ink-900">
           Test Publish Precheck
@@ -171,7 +171,7 @@ const PrecheckTester = ({
             value={state.id}
             onChange={(e) => setState((s) => ({ ...s, id: e.target.value }))}
             placeholder="e.g. abc-123"
-            className="mt-1 w-full rounded-lg border border-ink-300 bg-white px-3 py-2 text-sm text-ink-900 shadow-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200"
+            className="mt-1 w-full rounded-lg border border-ink-300 bg-surface px-3 py-2 text-sm text-ink-900 shadow-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200"
           />
         </div>
         <div>
@@ -186,7 +186,7 @@ const PrecheckTester = ({
                 type: e.target.value as PublishingDocumentType,
               }))
             }
-            className="mt-1 rounded-lg border border-ink-300 bg-white px-3 py-2 text-sm text-ink-900 shadow-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200"
+            className="mt-1 rounded-lg border border-ink-300 bg-surface px-3 py-2 text-sm text-ink-900 shadow-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200"
           >
             <option value="invoice">invoice</option>
             <option value="receipt">receipt</option>
@@ -247,7 +247,7 @@ const PrecheckTester = ({
               {state.response.blocked ? "Blocked" : "Cleared"}
             </span>
             {state.response.error_code && (
-              <code className="rounded bg-white/60 px-1.5 py-0.5 text-[10px] font-mono text-ink-700">
+              <code className="rounded bg-surface/60 px-1.5 py-0.5 text-[10px] font-mono text-ink-700">
                 {state.response.error_code}
               </code>
             )}
@@ -272,7 +272,7 @@ const PrecheckTester = ({
             )}
 
           {state.response.result?.suggested_category && (
-            <div className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-white/70 px-2.5 py-1 text-[11px] font-medium text-ink-700 ring-1 ring-ink-200">
+            <div className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-surface/70 px-2.5 py-1 text-[11px] font-medium text-ink-700 ring-1 ring-ink-200">
               AI suggests · {state.response.result.suggested_category}
               {state.response.result.confidence_score != null && (
                 <span className="text-ink-400">
@@ -466,7 +466,7 @@ export const PreLedgerReviewCenter = ({
               type="button"
               onClick={runDemo}
               disabled={demoLoading}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-ink-200 bg-white px-3 py-2 text-sm font-medium text-ink-700 shadow-card transition hover:border-brand-300 hover:bg-brand-50 hover:text-brand-700 disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-ink-200 bg-surface px-3 py-2 text-sm font-medium text-ink-700 shadow-card transition hover:border-brand-300 hover:bg-brand-50 hover:text-brand-700 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {demoLoading ? (
                 <svg
@@ -494,7 +494,7 @@ export const PreLedgerReviewCenter = ({
           )}
           <button
             type="button"
-            className="rounded-lg border border-ink-200 bg-white px-3 py-2 text-sm font-medium text-ink-700 shadow-card transition hover:bg-ink-50"
+            className="rounded-lg border border-ink-200 bg-surface px-3 py-2 text-sm font-medium text-ink-700 shadow-card transition hover:bg-ink-50"
           >
             Export CSV
           </button>
@@ -531,7 +531,7 @@ export const PreLedgerReviewCenter = ({
       )}
 
       <div className="grid grid-cols-3 gap-4">
-        <div className="rounded-xl border border-ink-200 bg-white p-4 shadow-card">
+        <div className="rounded-xl border border-ink-200 bg-surface p-4 shadow-card">
           <p className="text-[11px] uppercase tracking-wider text-ink-500">
             Reviewed
           </p>
@@ -539,7 +539,7 @@ export const PreLedgerReviewCenter = ({
             {counts.total}
           </p>
         </div>
-        <div className="rounded-xl border border-ink-200 bg-white p-4 shadow-card">
+        <div className="rounded-xl border border-ink-200 bg-surface p-4 shadow-card">
           <p className="text-[11px] uppercase tracking-wider text-ink-500">
             Passed
           </p>
@@ -547,7 +547,7 @@ export const PreLedgerReviewCenter = ({
             {counts.passed}
           </p>
         </div>
-        <div className="rounded-xl border border-ink-200 bg-white p-4 shadow-card">
+        <div className="rounded-xl border border-ink-200 bg-surface p-4 shadow-card">
           <p className="text-[11px] uppercase tracking-wider text-ink-500">
             Held
           </p>
@@ -558,7 +558,7 @@ export const PreLedgerReviewCenter = ({
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.4fr_1fr]">
-        <section className="overflow-hidden rounded-xl border border-ink-200 bg-white shadow-card">
+        <section className="overflow-hidden rounded-xl border border-ink-200 bg-surface shadow-card">
           <div className="flex items-center justify-between border-b border-ink-200 px-4 py-3">
             <p className="text-sm font-semibold text-ink-900">
               {loading
@@ -669,7 +669,7 @@ export const PreLedgerReviewCenter = ({
         <aside className="space-y-4">
           {selected ? (
             <>
-              <div className="rounded-xl border border-ink-200 bg-white p-5 shadow-card">
+              <div className="rounded-xl border border-ink-200 bg-surface p-5 shadow-card">
                 <p className="text-[11px] uppercase tracking-wider text-ink-500">
                   {selected.vendor}
                 </p>
@@ -715,14 +715,14 @@ export const PreLedgerReviewCenter = ({
                 </button>
                 <button
                   type="button"
-                  className="rounded-lg border border-ink-200 bg-white px-3 py-2.5 text-sm font-medium text-ink-700 shadow-card transition hover:bg-ink-50"
+                  className="rounded-lg border border-ink-200 bg-surface px-3 py-2.5 text-sm font-medium text-ink-700 shadow-card transition hover:bg-ink-50"
                 >
                   Dismiss
                 </button>
               </div>
             </>
           ) : (
-            <div className="rounded-xl border border-dashed border-ink-300 bg-white p-8 text-center">
+            <div className="rounded-xl border border-dashed border-ink-300 bg-surface p-8 text-center">
               <p className="text-sm font-medium text-ink-700">
                 Select a blocked document
               </p>

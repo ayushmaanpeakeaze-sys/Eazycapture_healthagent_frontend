@@ -15,6 +15,7 @@ import {
 } from "@/services/audit.service";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { NotFound } from "@/components/NotFound";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { useAuth } from "@/features/auth/AuthProvider";
 import { ConnectXeroButton } from "@/features/integrations/ConnectXeroButton";
 import { ReconnectBanner } from "@/features/integrations/ReconnectBanner";
@@ -140,7 +141,7 @@ const BatchIcon = (
   </svg>
 );
 const LogoMark = (
-  <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 ring-1 ring-white/20">
+  <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-surface/10 ring-1 ring-white/20">
     <img
       src="/eazycapture-icon-white.png"
       alt="EazyCapture"
@@ -382,14 +383,14 @@ const RailButton = ({
       disabled
         ? "cursor-not-allowed text-white/40"
         : active
-          ? "bg-white/15 text-white shadow-sm ring-1 ring-white/20"
-          : "text-white/70 hover:bg-white/10 hover:text-white",
+          ? "bg-surface/15 text-white shadow-sm ring-1 ring-white/20"
+          : "text-white/70 hover:bg-surface/10 hover:text-white",
     ].join(" ")}
   >
     {active && !disabled && (
       <span
         aria-hidden
-        className="absolute -left-3 top-1/2 h-8 w-1 -translate-y-1/2 rounded-r-full bg-white shadow-[0_0_10px_rgba(255,255,255,0.7)]"
+        className="absolute -left-3 top-1/2 h-8 w-1 -translate-y-1/2 rounded-r-full bg-surface shadow-[0_0_10px_rgba(255,255,255,0.7)]"
       />
     )}
     <span
@@ -471,7 +472,7 @@ const ClientBreadcrumb = ({
     PROVIDER_STYLE[providerKey] ?? "bg-ink-100 text-ink-700 ring-ink-200";
   const needsReconnect = !!client?.needs_reconnect;
   return (
-    <div className="flex flex-wrap items-center gap-3 rounded-xl border border-ink-200 bg-white px-4 py-2.5 shadow-card">
+    <div className="flex flex-wrap items-center gap-3 rounded-xl border border-ink-200 bg-surface px-4 py-2.5 shadow-card">
       {navCollapsed && onToggleNav && (
         <button
           type="button"
@@ -536,6 +537,7 @@ const ClientBreadcrumb = ({
       <span className="ml-auto font-mono text-[10px] text-ink-400">
         {(client?.company_id ?? companyId).slice(0, 8)}…
       </span>
+      <ThemeToggle />
     </div>
   );
 };
@@ -549,13 +551,18 @@ const PracticeLayout = () => {
 
   return (
     <div className="relative flex h-screen flex-col overflow-hidden bg-ink-50 text-ink-900">
-      <header className="shrink-0 border-b border-ink-200 bg-white/95 backdrop-blur">
+      <header className="shrink-0 border-b border-ink-200 bg-surface/95 backdrop-blur">
         <div className="mx-auto flex h-14 max-w-[1280px] items-center gap-5 px-8">
           <div className="flex items-center">
             <img
               src="/eazycapture-logo.png"
               alt="EazyCapture"
-              className="h-7 w-auto"
+              className="h-7 w-auto dark:hidden"
+            />
+            <img
+              src="/eazycapture-logo-white.png"
+              alt="EazyCapture"
+              className="hidden h-7 w-auto dark:block"
             />
           </div>
 
@@ -573,6 +580,7 @@ const PracticeLayout = () => {
           </nav>
 
           <div className="ml-auto flex items-center gap-3">
+            <ThemeToggle />
             <ConnectXeroButton />
             <div
               className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-medium text-emerald-700 ring-1 ring-emerald-200"
@@ -679,7 +687,7 @@ const ClientLayout = () => {
             type="button"
             onClick={toggleNav}
             title="Hide sidebar"
-            className="absolute -right-2.5 top-6 z-10 flex h-6 w-6 items-center justify-center rounded-full bg-white text-brand-700 shadow ring-1 ring-ink-200 transition hover:bg-brand-50"
+            className="absolute -right-2.5 top-6 z-10 flex h-6 w-6 items-center justify-center rounded-full bg-surface text-brand-700 shadow ring-1 ring-ink-200 transition hover:bg-brand-50"
           >
             <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round">
               <path d="m15 18-6-6 6-6" />
@@ -687,7 +695,7 @@ const ClientLayout = () => {
           </button>
         )}
         <div className="relative mb-4">{LogoMark}</div>
-        <div className="relative h-px w-8 bg-white/15" />
+        <div className="relative h-px w-8 bg-surface/15" />
         <nav className="relative mt-4 flex flex-1 flex-col items-center gap-2">
           {NAV_CLIENT.map((item) => (
             <RailButton

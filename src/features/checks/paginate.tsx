@@ -45,7 +45,7 @@ export const TablePager = ({
         <select
           value={limit}
           onChange={(e) => setLimit(Number(e.target.value))}
-          className="rounded-md border border-ink-200 bg-white px-1.5 py-1 text-[11px] focus:border-brand-400 focus:outline-none"
+          className="rounded-md border border-ink-200 bg-surface px-1.5 py-1 text-[11px] focus:border-brand-400 focus:outline-none"
         >
           <option value={20}>20</option>
           <option value={50}>50</option>

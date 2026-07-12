@@ -22,7 +22,7 @@ export const SettingsView = () => {
         </p>
       </header>
 
-      <section className="relative overflow-hidden rounded-2xl border border-ink-200 bg-white p-6 shadow-float">
+      <section className="relative overflow-hidden rounded-2xl border border-ink-200 bg-surface p-6 shadow-float">
         <span
           aria-hidden
           className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-brand-100/60 blur-3xl"
@@ -59,7 +59,7 @@ export const SettingsView = () => {
             <button
               type="button"
               onClick={logout}
-              className="inline-flex items-center justify-center gap-2 rounded-lg border border-ink-200 bg-white px-3.5 py-2 text-sm font-medium text-ink-700 transition hover:border-rose-300 hover:bg-rose-50 hover:text-rose-700 sm:ml-auto"
+              className="inline-flex items-center justify-center gap-2 rounded-lg border border-ink-200 bg-surface px-3.5 py-2 text-sm font-medium text-ink-700 transition hover:border-rose-300 hover:bg-rose-50 hover:text-rose-700 sm:ml-auto"
             >
               <LogoutIcon />
               Sign out
@@ -68,7 +68,7 @@ export const SettingsView = () => {
         </div>
       </section>
 
-      <section className="rounded-2xl border border-ink-200 bg-white p-5 shadow-card">
+      <section className="rounded-2xl border border-ink-200 bg-surface p-5 shadow-card">
         <h2 className="text-sm font-semibold text-ink-900">On the roadmap</h2>
         <p className="mt-1 text-xs text-ink-500">
           Configuration that will live here as the backend ships.
@@ -79,7 +79,7 @@ export const SettingsView = () => {
               key={item.title}
               className="flex items-start gap-3 rounded-xl border border-dashed border-ink-200 bg-ink-50/40 p-3.5"
             >
-              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white text-ink-400 ring-1 ring-ink-200">
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-surface text-ink-400 ring-1 ring-ink-200">
                 {item.icon}
               </span>
               <div className="min-w-0">

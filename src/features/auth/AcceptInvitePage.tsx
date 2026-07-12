@@ -165,7 +165,7 @@ export const AcceptInvitePage = ({
           onClick={() => {
             window.location.href = `${window.location.origin}/`;
           }}
-          className="mt-3 inline-flex w-full items-center justify-center rounded-lg border border-ink-200 bg-white py-2.5 text-sm font-medium text-ink-600 transition hover:bg-ink-50"
+          className="mt-3 inline-flex w-full items-center justify-center rounded-lg border border-ink-200 bg-surface py-2.5 text-sm font-medium text-ink-600 transition hover:bg-ink-50"
         >
           Stay signed in as {sessionEmail}
         </button>
@@ -200,7 +200,7 @@ export const AcceptInvitePage = ({
             <span className="truncate text-sm font-medium text-ink-800">
               {invitedEmail}
             </span>
-            <span className="ml-auto rounded-full bg-white px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-ink-400 ring-1 ring-ink-200">
+            <span className="ml-auto rounded-full bg-surface px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-ink-400 ring-1 ring-ink-200">
               Invited
             </span>
           </div>
@@ -222,7 +222,7 @@ export const AcceptInvitePage = ({
             onChange={(e) => setFullName(e.target.value)}
             disabled={loading}
             placeholder="Jane Doe"
-            className="mt-1 block w-full rounded-lg border border-ink-300 bg-white px-3 py-2.5 text-sm text-ink-900 shadow-sm transition focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200 disabled:opacity-60"
+            className="mt-1 block w-full rounded-lg border border-ink-300 bg-surface px-3 py-2.5 text-sm text-ink-900 shadow-sm transition focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200 disabled:opacity-60"
           />
         </div>
         <div>
@@ -236,7 +236,7 @@ export const AcceptInvitePage = ({
             onChange={(e) => setPassword(e.target.value)}
             disabled={loading}
             placeholder="At least 8 characters"
-            className="mt-1 block w-full rounded-lg border border-ink-300 bg-white px-3 py-2.5 text-sm text-ink-900 shadow-sm transition focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200 disabled:opacity-60"
+            className="mt-1 block w-full rounded-lg border border-ink-300 bg-surface px-3 py-2.5 text-sm text-ink-900 shadow-sm transition focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200 disabled:opacity-60"
           />
         </div>
         <div>
@@ -250,7 +250,7 @@ export const AcceptInvitePage = ({
             onChange={(e) => setConfirm(e.target.value)}
             disabled={loading}
             placeholder="Repeat password"
-            className="mt-1 block w-full rounded-lg border border-ink-300 bg-white px-3 py-2.5 text-sm text-ink-900 shadow-sm transition focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200 disabled:opacity-60"
+            className="mt-1 block w-full rounded-lg border border-ink-300 bg-surface px-3 py-2.5 text-sm text-ink-900 shadow-sm transition focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200 disabled:opacity-60"
           />
         </div>
 

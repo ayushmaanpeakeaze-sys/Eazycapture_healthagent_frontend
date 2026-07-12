@@ -217,7 +217,7 @@ export const OldUnpaidInvoicesPage = ({
           >
             <span
               className={[
-                "absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition",
+                "absolute top-0.5 h-4 w-4 rounded-full bg-surface shadow transition",
                 showDismissed ? "left-[18px]" : "left-0.5",
               ].join(" ")}
             />
@@ -240,7 +240,7 @@ export const OldUnpaidInvoicesPage = ({
             type="button"
             disabled={bulkBusy}
             onClick={() => bulk("snooze", { days: 30 })}
-            className="rounded-md border border-ink-200 bg-white px-2.5 py-1 font-semibold text-ink-600 transition hover:border-brand-300 hover:text-brand-700 disabled:opacity-60"
+            className="rounded-md border border-ink-200 bg-surface px-2.5 py-1 font-semibold text-ink-600 transition hover:border-brand-300 hover:text-brand-700 disabled:opacity-60"
           >
             Ignore 30 days
           </button>
@@ -248,7 +248,7 @@ export const OldUnpaidInvoicesPage = ({
             type="button"
             disabled={bulkBusy}
             onClick={() => bulk("dismiss")}
-            className="rounded-md border border-ink-200 bg-white px-2.5 py-1 font-semibold text-ink-600 transition hover:border-rose-300 hover:text-rose-600 disabled:opacity-60"
+            className="rounded-md border border-ink-200 bg-surface px-2.5 py-1 font-semibold text-ink-600 transition hover:border-rose-300 hover:text-rose-600 disabled:opacity-60"
           >
             Dismiss
           </button>
@@ -269,11 +269,11 @@ export const OldUnpaidInvoicesPage = ({
       )}
 
       {loading ? (
-        <p className="rounded-2xl border border-ink-100 bg-white px-5 py-10 text-center text-sm text-ink-500 shadow-card">
+        <p className="rounded-2xl border border-ink-100 bg-surface px-5 py-10 text-center text-sm text-ink-500 shadow-card">
           Loading…
         </p>
       ) : visible.length === 0 ? (
-        <p className="rounded-2xl border border-ink-100 bg-white px-5 py-10 text-center text-sm italic text-ink-400 shadow-card">
+        <p className="rounded-2xl border border-ink-100 bg-surface px-5 py-10 text-center text-sm italic text-ink-400 shadow-card">
           {showDismissed
             ? "No dismissed items."
             : search
@@ -281,7 +281,7 @@ export const OldUnpaidInvoicesPage = ({
               : `No old unpaid ${noun}s`}
         </p>
       ) : (
-        <div className="overflow-x-auto rounded-2xl border border-ink-100 bg-white shadow-card">
+        <div className="overflow-x-auto rounded-2xl border border-ink-100 bg-surface shadow-card">
           <table className="min-w-[820px] w-full text-sm">
             <thead>
               <tr className="border-b border-ink-100 bg-ink-50/50 text-left text-[10px] font-semibold uppercase tracking-wider text-ink-400">

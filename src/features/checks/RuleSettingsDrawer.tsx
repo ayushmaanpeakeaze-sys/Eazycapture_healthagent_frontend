@@ -105,11 +105,11 @@ export const RuleSettingsDrawer = ({
       aria-modal="true"
     >
       <div
-        className="absolute inset-0 bg-ink-900/40 backdrop-blur-sm"
+        className="absolute inset-0 bg-scrim/40 backdrop-blur-sm"
         onClick={saving ? undefined : onClose}
       />
 
-      <aside className="relative flex h-full w-full max-w-md flex-col overflow-hidden bg-white shadow-2xl">
+      <aside className="relative flex h-full w-full max-w-md flex-col overflow-hidden bg-surface shadow-2xl">
         <header className="flex items-start justify-between gap-4 border-b border-ink-200 px-6 py-5">
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-wider text-ink-500">
@@ -173,7 +173,7 @@ export const RuleSettingsDrawer = ({
                 <h3 className="text-[11px] font-semibold uppercase tracking-wider text-ink-500">
                   General
                 </h3>
-                <div className="mt-3 rounded-lg border border-ink-200 bg-white p-3.5">
+                <div className="mt-3 rounded-lg border border-ink-200 bg-surface p-3.5">
                   <label
                     htmlFor="ignore-before"
                     className="block text-xs font-medium text-ink-800"
@@ -191,7 +191,7 @@ export const RuleSettingsDrawer = ({
                       setIgnoreBefore(e.target.value);
                       setDirty(true);
                     }}
-                    className="mt-2 w-full rounded-md border border-ink-300 bg-white px-2.5 py-1.5 text-sm text-ink-900 shadow-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200"
+                    className="mt-2 w-full rounded-md border border-ink-300 bg-surface px-2.5 py-1.5 text-sm text-ink-900 shadow-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200"
                   />
                 </div>
               </section>
@@ -230,7 +230,7 @@ export const RuleSettingsDrawer = ({
                       )}
                     </header>
 
-                    <ul className="overflow-hidden rounded-lg border border-ink-200 bg-white">
+                    <ul className="overflow-hidden rounded-lg border border-ink-200 bg-surface">
                       {builtRules.map((rule, i) => {
                         const isOn = !disabledRules.has(rule.key);
                         return (
@@ -261,7 +261,7 @@ export const RuleSettingsDrawer = ({
                             >
                               <span
                                 className={[
-                                  "inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform",
+                                  "inline-block h-4 w-4 transform rounded-full bg-surface shadow-sm transition-transform",
                                   isOn ? "translate-x-[18px]" : "translate-x-0.5",
                                 ].join(" ")}
                               />
@@ -303,7 +303,7 @@ export const RuleSettingsDrawer = ({
                   type="button"
                   onClick={onClose}
                   disabled={saving}
-                  className="rounded-lg border border-ink-200 bg-white px-3 py-2 text-sm font-medium text-ink-700 transition hover:bg-ink-50 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="rounded-lg border border-ink-200 bg-surface px-3 py-2 text-sm font-medium text-ink-700 transition hover:bg-ink-50 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   Cancel
                 </button>

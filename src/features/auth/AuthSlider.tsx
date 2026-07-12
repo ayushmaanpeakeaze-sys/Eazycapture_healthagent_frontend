@@ -459,11 +459,11 @@ const Ambient = () => (
   <>
     <span
       aria-hidden
-      className="pointer-events-none absolute -right-16 top-12 h-64 w-64 rounded-full bg-white/10 blur-3xl"
+      className="pointer-events-none absolute -right-16 top-12 h-64 w-64 rounded-full bg-surface/10 blur-3xl"
     />
     <span
       aria-hidden
-      className="pointer-events-none absolute -bottom-16 -left-10 h-72 w-72 rounded-full bg-white/10 blur-3xl"
+      className="pointer-events-none absolute -bottom-16 -left-10 h-72 w-72 rounded-full bg-surface/10 blur-3xl"
     />
   </>
 );
@@ -606,13 +606,13 @@ const SLIDER_CSS = `
 .ec-auth-stage {
   height: 100vh;
   width: 100%;
-  background: #ffffff;
+  background: rgb(var(--surface));
 }
 .ec-auth {
   position: relative;
   width: 100%;
   height: 100%;
-  background: #ffffff;
+  background: rgb(var(--surface));
   overflow: hidden;
 }
 .ec-form-c {
@@ -620,7 +620,7 @@ const SLIDER_CSS = `
   top: 0;
   height: 100%;
   width: 50%;
-  background: linear-gradient(155deg, #ffffff 0%, #faf8ff 55%, #f1ecfd 100%);
+  background: linear-gradient(155deg, rgb(var(--surface)) 0%, rgb(var(--surface-2)) 100%);
   transition: all 0.6s ease-in-out;
 }
 .ec-signin-c { left: 0; z-index: 2; }
@@ -662,17 +662,17 @@ const SLIDER_CSS = `
 .ec-input {
   width: 100%;
   border-radius: 12px;
-  border: 1px solid #e2e0ee;
-  background: #f5f4fa;
+  border: 1px solid rgb(var(--ink-200));
+  background: rgb(var(--surface-2));
   padding: 14px 16px;
   font-size: 15px;
-  color: #1e1b2e;
+  color: rgb(var(--ink-900));
   transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
 }
-.ec-input::placeholder { color: #9b97ac; }
+.ec-input::placeholder { color: rgb(var(--ink-400)); }
 .ec-input:focus {
   outline: none;
-  background: #ffffff;
+  background: rgb(var(--surface));
   border-color: #7142ee;
   box-shadow: 0 0 0 3px rgba(113,66,238,0.18);
 }
@@ -698,11 +698,11 @@ const SLIDER_CSS = `
   margin-top: 16px;
   width: 100%;
   border-radius: 12px;
-  border: 1px solid #fecdd3;
-  background: #fff1f2;
+  border: 1px solid rgb(var(--rose-200));
+  background: rgb(var(--rose-50));
   padding: 10px 14px;
   font-size: 13px;
-  color: #9f1239;
+  color: rgb(var(--rose-800));
 }
 .ec-overlay-c {
   position: absolute;

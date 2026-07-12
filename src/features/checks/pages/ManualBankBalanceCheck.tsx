@@ -455,7 +455,7 @@ const AccountCard = ({
   };
 
   return (
-    <section className="relative overflow-hidden rounded-2xl border border-ink-100 bg-white p-4 shadow-card">
+    <section className="relative overflow-hidden rounded-2xl border border-ink-100 bg-surface p-4 shadow-card">
       <button
         type="button"
         onClick={() => onExclude(true)}
@@ -821,11 +821,11 @@ export const ManualBankBalanceCheck = ({
       )}
 
       {loading ? (
-        <p className="rounded-2xl border border-ink-100 bg-white px-5 py-10 text-center text-sm text-ink-500 shadow-card">
+        <p className="rounded-2xl border border-ink-100 bg-surface px-5 py-10 text-center text-sm text-ink-500 shadow-card">
           Loading…
         </p>
       ) : error ? null : items.length === 0 ? (
-        <p className="rounded-2xl border border-ink-100 bg-white px-5 py-10 text-center text-sm italic text-ink-400 shadow-card">
+        <p className="rounded-2xl border border-ink-100 bg-surface px-5 py-10 text-center text-sm italic text-ink-400 shadow-card">
           {showAll
             ? "No bank accounts found."
             : "All bank accounts reconciled ✓"}

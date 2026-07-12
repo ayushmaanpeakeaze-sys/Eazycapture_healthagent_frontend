@@ -232,7 +232,7 @@ export const TeamActivityView = ({ onPickClient }: TeamActivityViewProps) => {
           <h3 className="mb-2 text-sm font-semibold text-ink-700">
             Team &amp; invitations
           </h3>
-          <div className="overflow-hidden rounded-xl border border-ink-200 bg-white shadow-card">
+          <div className="overflow-hidden rounded-xl border border-ink-200 bg-surface shadow-card">
             {loading && events.length === 0 ? (
               <p className="px-4 py-8 text-center text-sm text-ink-400">
                 Loading team…
@@ -294,7 +294,7 @@ export const TeamActivityView = ({ onPickClient }: TeamActivityViewProps) => {
           <h3 className="mb-2 text-sm font-semibold text-ink-700">
             Connected ledgers
           </h3>
-          <div className="overflow-hidden rounded-xl border border-ink-200 bg-white shadow-card">
+          <div className="overflow-hidden rounded-xl border border-ink-200 bg-surface shadow-card">
             {loading && connected.length === 0 ? (
               <p className="px-4 py-8 text-center text-sm text-ink-400">
                 Loading connections…
@@ -365,7 +365,7 @@ const StatCard = ({
   value: number;
   accent?: "amber";
 }) => (
-  <div className="rounded-xl border border-ink-200 bg-white p-3 shadow-card">
+  <div className="rounded-xl border border-ink-200 bg-surface p-3 shadow-card">
     <p
       className={[
         "text-[10px] font-semibold uppercase tracking-wider",

@@ -17,6 +17,16 @@
       rel="stylesheet"
     />
     <title>EazyCapture · Bookkeeping Health</title>
+    <script>
+      (function () {
+        try {
+          var t = localStorage.getItem("eazy.theme");
+          if (t !== "light" && t !== "dark")
+            t = matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+          if (t === "dark") document.documentElement.classList.add("dark");
+        } catch (e) {}
+      })();
+    </script>
   </head>
   <body class="bg-ink-50 text-ink-900 font-sans antialiased">
     <div id="root"></div>

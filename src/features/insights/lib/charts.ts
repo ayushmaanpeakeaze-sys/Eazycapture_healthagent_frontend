@@ -18,7 +18,7 @@ export const miniAxisX = (categories: string[]): ApexOptions["xaxis"] => ({
     hideOverlappingLabels: true,
     style: { colors: "#94a3b8", fontSize: "9px" },
   },
-  axisBorder: { color: "#e2e8f0" },
+  axisBorder: { color: "rgba(148,163,184,0.25)" },
   axisTicks: { show: false },
   tooltip: { enabled: false },
 });
@@ -31,7 +31,7 @@ export const miniAxisY = (): ApexOptions["yaxis"] => ({
 });
 
 export const gridStyle = (): ApexOptions["grid"] => ({
-  borderColor: "#f1f3f7",
+  borderColor: "rgba(148,163,184,0.15)",
   padding: { left: 4, right: 4 },
   xaxis: { lines: { show: false } },
 });

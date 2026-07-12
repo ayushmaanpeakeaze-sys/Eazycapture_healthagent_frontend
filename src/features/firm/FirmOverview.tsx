@@ -140,7 +140,7 @@ export const FirmOverview = () => {
       {!res ? (
         <SummarySkeleton />
       ) : !res.ok ? (
-        <div className="rounded-2xl border border-ink-100 bg-white p-6 text-sm text-ink-600 shadow-card">
+        <div className="rounded-2xl border border-ink-100 bg-surface p-6 text-sm text-ink-600 shadow-card">
           {res.error}
         </div>
       ) : isEmpty ? (
@@ -152,7 +152,7 @@ export const FirmOverview = () => {
         <>
           <SummaryTiles data={res.data} />
 
-          <section className="overflow-hidden rounded-2xl border border-ink-100 bg-white shadow-card">
+          <section className="overflow-hidden rounded-2xl border border-ink-100 bg-surface shadow-card">
             <div className="flex items-center justify-between gap-3 border-b border-ink-100 px-5 py-3">
               <div className="relative max-w-xs flex-1">
                 <svg
@@ -171,7 +171,7 @@ export const FirmOverview = () => {
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="Search client"
-                  className="w-full rounded-lg border border-ink-200 bg-white py-1.5 pl-9 pr-3 text-sm text-ink-900 shadow-sm transition focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-200"
+                  className="w-full rounded-lg border border-ink-200 bg-surface py-1.5 pl-9 pr-3 text-sm text-ink-900 shadow-sm transition focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-200"
                 />
               </div>
               <span className="shrink-0 text-xs text-ink-400">
@@ -338,7 +338,7 @@ const Tile = ({
             ? "text-ink-500"
             : "text-ink-900";
   return (
-    <div className="rounded-xl border border-ink-100 bg-white px-4 py-3 shadow-card">
+    <div className="rounded-xl border border-ink-100 bg-surface px-4 py-3 shadow-card">
       <p className="text-[10px] font-semibold uppercase tracking-wider text-ink-400">
         {label}
       </p>
@@ -486,10 +486,10 @@ const SummarySkeleton = () => (
       {Array.from({ length: 8 }).map((_, i) => (
         <div
           key={i}
-          className="h-[68px] animate-pulse rounded-xl border border-ink-100 bg-white shadow-card"
+          className="h-[68px] animate-pulse rounded-xl border border-ink-100 bg-surface shadow-card"
         />
       ))}
     </div>
-    <div className="h-72 animate-pulse rounded-2xl border border-ink-100 bg-white shadow-card" />
+    <div className="h-72 animate-pulse rounded-2xl border border-ink-100 bg-surface shadow-card" />
   </div>
 );

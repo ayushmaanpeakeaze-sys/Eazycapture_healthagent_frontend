@@ -22,18 +22,18 @@ export const AuthShell = ({
   const [imgOk, setImgOk] = useState(true);
 
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-white">
+    <div className="flex h-screen w-full overflow-hidden bg-surface">
       <div
         className="relative hidden w-1/2 flex-col overflow-hidden p-10 text-white lg:flex"
         style={PANEL_BG}
       >
         <span
           aria-hidden
-          className="pointer-events-none absolute -right-16 top-10 h-64 w-64 rounded-full bg-white/10 blur-3xl"
+          className="pointer-events-none absolute -right-16 top-10 h-64 w-64 rounded-full bg-surface/10 blur-3xl"
         />
         <span
           aria-hidden
-          className="pointer-events-none absolute -bottom-20 -left-10 h-72 w-72 rounded-full bg-white/10 blur-3xl"
+          className="pointer-events-none absolute -bottom-20 -left-10 h-72 w-72 rounded-full bg-surface/10 blur-3xl"
         />
 
         <img
@@ -71,7 +71,12 @@ export const AuthShell = ({
           <img
             src="/eazycapture-logo.png"
             alt="EazyCapture"
-            className="mb-6 h-6 w-auto lg:hidden"
+            className="mb-6 h-6 w-auto lg:hidden dark:hidden"
+          />
+          <img
+            src="/eazycapture-logo-white.png"
+            alt="EazyCapture"
+            className="mb-6 hidden h-6 w-auto dark:max-lg:block"
           />
           {children}
         </div>

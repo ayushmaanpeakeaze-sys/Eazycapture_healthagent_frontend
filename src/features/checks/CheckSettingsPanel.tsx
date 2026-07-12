@@ -191,8 +191,8 @@ export const CheckSettingsPanel = ({
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
-      <div className="absolute inset-0 bg-ink-900/30 backdrop-blur-sm" onClick={busy ? undefined : onClose} />
-      <div className="relative flex h-full w-full max-w-md flex-col bg-white shadow-2xl">
+      <div className="absolute inset-0 bg-scrim/30 backdrop-blur-sm" onClick={busy ? undefined : onClose} />
+      <div className="relative flex h-full w-full max-w-md flex-col bg-surface shadow-2xl">
         <header className="flex items-center justify-between border-b border-ink-100 px-5 py-4">
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-ink-400">
@@ -341,7 +341,7 @@ const FieldControl = ({
         <select
           value={String(value ?? field.default ?? "")}
           onChange={(e) => onChange(e.target.value)}
-          className="w-full rounded-lg border border-ink-200 bg-white px-2.5 py-1.5 text-sm focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-200"
+          className="w-full rounded-lg border border-ink-200 bg-surface px-2.5 py-1.5 text-sm focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-200"
         >
           {opts.map((opt) => (
             <option key={opt} value={opt}>
@@ -417,7 +417,7 @@ const Switch = ({
   >
     <span
       className={[
-        "absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition",
+        "absolute top-0.5 h-4 w-4 rounded-full bg-surface shadow transition",
         checked ? "left-[18px]" : "left-0.5",
       ].join(" ")}
     />

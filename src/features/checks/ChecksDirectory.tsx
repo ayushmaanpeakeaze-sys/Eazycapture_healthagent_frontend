@@ -182,7 +182,7 @@ export const ChecksDirectory = ({
   return (
     <div className="grid gap-5 lg:grid-cols-[250px_1fr]">
       <aside className="space-y-4">
-        <div className="rounded-2xl border border-ink-100 bg-white p-5 text-center shadow-card">
+        <div className="rounded-2xl border border-ink-100 bg-surface p-5 text-center shadow-card">
           <Gauge score={checksHealth} />
           <p className="mt-1.5 text-[11px] text-ink-400">
             {loading ? "—" : `${okCount} of ${rows.length} checks clear`}
@@ -196,7 +196,7 @@ export const ChecksDirectory = ({
             </p>
           </div>
         </div>
-        <div className="rounded-2xl border border-ink-100 bg-white p-4 shadow-card">
+        <div className="rounded-2xl border border-ink-100 bg-surface p-4 shadow-card">
           <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-400">
             All checks
           </p>
@@ -267,7 +267,7 @@ export const ChecksDirectory = ({
           </FilterPill>
         </div>
 
-        <section className="overflow-hidden rounded-2xl border border-ink-100 bg-white shadow-card">
+        <section className="overflow-hidden rounded-2xl border border-ink-100 bg-surface shadow-card">
           <div className="flex items-center justify-between border-b border-ink-100 px-5 py-3">
             <h3 className="text-sm font-semibold text-ink-900">Detailed results</h3>
             <span className="text-[11px] text-ink-400">
@@ -574,7 +574,7 @@ const FilterPill = ({
       "inline-flex items-center rounded-full px-3 py-1 text-xs font-medium ring-1 transition",
       active
         ? "bg-brand-600 text-white ring-brand-600"
-        : "bg-white text-ink-600 ring-ink-200 hover:border-brand-300 hover:text-brand-700",
+        : "bg-surface text-ink-600 ring-ink-200 hover:border-brand-300 hover:text-brand-700",
     ].join(" ")}
   >
     {children}
@@ -590,7 +590,7 @@ const BasisTile = ({
   value: ReactNode;
   tone?: "ink" | "brand";
 }) => (
-  <div className="rounded-xl border border-ink-100 bg-white px-4 py-3 text-center shadow-card">
+  <div className="rounded-xl border border-ink-100 bg-surface px-4 py-3 text-center shadow-card">
     <p className="text-[10px] font-semibold uppercase tracking-wider text-ink-400">
       {label}
     </p>
@@ -616,7 +616,7 @@ const Gauge = ({ score }: { score: number | null }) => {
         ? "#f59e0b"
         : tone === "rose"
           ? "#f43f5e"
-          : "#cbd5e1";
+          : "#94a3b8";
   const heart =
     tone === "emerald"
       ? "text-emerald-500"
@@ -633,7 +633,7 @@ const Gauge = ({ score }: { score: number | null }) => {
     <div className="relative mx-auto h-28 w-28">
       <svg viewBox="0 0 104 104" className="h-full w-full">
         <g transform="rotate(135 52 52)">
-          <circle cx="52" cy="52" r={r} fill="none" stroke="rgba(15,23,42,0.08)" strokeWidth="9" strokeLinecap="round" strokeDasharray={`${track} ${c}`} />
+          <circle cx="52" cy="52" r={r} fill="none" style={{ stroke: "rgb(var(--ink-900) / 0.08)" }} strokeWidth="9" strokeLinecap="round" strokeDasharray={`${track} ${c}`} />
           <circle cx="52" cy="52" r={r} fill="none" stroke={stroke} strokeWidth="9" strokeLinecap="round" strokeDasharray={`${val} ${c}`} style={{ transition: "stroke-dasharray 800ms cubic-bezier(.2,.8,.2,1)" }} />
         </g>
       </svg>

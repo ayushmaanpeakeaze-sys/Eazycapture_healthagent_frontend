@@ -10,7 +10,7 @@ export const XeroOnboarding = ({
   onChanged?: () => void;
 }) => (
   <div className="space-y-5">
-    <div className="rounded-2xl border border-ink-100 bg-white px-6 py-14 text-center shadow-card">
+    <div className="rounded-2xl border border-ink-100 bg-surface px-6 py-14 text-center shadow-card">
       <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#13B5EA]/10 text-[#13B5EA]">
         <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
           <path d="M3 7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />

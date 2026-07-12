@@ -97,7 +97,7 @@ export const FinancialInsights = ({ companyId }: { companyId: string }) => {
           type="button"
           onClick={refresh}
           disabled={loading || refreshing}
-          className="inline-flex items-center gap-1.5 rounded-lg border border-ink-200 bg-white px-3 py-1.5 text-xs font-semibold text-ink-700 shadow-sm transition hover:border-brand-300 hover:text-brand-700 disabled:cursor-not-allowed disabled:opacity-60"
+          className="inline-flex items-center gap-1.5 rounded-lg border border-ink-200 bg-surface px-3 py-1.5 text-xs font-semibold text-ink-700 shadow-sm transition hover:border-brand-300 hover:text-brand-700 disabled:cursor-not-allowed disabled:opacity-60"
         >
           <svg
             viewBox="0 0 24 24"
@@ -189,7 +189,7 @@ const InsightsBody = ({
 };
 
 const Skeleton = () => (
-  <div className="h-64 animate-pulse rounded-2xl border border-ink-100 bg-white shadow-card" />
+  <div className="h-64 animate-pulse rounded-2xl border border-ink-100 bg-surface shadow-card" />
 );
 
 const GridSkeleton = () => (
@@ -201,7 +201,7 @@ const GridSkeleton = () => (
 );
 
 const ErrorBox = ({ message }: { message: string }) => (
-  <section className="rounded-2xl border border-ink-100 bg-white p-6 shadow-card">
+  <section className="rounded-2xl border border-ink-100 bg-surface p-6 shadow-card">
     <div className="flex items-center gap-3 text-sm text-ink-600">
       <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-amber-50 text-amber-600 ring-1 ring-amber-200">
         <svg
@@ -223,7 +223,7 @@ const ErrorBox = ({ message }: { message: string }) => (
 );
 
 const NoSnapshot = ({ refreshing }: { refreshing: boolean }) => (
-  <section className="rounded-2xl border border-ink-100 bg-white p-8 text-center shadow-card">
+  <section className="rounded-2xl border border-ink-100 bg-surface p-8 text-center shadow-card">
     <p className="text-sm font-medium text-ink-800">No snapshot yet</p>
     <p className="mx-auto mt-1 max-w-sm text-xs text-ink-500">
       This client’s financial insights haven’t been computed. Hit{" "}

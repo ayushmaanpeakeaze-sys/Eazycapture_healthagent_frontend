@@ -78,7 +78,7 @@ export const RemovedOrgs = ({
   if (orgs.length === 0) return null;
 
   return (
-    <section className="rounded-2xl border border-ink-100 bg-white shadow-card">
+    <section className="rounded-2xl border border-ink-100 bg-surface shadow-card">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}

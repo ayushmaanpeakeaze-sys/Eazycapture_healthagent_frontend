@@ -286,7 +286,7 @@ const HealthGauge = ({ score }: { score: number | null }) => {
             cy="24"
             r={r}
             fill="none"
-            stroke="rgba(15,23,42,0.08)"
+            style={{ stroke: "rgb(var(--ink-900) / 0.08)" }}
             strokeWidth="4"
             strokeLinecap="round"
             strokeDasharray={`${track} ${c}`}
@@ -565,13 +565,13 @@ export const AllClientsView = ({ onPick, restrictToIds }: AllClientsViewProps) =
     <div className="space-y-5">
       {confirmTarget && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-ink-900/40 p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-scrim/40 p-4"
           onClick={() => {
             if (!disconnecting) setConfirmTarget(null);
           }}
         >
           <div
-            className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-xl"
+            className="w-full max-w-sm rounded-2xl bg-surface p-5 shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
             <h3 className="text-base font-semibold text-ink-900">
@@ -610,7 +610,7 @@ export const AllClientsView = ({ onPick, restrictToIds }: AllClientsViewProps) =
       )}
       {deleteTarget && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-ink-900/40 p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-scrim/40 p-4"
           onClick={() => {
             if (!deleting) {
               setDeleteTarget(null);
@@ -619,7 +619,7 @@ export const AllClientsView = ({ onPick, restrictToIds }: AllClientsViewProps) =
           }}
         >
           <div
-            className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-xl"
+            className="w-full max-w-sm rounded-2xl bg-surface p-5 shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-start gap-3">
@@ -690,7 +690,7 @@ export const AllClientsView = ({ onPick, restrictToIds }: AllClientsViewProps) =
       )}
       {forgetTarget && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-ink-900/40 p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-scrim/40 p-4"
           onClick={() => {
             if (!forgetting) {
               setForgetTarget(null);
@@ -699,7 +699,7 @@ export const AllClientsView = ({ onPick, restrictToIds }: AllClientsViewProps) =
           }}
         >
           <div
-            className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-xl"
+            className="w-full max-w-sm rounded-2xl bg-surface p-5 shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-start gap-3">
@@ -788,7 +788,7 @@ export const AllClientsView = ({ onPick, restrictToIds }: AllClientsViewProps) =
           </p>
         </div>
 
-        <div className="grid grid-cols-3 divide-x divide-ink-200 rounded-xl border border-ink-200 bg-white">
+        <div className="grid grid-cols-3 divide-x divide-ink-200 rounded-xl border border-ink-200 bg-surface">
           <KpiStat
             label="Connected"
             value={filtered.length}
@@ -820,7 +820,7 @@ export const AllClientsView = ({ onPick, restrictToIds }: AllClientsViewProps) =
         </div>
       </header>
 
-      <div className="rounded-xl border border-ink-200 bg-white shadow-card">
+      <div className="rounded-xl border border-ink-200 bg-surface shadow-card">
         <div className="flex flex-wrap items-end gap-4 border-b border-ink-100 px-5 py-3.5">
           <div className="min-w-[220px] flex-1">
             <label className="block text-[10px] font-semibold uppercase tracking-wider text-ink-500">
@@ -843,7 +843,7 @@ export const AllClientsView = ({ onPick, restrictToIds }: AllClientsViewProps) =
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Name, ID, or provider"
-                className="w-full rounded-lg border border-ink-200 bg-white py-1.5 pl-8 pr-3 text-sm text-ink-900 shadow-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200"
+                className="w-full rounded-lg border border-ink-200 bg-surface py-1.5 pl-8 pr-3 text-sm text-ink-900 shadow-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200"
               />
             </div>
           </div>
@@ -852,7 +852,7 @@ export const AllClientsView = ({ onPick, restrictToIds }: AllClientsViewProps) =
             <label className="block text-[10px] font-semibold uppercase tracking-wider text-ink-500">
               Window
             </label>
-            <div className="mt-1 inline-flex rounded-lg border border-ink-200 bg-white p-0.5 text-xs font-medium text-ink-600 shadow-sm">
+            <div className="mt-1 inline-flex rounded-lg border border-ink-200 bg-surface p-0.5 text-xs font-medium text-ink-600 shadow-sm">
               {([7, 30, 90] as const).map((d) => (
                 <button
                   key={d}
@@ -875,7 +875,7 @@ export const AllClientsView = ({ onPick, restrictToIds }: AllClientsViewProps) =
             <label className="block text-[10px] font-semibold uppercase tracking-wider text-ink-500">
               Provider
             </label>
-            <div className="mt-1 inline-flex rounded-lg border border-ink-200 bg-white p-0.5 text-xs font-medium text-ink-600 shadow-sm">
+            <div className="mt-1 inline-flex rounded-lg border border-ink-200 bg-surface p-0.5 text-xs font-medium text-ink-600 shadow-sm">
               {(["all", "XERO", "QBO"] as const).map((p) => (
                 <button
                   key={p}
@@ -901,7 +901,7 @@ export const AllClientsView = ({ onPick, restrictToIds }: AllClientsViewProps) =
             <select
               value={sortKey}
               onChange={(e) => setSortKey(e.target.value as SortKey)}
-              className="mt-1 rounded-lg border border-ink-200 bg-white px-2.5 py-1.5 text-xs font-medium text-ink-700 shadow-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200"
+              className="mt-1 rounded-lg border border-ink-200 bg-surface px-2.5 py-1.5 text-xs font-medium text-ink-700 shadow-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200"
             >
               <option value="severity">Worst first</option>
               <option value="score">Score ↑</option>

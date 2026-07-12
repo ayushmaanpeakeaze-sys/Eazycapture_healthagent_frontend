@@ -155,7 +155,7 @@ export const ContactDefaultsPage = ({ companyId }: { companyId: string }) => {
             >
               <span
                 className={[
-                  "absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition",
+                  "absolute top-0.5 h-4 w-4 rounded-full bg-surface shadow transition",
                   !missingOnly ? "left-[18px]" : "left-0.5",
                 ].join(" ")}
               />
@@ -175,7 +175,7 @@ export const ContactDefaultsPage = ({ companyId }: { companyId: string }) => {
             >
               <span
                 className={[
-                  "absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition",
+                  "absolute top-0.5 h-4 w-4 rounded-full bg-surface shadow transition",
                   includeDismissed ? "left-[18px]" : "left-0.5",
                 ].join(" ")}
               />
@@ -192,7 +192,7 @@ export const ContactDefaultsPage = ({ companyId }: { companyId: string }) => {
               setPage(0);
             }}
             placeholder="Search contact"
-            className="w-full rounded-lg border border-ink-200 bg-white px-3 py-1.5 text-sm shadow-sm focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-200"
+            className="w-full rounded-lg border border-ink-200 bg-surface px-3 py-1.5 text-sm shadow-sm focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-200"
           />
         </div>
 
@@ -203,7 +203,7 @@ export const ContactDefaultsPage = ({ companyId }: { companyId: string }) => {
         </span>
       </div>
 
-      <section className="overflow-hidden rounded-2xl border border-ink-100 bg-white shadow-card">
+      <section className="overflow-hidden rounded-2xl border border-ink-100 bg-surface shadow-card">
         {loading ? (
           <p className="px-5 py-10 text-center text-sm text-ink-500">
             Loading contacts…
@@ -402,7 +402,7 @@ export const ContactDefaultsPage = ({ companyId }: { companyId: string }) => {
 
 const selectCls = (missing: boolean) =>
   [
-    "w-full min-w-[9rem] rounded-lg border bg-white px-2 py-1.5 text-xs text-ink-800 shadow-sm transition focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-200",
+    "w-full min-w-[9rem] rounded-lg border bg-surface px-2 py-1.5 text-xs text-ink-800 shadow-sm transition focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-200",
     missing ? "border-rose-300 bg-rose-50/40" : "border-ink-200",
   ].join(" ");
 

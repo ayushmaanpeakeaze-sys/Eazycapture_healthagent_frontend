@@ -504,7 +504,10 @@ const ClientBreadcrumb = ({
         All clients
       </button>
       <span className="text-ink-300">/</span>
-      <span className="truncate text-sm font-semibold text-ink-900">
+      <span
+        className="truncate text-sm font-semibold text-ink-900"
+        title={client?.company_id ?? companyId}
+      >
         {client
           ? client.name
           : resolved
@@ -534,10 +537,7 @@ const ClientBreadcrumb = ({
         companyId={client?.company_id ?? companyId}
         disabled={needsReconnect}
       />
-      <span className="ml-auto font-mono text-[10px] text-ink-400">
-        {(client?.company_id ?? companyId).slice(0, 8)}…
-      </span>
-      <ThemeToggle />
+      <ThemeToggle className="ml-auto" />
     </div>
   );
 };

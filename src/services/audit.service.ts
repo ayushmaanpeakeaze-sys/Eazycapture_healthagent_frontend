@@ -42,6 +42,36 @@ const unwrap = (err: unknown): never => {
   throw err;
 };
 
+export const downloadBatchTemplate = async (): Promise<{
+  ok: boolean;
+  error?: string;
+}> => {
+  try {
+    const res = await apiClient.get<Blob>(
+      "/api/v1/health-check/batch/template.csv",
+      { responseType: "blob" },
+    );
+    const cd = (res.headers["content-disposition"] as string | undefined) ?? "";
+    const filename =
+      cd.match(/filename\*?=(?:UTF-8'')?"?([^";]+)"?/i)?.[1] ??
+      "batch_template.csv";
+    const url = URL.createObjectURL(res.data);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = decodeURIComponent(filename);
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    return { ok: true };
+  } catch (err) {
+    return {
+      ok: false,
+      error: err instanceof Error ? err.message : "Download failed",
+    };
+  }
+};
+
 export const runBatchHealthCheck = async (
   payload: BatchHealthCheckRequest,
 ): Promise<BatchHealthCheckResponse> => {

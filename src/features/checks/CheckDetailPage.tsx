@@ -23,6 +23,7 @@ import {
 } from "@/features/checks/pages/MultiCodeSuppliersPage";
 import { OldCreditRuleId, OldCreditsPage } from "@/features/checks/pages/OldCreditsPage";
 import { OpeningBalanceDiffsPage } from "@/features/checks/pages/OpeningBalanceDiffsPage";
+import { PrepaymentReviewPage } from "@/features/checks/pages/PrepaymentReviewPage";
 import { TaxMissingPage, TaxMissingRuleId } from "@/features/checks/pages/TaxMissingPage";
 import { UndocumentedBillsPage } from "@/features/checks/pages/UndocumentedBillsPage";
 import { UnreconciledBankItemsPage } from "@/features/checks/pages/UnreconciledBankItemsPage";
@@ -81,6 +82,7 @@ export const CheckDetailPage = ({
   const isInactive = checkKey === "inactive_contact";
   const isLowCost = checkKey === "low_cost_fixed_asset";
   const isCapital = checkKey === "capital_item_review";
+  const isPrepayment = checkKey === "prepayment_review";
   const isMisallocated = checkKey === "misallocated_item";
   const isUndocumented = checkKey === "undocumented_bill";
   const isUnapproved =
@@ -269,6 +271,8 @@ export const CheckDetailPage = ({
         <LowCostFixedAssetPage companyId={companyId} refreshKey={refreshKey} />
       ) : isCapital ? (
         <CapitalItemReviewPage companyId={companyId} refreshKey={refreshKey} />
+      ) : isPrepayment ? (
+        <PrepaymentReviewPage companyId={companyId} refreshKey={refreshKey} />
       ) : isMisallocated ? (
         <MisallocatedItemsPage companyId={companyId} refreshKey={refreshKey} />
       ) : isUndocumented ? (

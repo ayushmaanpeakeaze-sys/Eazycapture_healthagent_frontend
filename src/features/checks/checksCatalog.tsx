@@ -159,6 +159,11 @@ export const CHECK_GROUPS: CheckGroup[] = [
         label: "Old Purchase Credits",
         blurb: "Purchase credit notes left unapplied.",
       },
+      {
+        key: "prepayment_review",
+        label: "Prepayment Review",
+        blurb: "Expenses that may cover a period beyond the year-end.",
+      },
     ],
   },
   {

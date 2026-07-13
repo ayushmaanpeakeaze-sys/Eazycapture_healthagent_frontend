@@ -40,6 +40,7 @@ export type IssueType =
   | "undocumented_bill"
   | "low_cost_fixed_asset"
   | "capital_item_review"
+  | "prepayment_review"
   | "currency_mismatch";
 
 export type Severity = "critical" | "high" | "medium";
@@ -142,6 +143,14 @@ export interface MatchReasons {
   net_amount?: string | null;
   tax_amount?: string | null;
   tax_code?: string | null;
+  current_account_type?: string | null;
+  period_start?: string | null;
+  period_end?: string | null;
+  year_end?: string | null;
+  months_after_year_end?: number | null;
+  total_months?: number | null;
+  prepaid_estimate?: string | number | null;
+  recommended_action?: string | null;
 }
 
 export interface ContactHelper {

@@ -129,6 +129,7 @@ const ISSUE_META: Record<
     label: "Capital item review",
     icon: <FixedAssetIcon />,
   },
+  prepayment_review: { label: "Prepayment review", icon: <ClockIcon /> },
   currency_mismatch: { label: "Currency mismatch", icon: <SwapIcon /> },
 };
 

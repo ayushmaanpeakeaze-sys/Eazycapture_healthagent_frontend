@@ -970,6 +970,7 @@ export interface TrappedInvoicesQuery {
   include_dismissed?: boolean;
   include_marked_ok?: boolean;
   exclude_bank_items?: boolean;
+  issue_type?: string;
 }
 
 export interface TrappedInvoicesResponse {
@@ -1322,6 +1323,7 @@ export const fetchTrappedInvoices = async (
   if (query.include_dismissed) params.set("include_dismissed", "true");
   if (query.include_marked_ok) params.set("include_marked_ok", "true");
   if (query.exclude_bank_items) params.set("exclude_bank_items", "true");
+  if (query.issue_type) params.set("issue_type", query.issue_type);
   const qs = params.toString();
   const url = qs ? `/trapped-invoices/?${qs}` : "/trapped-invoices/";
   try {

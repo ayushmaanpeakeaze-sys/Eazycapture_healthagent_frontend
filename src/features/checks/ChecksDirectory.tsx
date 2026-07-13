@@ -29,6 +29,7 @@ import {
 } from "@/features/checks/pages/MultiCodeSuppliersPage";
 import { OldCreditRuleId, OldCreditsPage } from "@/features/checks/pages/OldCreditsPage";
 import { OpeningBalanceDiffsPage } from "@/features/checks/pages/OpeningBalanceDiffsPage";
+import { PrepaymentReviewPage } from "@/features/checks/pages/PrepaymentReviewPage";
 import { TaxMissingPage, TaxMissingRuleId } from "@/features/checks/pages/TaxMissingPage";
 import { UndocumentedBillsPage } from "@/features/checks/pages/UndocumentedBillsPage";
 import { UnreconciledBankItemsPage } from "@/features/checks/pages/UnreconciledBankItemsPage";
@@ -501,6 +502,8 @@ const CheckRow = ({
             <LowCostFixedAssetPage companyId={companyId} />
           ) : checkKey === "capital_item_review" ? (
             <CapitalItemReviewPage companyId={companyId} />
+          ) : checkKey === "prepayment_review" ? (
+            <PrepaymentReviewPage companyId={companyId} />
           ) : checkKey === "misallocated_item" ? (
             <MisallocatedItemsPage companyId={companyId} />
           ) : checkKey === "undocumented_bill" ? (

@@ -896,6 +896,7 @@ export const TrappedInvoicesList = ({
     fetchTrappedInvoices({
       company_id: companyId.trim() || undefined,
       limit: 100,
+      issue_type: issueFilter ?? undefined,
     })
       .then((data) => {
         if (!active) return;
@@ -912,7 +913,7 @@ export const TrappedInvoicesList = ({
     return () => {
       active = false;
     };
-  }, [companyId, refreshKey, localRefresh]);
+  }, [companyId, refreshKey, localRefresh, issueFilter]);
 
   const enriched = useMemo(
     () =>

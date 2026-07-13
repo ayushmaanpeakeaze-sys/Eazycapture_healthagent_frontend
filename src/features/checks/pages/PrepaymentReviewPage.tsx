@@ -84,8 +84,9 @@ export const PrepaymentReviewPage = ({
             company_id: companyId,
             limit: 200,
             include_dismissed: true,
+            issue_type: RULE,
           }),
-          fetchTrappedInvoices({ company_id: companyId, limit: 200 }),
+          fetchTrappedInvoices({ company_id: companyId, limit: 200, issue_type: RULE }),
         ]);
         if (!active) return;
         if ("error" in all) {
@@ -98,7 +99,11 @@ export const PrepaymentReviewPage = ({
           setRows(byRule((all.results ?? []).filter((r) => !activeIds.has(r.id))));
         }
       } else {
-        const d = await fetchTrappedInvoices({ company_id: companyId, limit: 200 });
+        const d = await fetchTrappedInvoices({
+          company_id: companyId,
+          limit: 200,
+          issue_type: RULE,
+        });
         if (!active) return;
         if ("error" in d) {
           setError(d.error);

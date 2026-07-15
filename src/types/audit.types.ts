@@ -144,13 +144,28 @@ export interface MatchReasons {
   tax_amount?: string | null;
   tax_code?: string | null;
   current_account_type?: string | null;
+  transaction_date?: string | null;
+  supplier?: string | null;
+  description?: string | null;
+  matched_keyword?: string | null;
+  matched_supplier?: string | null;
+  monitored_account?: boolean | null;
   period_start?: string | null;
   period_end?: string | null;
   year_end?: string | null;
   months_after_year_end?: number | null;
   total_months?: number | null;
   prepaid_estimate?: string | number | null;
+  expense_this_year?: string | null;
+  monthly_amount?: string | null;
+  release_schedule?: PrepaymentReleaseRow[] | null;
   recommended_action?: string | null;
+}
+
+export interface PrepaymentReleaseRow {
+  month: string;
+  release: string;
+  remaining: string;
 }
 
 export interface ContactHelper {

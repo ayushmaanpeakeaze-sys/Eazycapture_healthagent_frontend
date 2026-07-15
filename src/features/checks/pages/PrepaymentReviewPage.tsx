@@ -26,7 +26,7 @@ const shortDate = (iso: string | null | undefined) => {
   return d.toLocaleDateString("en-GB", {
     day: "numeric",
     month: "short",
-    year: "2-digit",
+    year: "numeric",
   });
 };
 
@@ -42,6 +42,9 @@ const DOC_TYPE_CLS: Record<string, string> = {
   RECEIVE: "bg-sky-50 text-sky-700 ring-sky-200",
   SPEND: "bg-rose-50 text-rose-700 ring-rose-200",
 };
+
+const CLIENT_QUESTION =
+  "This expense appears to cover a period beyond the year-end. Please confirm whether the future portion should be treated as a prepayment.";
 
 const flagFor = (r: HealthCheckResult | undefined): FlaggedIssue | undefined =>
   (r?.result?.flagged ?? []).find((f) => f.issue_type === RULE) ??
@@ -66,6 +69,7 @@ export const PrepaymentReviewPage = ({
   const [busyKey, setBusyKey] = useState<string | null>(null);
   const [removed, setRemoved] = useState<Set<string>>(new Set());
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [expandedId, setExpandedId] = useState<string | null>(null);
   const [bulkBusy, setBulkBusy] = useState(false);
 
   useEffect(() => {
@@ -128,7 +132,8 @@ export const PrepaymentReviewPage = ({
       .filter((r) => {
         if (!q) return true;
         const res = r.result;
-        return [res?.vendor_name, res?.details].some((v) =>
+        const mr = flagFor(r)?.match_reasons;
+        return [res?.vendor_name, res?.details, mr?.description].some((v) =>
           (v || "").toString().toLowerCase().includes(q),
         );
       });
@@ -270,7 +275,7 @@ export const PrepaymentReviewPage = ({
         </p>
       ) : (
         <div className="overflow-x-auto rounded-2xl border border-ink-100 bg-surface shadow-card">
-          <table className="w-full min-w-[940px] text-sm">
+          <table className="w-full min-w-[1000px] text-sm">
             <thead>
               <tr className="border-b border-ink-100 bg-ink-50/50 text-left text-[10px] font-semibold uppercase tracking-wider text-ink-400">
                 <th className="px-3 py-2.5">
@@ -285,8 +290,8 @@ export const PrepaymentReviewPage = ({
                 <th className="px-2 py-2.5">Type</th>
                 <th className="px-2 py-2.5">Item</th>
                 <th className="px-2 py-2.5">Account used</th>
-                <th className="px-2 py-2.5">Net</th>
-                <th className="px-2 py-2.5">Prepayment</th>
+                <th className="px-2 py-2.5 text-right">Net</th>
+                <th className="px-2 py-2.5">Period</th>
                 <th className="px-3 py-2.5 text-right">Actions</th>
               </tr>
             </thead>
@@ -299,111 +304,218 @@ export const PrepaymentReviewPage = ({
                 const account = mr?.account_code ?? f?.current_code ?? "";
                 const accountName = mr?.account_name ?? f?.current_name ?? "";
                 const usedType = mr?.current_account_type;
-                const period =
-                  shortDate(mr?.period_start) && shortDate(mr?.period_end)
-                    ? `${shortDate(mr?.period_start)} → ${shortDate(mr?.period_end)}`
-                    : null;
-                const yearEnd = shortDate(mr?.year_end);
-                const monthsAfter = mr?.months_after_year_end;
-                const prepaid = mr?.prepaid_estimate;
-                const title = f?.message || f?.reasoning || "";
+                const desc = mr?.description || res?.details || "";
+                const txDate = shortDate(mr?.transaction_date ?? res?.invoice_date);
+                const periodStart = shortDate(mr?.period_start);
+                const periodEnd = shortDate(mr?.period_end);
+                const schedule = mr?.release_schedule ?? [];
+                const open = expandedId === r.id;
                 const busy = busyKey === r.id;
                 return (
-                  <tr key={r.id} className="align-top transition hover:bg-brand-50/20">
-                    <td className="px-3 py-3">
-                      <input
-                        type="checkbox"
-                        checked={selected.has(r.id)}
-                        onChange={() => toggle(r.id)}
-                        className="h-3.5 w-3.5 accent-brand-600"
-                        aria-label="Select row"
-                      />
-                    </td>
-                    <td className="px-2 py-3">
-                      <span
-                        className={[
-                          "rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ring-1",
-                          DOC_TYPE_CLS[r.document_type] ??
-                            "bg-ink-100 text-ink-600 ring-ink-200",
-                        ].join(" ")}
-                      >
-                        {DOC_TYPE_LABEL[r.document_type] ?? r.document_type}
-                      </span>
-                    </td>
-                    <td className="px-2 py-3">
-                      <p className="flex items-center gap-1 font-medium text-ink-900">
-                        {res?.vendor_name || "—"}
-                        {title && (
-                          <span
-                            title={title}
-                            className="flex h-4 w-4 shrink-0 cursor-help items-center justify-center rounded-full bg-ink-100 text-[10px] font-bold text-ink-500"
-                          >
-                            ?
-                          </span>
-                        )}
-                      </p>
-                      {shortDate(res?.invoice_date) && (
-                        <p className="text-[11px] text-ink-400">
-                          {shortDate(res?.invoice_date)}
-                        </p>
-                      )}
-                    </td>
-                    <td className="px-2 py-3 text-ink-700">
-                      <span>{account || "—"}</span>
-                      {usedType && (
-                        <span className="ml-1 rounded bg-rose-50 px-1 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-rose-600 ring-1 ring-rose-100">
-                          {usedType}
+                  <>
+                    <tr
+                      key={r.id}
+                      className="align-top transition hover:bg-brand-50/20"
+                    >
+                      <td className="px-3 py-3">
+                        <input
+                          type="checkbox"
+                          checked={selected.has(r.id)}
+                          onChange={() => toggle(r.id)}
+                          className="h-3.5 w-3.5 accent-brand-600"
+                          aria-label="Select row"
+                        />
+                      </td>
+                      <td className="px-2 py-3">
+                        <span
+                          className={[
+                            "rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ring-1",
+                            DOC_TYPE_CLS[r.document_type] ??
+                              "bg-ink-100 text-ink-600 ring-ink-200",
+                          ].join(" ")}
+                        >
+                          {DOC_TYPE_LABEL[r.document_type] ?? r.document_type}
                         </span>
-                      )}
-                      {accountName && (
-                        <span className="block text-[11px] text-ink-400">{accountName}</span>
-                      )}
-                    </td>
-                    <td className="px-2 py-3 font-semibold tabular-nums text-ink-900">
-                      {money(res?.amount ?? mr?.line_amount, cur)}
-                    </td>
-                    <td className="px-2 py-3">
-                      <div className="flex flex-wrap gap-1">
-                        {period && (
-                          <span className="rounded-md bg-sky-50 px-1.5 py-0.5 text-[10px] font-medium text-sky-700 ring-1 ring-sky-100">
-                            Period: {period}
+                      </td>
+                      <td className="max-w-[280px] px-2 py-3">
+                        {res?.vendor_name && (
+                          <p className="font-medium text-ink-900">{res.vendor_name}</p>
+                        )}
+                        {desc && (
+                          <p className="line-clamp-2 text-[12px] text-ink-600">{desc}</p>
+                        )}
+                        {txDate && (
+                          <p className="text-[11px] text-ink-400">{txDate}</p>
+                        )}
+                      </td>
+                      <td className="px-2 py-3 text-ink-700">
+                        <span>{account || "—"}</span>
+                        {usedType && (
+                          <span className="ml-1 rounded bg-rose-50 px-1 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-rose-600 ring-1 ring-rose-100">
+                            {usedType}
                           </span>
                         )}
-                        {yearEnd && monthsAfter != null && (
-                          <span className="rounded-md bg-amber-50 px-1.5 py-0.5 text-[10px] font-medium text-amber-700 ring-1 ring-amber-100">
-                            After year-end ({yearEnd}): {monthsAfter} mo
+                        {accountName && (
+                          <span className="block text-[11px] text-ink-400">
+                            {accountName}
                           </span>
                         )}
-                        {prepaid != null && (
-                          <span className="rounded-md bg-emerald-50 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-700 ring-1 ring-emerald-100">
-                            Est. prepaid: {money(prepaid, cur)}
+                      </td>
+                      <td className="px-2 py-3 text-right font-semibold tabular-nums text-ink-900">
+                        {money(mr?.line_amount ?? res?.amount, cur)}
+                      </td>
+                      <td className="px-2 py-3 text-[12px] text-ink-600">
+                        {periodStart && periodEnd ? (
+                          <span className="whitespace-nowrap">
+                            {periodStart} → {periodEnd}
                           </span>
+                        ) : (
+                          "—"
                         )}
-                      </div>
-                    </td>
-                    <td className="px-3 py-3">
-                      <div className="flex flex-wrap items-center justify-end gap-1.5">
-                        {r.xero_url && (
-                          <a
-                            href={r.xero_url}
-                            target="_blank"
-                            rel="noopener noreferrer"
+                      </td>
+                      <td className="px-3 py-3">
+                        <div className="flex flex-wrap items-center justify-end gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => setExpandedId(open ? null : r.id)}
+                            aria-expanded={open}
                             className="rounded-md border border-ink-200 px-2.5 py-1 text-xs font-semibold text-ink-600 transition hover:border-brand-300 hover:text-brand-700"
                           >
-                            Edit in Xero
-                          </a>
-                        )}
-                        <button
-                          type="button"
-                          onClick={() => onDismiss(r)}
-                          disabled={busy}
-                          className="rounded-md border border-ink-200 px-2.5 py-1 text-xs font-semibold text-ink-500 transition hover:border-rose-300 hover:text-rose-600 disabled:opacity-60"
-                        >
-                          {busy ? "…" : "Dismiss"}
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
+                            {open ? "Hide" : "Details"}
+                          </button>
+                          {r.xero_url && (
+                            <a
+                              href={r.xero_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="rounded-md border border-ink-200 px-2.5 py-1 text-xs font-semibold text-ink-600 transition hover:border-brand-300 hover:text-brand-700"
+                            >
+                              Edit in Xero
+                            </a>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => onDismiss(r)}
+                            disabled={busy}
+                            className="rounded-md border border-ink-200 px-2.5 py-1 text-xs font-semibold text-ink-500 transition hover:border-rose-300 hover:text-rose-600 disabled:opacity-60"
+                          >
+                            {busy ? "…" : "Dismiss"}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                    {open && (
+                      <tr key={`${r.id}-detail`} className="bg-ink-50/40">
+                        <td colSpan={7} className="px-4 py-4">
+                          <div className="space-y-3">
+                            <div className="flex flex-wrap items-center gap-x-6 gap-y-2 rounded-lg border border-ink-100 bg-surface px-4 py-3">
+                              <div>
+                                <p className="text-[10px] font-semibold uppercase tracking-wider text-ink-400">
+                                  Total
+                                </p>
+                                <p className="font-semibold tabular-nums text-ink-900">
+                                  {money(mr?.line_amount ?? res?.amount, cur)}
+                                </p>
+                              </div>
+                              <div>
+                                <p className="text-[10px] font-semibold uppercase tracking-wider text-ink-400">
+                                  This year (P&amp;L)
+                                </p>
+                                <p className="font-semibold tabular-nums text-ink-700">
+                                  {money(mr?.expense_this_year, cur)}
+                                </p>
+                              </div>
+                              <div>
+                                <p className="text-[10px] font-semibold uppercase tracking-wider text-emerald-600">
+                                  Prepayment (carry forward)
+                                </p>
+                                <p className="text-base font-bold tabular-nums text-emerald-700">
+                                  {money(mr?.prepaid_estimate, cur)}
+                                </p>
+                              </div>
+                            </div>
+
+                            <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-ink-500">
+                              {periodStart && periodEnd && (
+                                <span>
+                                  Period{" "}
+                                  <span className="font-medium text-ink-700">
+                                    {periodStart} → {periodEnd}
+                                  </span>
+                                </span>
+                              )}
+                              {shortDate(mr?.year_end) && (
+                                <>
+                                  <span className="text-ink-300">·</span>
+                                  <span>
+                                    Year-end{" "}
+                                    <span className="font-medium text-ink-700">
+                                      {shortDate(mr?.year_end)}
+                                    </span>
+                                  </span>
+                                </>
+                              )}
+                              {mr?.months_after_year_end != null &&
+                                mr?.total_months != null && (
+                                  <>
+                                    <span className="text-ink-300">·</span>
+                                    <span>
+                                      <span className="font-medium text-ink-700">
+                                        {mr.months_after_year_end} of {mr.total_months}
+                                      </span>{" "}
+                                      months after year-end
+                                    </span>
+                                  </>
+                                )}
+                            </p>
+
+                            {schedule.length > 0 && (
+                              <div className="overflow-hidden rounded-lg border border-ink-100 bg-surface">
+                                <table className="w-full text-[12px]">
+                                  <thead>
+                                    <tr className="border-b border-ink-100 bg-ink-50/50 text-left text-[10px] font-semibold uppercase tracking-wider text-ink-400">
+                                      <th className="px-3 py-2">Month</th>
+                                      <th className="px-3 py-2 text-right">
+                                        Release to P&amp;L
+                                      </th>
+                                      <th className="px-3 py-2 text-right">
+                                        Remaining prepaid
+                                      </th>
+                                    </tr>
+                                  </thead>
+                                  <tbody className="divide-y divide-ink-50">
+                                    {schedule.map((s, i) => (
+                                      <tr key={`${s.month}-${i}`}>
+                                        <td className="px-3 py-1.5 text-ink-700">
+                                          {s.month}
+                                        </td>
+                                        <td className="px-3 py-1.5 text-right tabular-nums text-ink-700">
+                                          {money(s.release, cur)}
+                                        </td>
+                                        <td className="px-3 py-1.5 text-right tabular-nums text-ink-700">
+                                          {money(s.remaining, cur)}
+                                        </td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </div>
+                            )}
+
+                            <p className="text-[11px] italic text-ink-400">
+                              Straight-line estimate — guidance only, nothing is posted.
+                            </p>
+                            <p className="text-[11px] text-ink-500">
+                              <span className="font-semibold text-ink-600">
+                                Client question:
+                              </span>{" "}
+                              {CLIENT_QUESTION}
+                            </p>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </>
                 );
               })}
             </tbody>

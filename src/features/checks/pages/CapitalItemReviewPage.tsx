@@ -343,13 +343,15 @@ export const CapitalItemReviewPage = ({
                 const current = f?.current_code ?? mr?.account_code ?? "";
                 const usedName = f?.current_name || mr?.account_name || nameByCode[current];
                 const usedType = typeByCode[current];
-                const targetType = (mr?.recode_to_account_type || "FIXED").toUpperCase();
+                const recodeType = mr?.recode_to_account_type;
+                const targetType = (recodeType || "FIXED").toUpperCase();
                 const fixedAccounts = accounts.filter(
                   (a) => (a.type || "").toUpperCase() === targetType,
                 );
                 const targetAccounts = fixedAccounts.length ? fixedAccounts : accounts;
                 const reason = f?.reasoning || f?.message || "";
                 const editable = res?.editable !== false;
+                const canRecode = !!recodeType && editable;
                 const chosen = choice[r.id] ?? "";
                 const busy = busyKey === r.id;
                 return (
@@ -382,8 +384,31 @@ export const CapitalItemReviewPage = ({
                         </p>
                       )}
                     </td>
-                    <td className="max-w-[180px] px-2 py-3 text-[12px] text-ink-500">
-                      <span className="line-clamp-2">{res?.details || "—"}</span>
+                    <td className="max-w-[220px] px-2 py-3 text-[12px] text-ink-500">
+                      <span className="line-clamp-2">
+                        {mr?.description || res?.details || "—"}
+                      </span>
+                      {(mr?.matched_keyword ||
+                        mr?.matched_supplier ||
+                        mr?.monitored_account) && (
+                        <div className="mt-1.5 flex flex-wrap gap-1">
+                          {mr?.matched_keyword && (
+                            <span className="rounded-md bg-sky-50 px-1.5 py-0.5 text-[10px] font-medium text-sky-700 ring-1 ring-sky-100">
+                              Description mentions “{mr.matched_keyword}”
+                            </span>
+                          )}
+                          {mr?.matched_supplier && (
+                            <span className="rounded-md bg-amber-50 px-1.5 py-0.5 text-[10px] font-medium text-amber-700 ring-1 ring-amber-100">
+                              Supplier “{mr.matched_supplier}” commonly sells assets
+                            </span>
+                          )}
+                          {mr?.monitored_account && (
+                            <span className="rounded-md bg-brand-50 px-1.5 py-0.5 text-[10px] font-medium text-brand-700 ring-1 ring-brand-100">
+                              Account often hides capital items
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </td>
                     <td className="px-2 py-3 font-semibold tabular-nums text-ink-900">
                       {money(res?.amount, res?.currency_code)}
@@ -410,7 +435,11 @@ export const CapitalItemReviewPage = ({
                       )}
                     </td>
                     <td className="px-2 py-3">
-                      {editable ? (
+                      {!recodeType ? (
+                        <span className="text-[11px] italic text-ink-400">
+                          Review only
+                        </span>
+                      ) : editable ? (
                         <select
                           value={chosen}
                           onChange={(e) =>
@@ -436,7 +465,7 @@ export const CapitalItemReviewPage = ({
                     </td>
                     <td className="px-3 py-3">
                       <div className="flex flex-wrap items-center justify-end gap-1.5">
-                        {editable && (
+                        {canRecode && (
                           <button
                             type="button"
                             onClick={() => onSave(r, current)}

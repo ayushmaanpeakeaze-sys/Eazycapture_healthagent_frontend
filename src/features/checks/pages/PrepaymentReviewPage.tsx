@@ -6,6 +6,7 @@ import {
 } from "@/services/audit.service";
 import { FlaggedIssue, HealthCheckResult } from "@/types/audit.types";
 import { TablePager, useClientPagination } from "@/features/checks/paginate";
+import { PrepaymentSchedulePage } from "@/features/checks/pages/PrepaymentSchedulePage";
 
 const RULE = "prepayment_review";
 
@@ -71,6 +72,7 @@ export const PrepaymentReviewPage = ({
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [bulkBusy, setBulkBusy] = useState(false);
+  const [view, setView] = useState<"flags" | "schedule">("flags");
 
   useEffect(() => {
     let active = true;
@@ -193,6 +195,37 @@ export const PrepaymentReviewPage = ({
 
   return (
     <div className="space-y-4">
+      <div className="inline-flex rounded-lg border border-ink-200 bg-ink-50 p-0.5 text-xs font-semibold">
+        <button
+          type="button"
+          onClick={() => setView("flags")}
+          className={[
+            "rounded-md px-3 py-1 transition",
+            view === "flags"
+              ? "bg-surface text-ink-900 shadow-sm"
+              : "text-ink-500 hover:text-ink-800",
+          ].join(" ")}
+        >
+          Flagged expenses
+        </button>
+        <button
+          type="button"
+          onClick={() => setView("schedule")}
+          className={[
+            "rounded-md px-3 py-1 transition",
+            view === "schedule"
+              ? "bg-surface text-ink-900 shadow-sm"
+              : "text-ink-500 hover:text-ink-800",
+          ].join(" ")}
+        >
+          Prepayment schedule
+        </button>
+      </div>
+
+      {view === "schedule" ? (
+        <PrepaymentSchedulePage companyId={companyId} refreshKey={refreshKey} />
+      ) : (
+        <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <label className="inline-flex cursor-pointer items-center gap-2 text-xs font-medium text-ink-600">
           <button
@@ -527,6 +560,8 @@ export const PrepaymentReviewPage = ({
             setLimit={pg.setLimit}
             total={pg.total}
           />
+        </div>
+      )}
         </div>
       )}
     </div>

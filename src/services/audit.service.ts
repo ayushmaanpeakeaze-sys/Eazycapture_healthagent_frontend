@@ -12,6 +12,7 @@ import {
   HealthCheckResult,
   LateTransactionsResponse,
   OpeningBalanceResponse,
+  PrepaymentScheduleResponse,
   HealthStatsResponse,
   LedgerHealthSummary,
   OutboundDemoResponse,
@@ -460,6 +461,23 @@ export const fetchBankBalanceCheck = async (
     return data;
   } catch {
     return null;
+  }
+};
+
+export const fetchPrepaymentSchedule = async (
+  companyId: string,
+  opts: { yearEnd?: string; months?: number } = {},
+): Promise<PrepaymentScheduleResponse | ServiceErrorDict> => {
+  try {
+    const params = new URLSearchParams({ company_id: companyId });
+    if (opts.yearEnd) params.set("year_end", opts.yearEnd);
+    if (opts.months) params.set("months", String(opts.months));
+    const { data } = await healthClient.get<PrepaymentScheduleResponse>(
+      `/prepayment-schedule/?${params.toString()}`,
+    );
+    return data;
+  } catch (err) {
+    return errorDict(err);
   }
 };
 

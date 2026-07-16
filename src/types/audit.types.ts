@@ -1,3 +1,39 @@
+export interface PrepaymentScheduleRow {
+  date: string;
+  invoice_no: string;
+  supplier: string;
+  description: string;
+  account_code: string;
+  account_name: string;
+  amount: string;
+  period_start: string | null;
+  period_end: string | null;
+  total_months: number | null;
+  monthly: string | null;
+  cells: Array<string | null>;
+  balance: string;
+  unscheduled: boolean;
+}
+
+export interface PrepaymentScheduleValidation {
+  schedule_balance: string;
+  ledger_balance: string;
+  ledger_source: "xero_trial_balance" | "posted_amounts" | string;
+  difference: string;
+  reconciled: boolean;
+}
+
+export interface PrepaymentScheduleResponse {
+  year_end: string;
+  columns: string[];
+  rows: PrepaymentScheduleRow[];
+  column_totals: string[];
+  total_balance: string;
+  validation: PrepaymentScheduleValidation;
+  prepayment_accounts: string[];
+  item_count: number;
+}
+
 export type IssueType =
   | "unprocessed_bank"
   | "unreconciled_bank"

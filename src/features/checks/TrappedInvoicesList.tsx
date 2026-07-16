@@ -130,6 +130,8 @@ const ISSUE_META: Record<
     icon: <FixedAssetIcon />,
   },
   prepayment_review: { label: "Prepayment review", icon: <ClockIcon /> },
+  unusual_payment: { label: "Payment anomalies", icon: <WarningIcon /> },
+  missing_accrual: { label: "Accruals", icon: <ClockIcon /> },
   currency_mismatch: { label: "Currency mismatch", icon: <SwapIcon /> },
 };
 

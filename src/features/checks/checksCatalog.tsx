@@ -81,6 +81,7 @@ const assetIcon = I(
     <path d="m3 17 9 4 9-4" />
   </>,
 );
+const anomalyIcon = I(<path d="M3 12h4l2-6 4 12 2-6h6" />);
 
 export const CHECK_GROUPS: CheckGroup[] = [
   {
@@ -163,6 +164,22 @@ export const CHECK_GROUPS: CheckGroup[] = [
         key: "prepayment_review",
         label: "Prepayment Review",
         blurb: "Expenses that may cover a period beyond the year-end.",
+      },
+      {
+        key: "missing_accrual",
+        label: "Accruals",
+        blurb: "Regular monthly costs missing near the year-end.",
+      },
+    ],
+  },
+  {
+    group: "Payments & Anomalies",
+    icon: anomalyIcon,
+    checks: [
+      {
+        key: "unusual_payment",
+        label: "Payment Anomalies",
+        blurb: "Payments with no clear description or an unusual pattern.",
       },
     ],
   },

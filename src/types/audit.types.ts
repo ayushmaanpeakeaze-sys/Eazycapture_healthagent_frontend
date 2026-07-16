@@ -77,6 +77,8 @@ export type IssueType =
   | "low_cost_fixed_asset"
   | "capital_item_review"
   | "prepayment_review"
+  | "unusual_payment"
+  | "missing_accrual"
   | "currency_mismatch";
 
 export type Severity = "critical" | "high" | "medium";
@@ -196,6 +198,11 @@ export interface MatchReasons {
   monthly_amount?: string | null;
   release_schedule?: PrepaymentReleaseRow[] | null;
   recommended_action?: string | null;
+  reason?: string | null;
+  date?: string | null;
+  account?: string | null;
+  usual?: string | null;
+  ratio?: string | null;
 }
 
 export interface PrepaymentReleaseRow {
@@ -243,6 +250,13 @@ export interface FlaggedIssue {
   age_days?: number | null;
   helper?: ContactHelper | null;
   partner_helper?: ContactHelper | null;
+  account_code?: string | null;
+  account_name?: string | null;
+  missing_month?: string | null;
+  reason?: string | null;
+  post_year_payment?: boolean | null;
+  months_present?: number | null;
+  avg_monthly_amount?: string | null;
 }
 
 export interface BatchHealthCheckResponse {

@@ -79,6 +79,7 @@ export type IssueType =
   | "prepayment_review"
   | "unusual_payment"
   | "missing_accrual"
+  | "non_payroll_payment"
   | "currency_mismatch";
 
 export type Severity = "critical" | "high" | "medium";
@@ -203,6 +204,7 @@ export interface MatchReasons {
   account?: string | null;
   usual?: string | null;
   ratio?: string | null;
+  payee?: string | null;
 }
 
 export interface PrepaymentReleaseRow {

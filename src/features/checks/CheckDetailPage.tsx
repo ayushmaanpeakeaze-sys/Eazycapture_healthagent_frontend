@@ -25,6 +25,7 @@ import { OldCreditRuleId, OldCreditsPage } from "@/features/checks/pages/OldCred
 import { OpeningBalanceDiffsPage } from "@/features/checks/pages/OpeningBalanceDiffsPage";
 import { PrepaymentReviewPage } from "@/features/checks/pages/PrepaymentReviewPage";
 import { PaymentAnomaliesPage } from "@/features/checks/pages/PaymentAnomaliesPage";
+import { PaymentsNonPayrollPage } from "@/features/checks/pages/PaymentsNonPayrollPage";
 import { AccrualsPage } from "@/features/checks/pages/AccrualsPage";
 import { TaxMissingPage, TaxMissingRuleId } from "@/features/checks/pages/TaxMissingPage";
 import { UndocumentedBillsPage } from "@/features/checks/pages/UndocumentedBillsPage";
@@ -86,6 +87,7 @@ export const CheckDetailPage = ({
   const isCapital = checkKey === "capital_item_review";
   const isPrepayment = checkKey === "prepayment_review";
   const isPaymentAnomaly = checkKey === "unusual_payment";
+  const isNonPayroll = checkKey === "non_payroll_payment";
   const isAccrual = checkKey === "missing_accrual";
   const isMisallocated = checkKey === "misallocated_item";
   const isUndocumented = checkKey === "undocumented_bill";
@@ -279,6 +281,8 @@ export const CheckDetailPage = ({
         <PrepaymentReviewPage companyId={companyId} refreshKey={refreshKey} />
       ) : isPaymentAnomaly ? (
         <PaymentAnomaliesPage companyId={companyId} refreshKey={refreshKey} />
+      ) : isNonPayroll ? (
+        <PaymentsNonPayrollPage companyId={companyId} refreshKey={refreshKey} />
       ) : isAccrual ? (
         <AccrualsPage companyId={companyId} refreshKey={refreshKey} />
       ) : isMisallocated ? (

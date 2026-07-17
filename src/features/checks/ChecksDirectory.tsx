@@ -31,6 +31,7 @@ import { OldCreditRuleId, OldCreditsPage } from "@/features/checks/pages/OldCred
 import { OpeningBalanceDiffsPage } from "@/features/checks/pages/OpeningBalanceDiffsPage";
 import { PrepaymentReviewPage } from "@/features/checks/pages/PrepaymentReviewPage";
 import { PaymentAnomaliesPage } from "@/features/checks/pages/PaymentAnomaliesPage";
+import { PaymentsNonPayrollPage } from "@/features/checks/pages/PaymentsNonPayrollPage";
 import { AccrualsPage } from "@/features/checks/pages/AccrualsPage";
 import { TaxMissingPage, TaxMissingRuleId } from "@/features/checks/pages/TaxMissingPage";
 import { UndocumentedBillsPage } from "@/features/checks/pages/UndocumentedBillsPage";
@@ -508,6 +509,8 @@ const CheckRow = ({
             <PrepaymentReviewPage companyId={companyId} />
           ) : checkKey === "unusual_payment" ? (
             <PaymentAnomaliesPage companyId={companyId} />
+          ) : checkKey === "non_payroll_payment" ? (
+            <PaymentsNonPayrollPage companyId={companyId} />
           ) : checkKey === "missing_accrual" ? (
             <AccrualsPage companyId={companyId} />
           ) : checkKey === "misallocated_item" ? (

@@ -131,6 +131,7 @@ const ISSUE_META: Record<
   },
   prepayment_review: { label: "Prepayment review", icon: <ClockIcon /> },
   unusual_payment: { label: "Payment anomalies", icon: <WarningIcon /> },
+  non_payroll_payment: { label: "Non-payroll payments", icon: <WarningIcon /> },
   missing_accrual: { label: "Accruals", icon: <ClockIcon /> },
   currency_mismatch: { label: "Currency mismatch", icon: <SwapIcon /> },
 };

@@ -181,6 +181,11 @@ export const CHECK_GROUPS: CheckGroup[] = [
         label: "Payment Anomalies",
         blurb: "Payments with no clear description or an unusual pattern.",
       },
+      {
+        key: "non_payroll_payment",
+        label: "Payments to Non-Payroll People",
+        blurb: "Bank payments to payees not in the payroll list.",
+      },
     ],
   },
   {
